@@ -14,10 +14,25 @@
 
 ```bash
 npm install
+cp .env.example .env.local
 npx expo start
 ```
 
 시뮬레이터, Expo Go, 개발 빌드 중 원하는 방식으로 실행할 수 있습니다.
+
+`.env.local`에 소셜 로그인 공급자의 네이티브 앱 설정을 입력해야 합니다.
+소셜 로그인은 네이티브 SDK가 포함된 개발 빌드 또는 배포 빌드에서 확인합니다. Expo Go에서는 동작하지 않습니다.
+
+| 환경변수 | 설명 |
+| --- | --- |
+| `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` | Google iOS OAuth Client ID |
+| `EXPO_PUBLIC_KAKAO_NATIVE_APP_KEY` | Kakao Native App Key |
+| `EXPO_PUBLIC_NAVER_CLIENT_ID` | Naver OAuth Client ID |
+| `EXPO_PUBLIC_NAVER_CLIENT_SECRET` | Naver iOS SDK 초기화에 필요한 Client Secret |
+| `EXPO_PUBLIC_NAVER_URL_SCHEME` | 선택 사항. 기본값은 `hangsha-naver` |
+| `IOS_BUNDLE_IDENTIFIER` | 공급자 콘솔에 등록한 iOS Bundle Identifier. 기본값은 `com.anonymous.hangsha-ios` |
+
+`EXPO_PUBLIC_*` 값은 앱 번들에 포함됩니다. 소셜 공급자가 발급한 사용자 access token은 로그인 요청에만 사용하며 로컬에 저장하지 않습니다.
 
 ## 폴더 구조
 

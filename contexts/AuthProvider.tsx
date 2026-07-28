@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react';
 
 import * as authApi from '@/api/auth';
 import { setSessionExpiredHandler } from '@/api/client';
-import { requestSocialAuthorization } from '@/api/socialAuth';
+import { requestSocialAccessToken } from '@/api/socialAuth';
 import { TokenService } from '@/api/tokenService';
 import { useAuthStore } from '@/stores/authStore';
 import type { LoginInput, ProfileImage, SignupInput, User } from '@/types/auth';
@@ -82,10 +82,8 @@ async function getUserAfterAuthentication() {
 }
 
 async function completeSocialAuthentication(accessToken: string) {
-  await TokenService.setAccessToken(accessToken);
-
   try {
-    await authApi.establishSession();
+    await authApi.establishSession(accessToken);
     return authApi.getUser();
   } catch (error) {
     await TokenService.clearTokens();
@@ -142,8 +140,8 @@ export function useAuth() {
 
   const socialLoginMutation = useMutation({
     mutationFn: async (provider: SocialLoginProvider) => {
-      const authorization = await requestSocialAuthorization(provider);
-      const { accessToken } = await authApi.loginWithSocial(authorization);
+      const providerToken = await requestSocialAccessToken(provider);
+      const { accessToken } = await authApi.loginWithSocial(providerToken);
       return completeSocialAuthentication(accessToken);
     },
     onSuccess: commitAuthenticatedUser,
@@ -180,12 +178,6 @@ export function useAuth() {
     onSuccess: commitAuthenticatedUser,
   });
 
-  const updateUserMutation = useMutation({
-    mutationFn: ({ username, image }: { username: string; image: ProfileImage | null }) =>
-      authApi.updateUser(username, image),
-    onSuccess: commitAuthenticatedUser,
-  });
-
   return {
     user: isAuthenticated ? (userQuery.data ?? null) : null,
     isAuthenticated,
@@ -200,7 +192,7 @@ export function useAuth() {
     updateUsernameMutation,
     clearProfileImageMutation,
     uploadProfileImageMutation,
-    updateUserMutation,
+
     login: (email: string, password: string) => loginMutation.mutateAsync({ email, password }),
     signup: (email: string, password: string, username: string) =>
       signupMutation.mutateAsync({ email, password, username }),
@@ -212,7 +204,5 @@ export function useAuth() {
     updateUsername: (username: string) => updateUsernameMutation.mutateAsync(username),
     clearProfileImg: () => clearProfileImageMutation.mutateAsync(),
     setProfileImg: (image: ProfileImage) => uploadProfileImageMutation.mutateAsync(image),
-    updateUser: (username: string, image: ProfileImage | null) =>
-      updateUserMutation.mutateAsync({ username, image }),
   };
 }

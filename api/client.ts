@@ -34,7 +34,17 @@ export function setSessionExpiredHandler(handler: SessionExpiredHandler | null) 
 }
 
 function includesEndpoint(url: string | undefined, endpoints: string[]) {
-  return endpoints.some((endpoint) => url?.includes(endpoint));
+  if (!url) return false;
+
+  const normalizedUrl = url.split(/[?#]/, 1)[0].replace(/\/+$/, '');
+
+  return endpoints.some((endpoint) => {
+    const normalizedEndpoint = endpoint.replace(/^\/+|\/+$/g, '');
+    return (
+      normalizedUrl === normalizedEndpoint ||
+      normalizedUrl.endsWith(`/${normalizedEndpoint}`)
+    );
+  });
 }
 
 async function refreshAccessToken() {
@@ -64,6 +74,10 @@ async function expireSession() {
 apiClient.interceptors.request.use(async (config) => {
   if (includesEndpoint(config.url, AUTH_WITHOUT_ACCESS_TOKEN)) {
     delete config.headers.Authorization;
+    return config;
+  }
+
+  if (config.headers.has('Authorization')) {
     return config;
   }
 

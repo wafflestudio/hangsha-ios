@@ -1,10 +1,10 @@
-import * as SecureStore from 'expo-secure-store';
-import { Platform } from 'react-native';
+import * as SecureStore from "expo-secure-store";
+import { Platform } from "react-native";
 
-import type { AuthTokens } from '@/types/auth';
+import type { AuthTokens } from "@/types/auth";
 
-const ACCESS_TOKEN_KEY = 'hangsha.accessToken';
-const REFRESH_TOKEN_KEY = 'hangsha.refreshToken';
+const ACCESS_TOKEN_KEY = "hangsha.accessToken";
+const REFRESH_TOKEN_KEY = "hangsha.refreshToken";
 const SECURE_STORE_OPTIONS: SecureStore.SecureStoreOptions = {
   keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
 };
@@ -14,13 +14,14 @@ let refreshToken: string | null = null;
 let isHydrated = false;
 let hydrationPromise: Promise<void> | null = null;
 
+// SecureStore -> memory
 async function hydrate() {
   if (isHydrated) return;
 
   if (!hydrationPromise) {
     hydrationPromise = (async () => {
-      // SecureStore has no web implementation. Keep web credentials in memory only.
-      if (Platform.OS !== 'web') {
+      // SecureStore has no web implementation (cautionary guard just in case)
+      if (Platform.OS !== "web") {
         [accessToken, refreshToken] = await Promise.all([
           SecureStore.getItemAsync(ACCESS_TOKEN_KEY, SECURE_STORE_OPTIONS),
           SecureStore.getItemAsync(REFRESH_TOKEN_KEY, SECURE_STORE_OPTIONS),
@@ -35,33 +36,36 @@ async function hydrate() {
   await hydrationPromise;
 }
 
+// save token to SecureStore
 async function persist(key: string, value: string) {
-  if (Platform.OS === 'web') return;
+  if (Platform.OS === "web") return;
   await SecureStore.setItemAsync(key, value, SECURE_STORE_OPTIONS);
 }
 
+// delete token from SecureStore
 async function remove(key: string) {
-  if (Platform.OS === 'web') return;
+  if (Platform.OS === "web") return;
   await SecureStore.deleteItemAsync(key, SECURE_STORE_OPTIONS);
 }
 
 export const TokenService = {
   async getAccessToken() {
-    await hydrate();
-    return accessToken;
+    await hydrate(); // first : read from SecureStore
+    return accessToken; // after : read from memory (hydration complete)
   },
 
   async getRefreshToken() {
-    await hydrate();
+    await hydrate(); // same as above
     return refreshToken;
   },
 
+  // save access / refresh tokens after login or token refresh
   async setTokens(tokens: AuthTokens) {
     const nextAccessToken = tokens.accessToken.trim();
     const nextRefreshToken = tokens.refreshToken.trim();
 
     if (!nextAccessToken || !nextRefreshToken) {
-      throw new Error('The server returned an empty authentication token.');
+      throw new Error("The server returned an empty authentication token.");
     }
 
     try {
@@ -73,7 +77,10 @@ export const TokenService = {
       accessToken = null;
       refreshToken = null;
       isHydrated = true;
-      await Promise.allSettled([remove(ACCESS_TOKEN_KEY), remove(REFRESH_TOKEN_KEY)]);
+      await Promise.allSettled([
+        remove(ACCESS_TOKEN_KEY),
+        remove(REFRESH_TOKEN_KEY),
+      ]);
       throw error;
     }
 
@@ -82,24 +89,14 @@ export const TokenService = {
     isHydrated = true;
   },
 
-  async setAccessToken(token: string) {
-    const nextAccessToken = token.trim();
-    if (!nextAccessToken) throw new Error('The access token is empty.');
-
-    await Promise.all([
-      persist(ACCESS_TOKEN_KEY, nextAccessToken),
-      remove(REFRESH_TOKEN_KEY),
-    ]);
-    accessToken = nextAccessToken;
-    refreshToken = null;
-    isHydrated = true;
-  },
-
   async clearTokens() {
     accessToken = null;
     refreshToken = null;
     isHydrated = true;
 
-    await Promise.allSettled([remove(ACCESS_TOKEN_KEY), remove(REFRESH_TOKEN_KEY)]);
+    await Promise.allSettled([
+      remove(ACCESS_TOKEN_KEY),
+      remove(REFRESH_TOKEN_KEY),
+    ]);
   },
 };

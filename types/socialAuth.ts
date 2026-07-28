@@ -1,14 +1,13 @@
-export const SOCIAL_LOGIN_PROVIDERS = ['google', 'kakao', 'naver'] as const;
+export const SOCIAL_LOGIN_PROVIDERS = ["GOOGLE", "KAKAO", "NAVER"] as const;
 
 export type SocialLoginProvider = (typeof SOCIAL_LOGIN_PROVIDERS)[number];
 
-export interface SocialAuthorizationResult {
-  code: string;
-  codeVerifier: string | null;
+export interface SocialProviderTokenResult {
+  accessToken: string;
   provider: SocialLoginProvider;
 }
 
-export type SocialLoginRequest = SocialAuthorizationResult;
+export type SocialLoginRequest = SocialProviderTokenResult;
 
 export interface SocialLoginResponse {
   accessToken: string;
@@ -16,9 +15,10 @@ export interface SocialLoginResponse {
 }
 
 export type SocialLoginErrorCode =
-  | 'cancelled'
-  | 'provider_error'
-  | 'missing_authorization_code';
+  | "cancelled"
+  | "configuration_error"
+  | "provider_error"
+  | "missing_provider_access_token";
 
 export class SocialLoginError extends Error {
   constructor(
@@ -26,6 +26,6 @@ export class SocialLoginError extends Error {
     message: string,
   ) {
     super(message);
-    this.name = 'SocialLoginError';
+    this.name = "SocialLoginError";
   }
 }

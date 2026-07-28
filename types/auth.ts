@@ -1,11 +1,8 @@
 export interface User {
-  id: number;
+  id?: number | string;
   username: string;
   email: string;
-  profileImageUrl: string | null;
-  isAdmin: boolean;
-  createdAt: string;
-  updatedAt: string;
+  profileImageUrl: string;
 }
 
 export interface AuthTokens {

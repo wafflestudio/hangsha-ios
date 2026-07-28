@@ -86,6 +86,9 @@ export function SocialLoginButtons() {
 function getErrorMessage(error: Error | null) {
   if (!error) return null;
   if (error instanceof SocialLoginError && error.code === 'cancelled') return null;
+  if (error instanceof SocialLoginError && error.code === 'configuration_error') {
+    return '소셜 로그인 설정을 확인해 주세요.';
+  }
   return '소셜 로그인에 실패했습니다. 잠시 후 다시 시도해 주세요.';
 }
 
