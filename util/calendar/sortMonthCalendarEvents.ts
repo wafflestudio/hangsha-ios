@@ -13,7 +13,7 @@ export const compareMonthCalendarEvents = (
   right: CalendarEvent,
 ): number => {
   const durationOrder =
-    Number(isMultiDayEvent(right)) - Number(isMultiDayEvent(left));
+    Number(isMultiDayEvent(left)) - Number(isMultiDayEvent(right));
 
   if (durationOrder !== 0) {
     return durationOrder;
