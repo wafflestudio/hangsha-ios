@@ -26,6 +26,34 @@ export const Colors = {
 
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
 
+/**
+ * eventTypeId(1~7) 배지 색상 — hangsha-web `src/util/constants/index.ts`의
+ * CATEGORY_COLORS/CATEGORY_TEXT_COLORS 그대로 이식. 다크모드는 원본에 없어
+ * 동일한 배경/텍스트 조합을 그대로 사용(추후 디자인 확정 시 교체).
+ */
+export const EventTypeColors = {
+  light: {
+    1: { background: '#FBB77A', text: '#b67d4b' },
+    2: { background: '#DFD093', text: '#a0882a' },
+    3: { background: '#69DEB1', text: '#349570' },
+    4: { background: '#72D3FA', text: '#3a90b2' },
+    5: { background: '#62B4FB', text: '#3e6cb1' },
+    6: { background: '#C398FB', text: '#7d50b9' },
+    7: { background: '#FB7D95', text: '#ac3a4f' },
+  },
+  dark: {
+    1: { background: '#FBB77A', text: '#b67d4b' },
+    2: { background: '#DFD093', text: '#a0882a' },
+    3: { background: '#69DEB1', text: '#349570' },
+    4: { background: '#72D3FA', text: '#3a90b2' },
+    5: { background: '#62B4FB', text: '#3e6cb1' },
+    6: { background: '#C398FB', text: '#7d50b9' },
+    7: { background: '#FB7D95', text: '#ac3a4f' },
+  },
+} as const;
+
+export type EventTypeId = keyof typeof EventTypeColors.light;
+
 export const Fonts = Platform.select({
   ios: {
     /** iOS `UIFontDescriptorSystemDesignDefault` */
