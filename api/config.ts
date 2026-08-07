@@ -1,12 +1,24 @@
-const DEV_API_URL = 'https://hangsha-api-dev.wafflestudio.com/api/v1/';
-const PROD_API_URL = 'https://hangsha-api.wafflestudio.com/api/v1/';
-
 const configuredApiUrl = process.env.EXPO_PUBLIC_API_URL?.trim();
 
-export const API_BASE_URL = ensureTrailingSlash(
-  configuredApiUrl || (__DEV__ ? DEV_API_URL : PROD_API_URL),
-);
+export const API_BASE_URL = getApiBaseUrl(configuredApiUrl);
 
-function ensureTrailingSlash(url: string) {
-  return url.endsWith('/') ? url : `${url}/`;
+function getApiBaseUrl(value: string | undefined) {
+  if (!value) {
+    throw new Error(
+      "EXPO_PUBLIC_API_URL is not configured. Pull the EAS development environment before starting Expo.",
+    );
+  }
+
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    throw new Error("EXPO_PUBLIC_API_URL must be a valid absolute URL.");
+  }
+
+  if (url.protocol !== "https:" && url.protocol !== "http:") {
+    throw new Error("EXPO_PUBLIC_API_URL must use http or https.");
+  }
+
+  return value.endsWith("/") ? value : `${value}/`;
 }

@@ -13,22 +13,10 @@ const PROVIDERS: readonly {
   color: string;
 }[] = [
   {
-    provider: 'google',
+    provider: 'GOOGLE',
     label: '구글 계정으로 계속하기',
     backgroundColor: '#FFFFFF',
     color: '#1F1F1F',
-  },
-  {
-    provider: 'kakao',
-    label: '카카오톡 계정으로 계속하기',
-    backgroundColor: '#FEE500',
-    color: '#191919',
-  },
-  {
-    provider: 'naver',
-    label: '네이버 계정으로 계속하기',
-    backgroundColor: '#03C75A',
-    color: '#FFFFFF',
   },
 ];
 
