@@ -13,7 +13,7 @@ import { BottomTabInset, Spacing } from '@/util/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 const WEEKDAY_LABELS_KO = ['일', '월', '화', '수', '목', '금', '토'];
-const MAX_VISIBLE_ROWS = 3;
+const MAX_VISIBLE_ROWS = 4;
 
 const addDays = (date: Date, amount: number): Date => {
   const next = new Date(date);
