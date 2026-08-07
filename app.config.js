@@ -3,19 +3,7 @@ const appVariant = configuredAppVariant || "development";
 // APP_VARIANT is supplied by eas.json only while resolving an actual build profile.
 // EAS management commands can therefore resolve the project with safe placeholders.
 const isEasBuildConfig = Boolean(configuredAppVariant);
-
-const variants = {
-  development: {
-    name: "행샤 dev",
-    scheme: "hangsha-dev",
-    iosBundleIdentifier: "com.wafflestudio.hangsha-ios.dev",
-  },
-  production: {
-    name: "행샤",
-    scheme: "hangsha",
-    iosBundleIdentifier: "com.wafflestudio.hangsha-ios",
-  },
-};
+const isDevelopment = appVariant === "development";
 
 if (appVariant !== "development" && appVariant !== "production") {
   throw new Error(
@@ -27,7 +15,10 @@ const googleIosClientId = readBuildEnv(
   "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID",
   "000000000000-placeholder.apps.googleusercontent.com",
 );
-const variant = variants[appVariant];
+const iosBundleIdentifier = readBuildEnv(
+  "IOS_BUNDLE_IDENTIFIER",
+  "com.wafflestudio.hangsha-ios.dev",
+);
 
 if (isEasBuildConfig) {
   requireEnv("EXPO_PUBLIC_API_URL");
@@ -35,16 +26,16 @@ if (isEasBuildConfig) {
 
 module.exports = {
   expo: {
-    name: variant.name,
+    name: isDevelopment ? "행샤 dev" : "행샤",
     slug: "hangsha-ios",
-    scheme: variant.scheme,
+    scheme: isDevelopment ? "hangsha-dev" : "hangsha",
     version: "1.0.0",
     orientation: "portrait",
     icon: "./assets/images/icon.png",
     userInterfaceStyle: "automatic",
 
     ios: {
-      bundleIdentifier: variant.iosBundleIdentifier,
+      bundleIdentifier: iosBundleIdentifier,
       icon: "./assets/expo.icon",
       config: {
         usesNonExemptEncryption: false,
@@ -82,7 +73,8 @@ module.exports = {
       [
         "expo-image-picker",
         {
-          photosPermission: "프로필 사진을 선택하기 위해 사진 보관함에 접근합니다.",
+          photosPermission:
+            "프로필 사진을 선택하기 위해 사진 보관함에 접근합니다.",
         },
       ],
       "expo-status-bar",
