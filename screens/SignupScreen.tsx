@@ -74,7 +74,7 @@ export default function SignupScreen() {
 
     try {
       await signup(email.trim(), password, username.trim());
-      router.replace("/calendar");
+      router.replace("/onboarding/profile");
     } catch (error) {
       Alert.alert("회원가입 실패", "회원가입 중 오류가 발생했습니다.");
     }

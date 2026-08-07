@@ -70,6 +70,12 @@ module.exports = {
       "expo-secure-store",
       "expo-web-browser",
       "expo-image",
+      [
+        "expo-image-picker",
+        {
+          photosPermission: "프로필 사진을 선택하기 위해 사진 보관함에 접근합니다.",
+        },
+      ],
       "expo-status-bar",
       [
         "@react-native-google-signin/google-signin",
