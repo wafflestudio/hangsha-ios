@@ -27,7 +27,6 @@ npx expo start
 | ---------------------------------- | ---------------------------------------------------------- |
 | `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` | Google iOS OAuth Client ID                                  |
 | `EXPO_PUBLIC_API_URL`              | 절대 경로 형식의 API base URL                              |
-| `IOS_BUNDLE_IDENTIFIER`            | Google Cloud Console에 등록한 iOS Bundle Identifier        |
 
 `EXPO_PUBLIC_*` 값은 앱 번들에 포함됩니다. Google이 발급한 사용자 access token은 로그인 요청에만 사용하며 로컬에 저장하지 않습니다.
 `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID`가 비어 있거나 Google iOS client ID 형식이 아니면 잘못된 네이티브 빌드가 만들어지지 않도록 Expo 설정 단계에서 실패합니다.
@@ -125,12 +124,16 @@ EAS의 `development`, `production` 환경에 각각 필요한 변수:
 ```env
 EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID=
 EXPO_PUBLIC_API_URL=
-IOS_BUNDLE_IDENTIFIER=
 ```
 
-`EXPO_PUBLIC_*` 값은 앱 번들에 포함되므로 secret을 저장하지 않습니다. EAS visibility는 `Plain text` 또는 `Sensitive`로 설정합니다. `IOS_BUNDLE_IDENTIFIER`도 EAS CLI의 로컬 app config 평가에 필요하므로 `Secret`으로 설정하지 않습니다.
+`EXPO_PUBLIC_*` 값은 앱 번들에 포함되므로 secret을 저장하지 않습니다. EAS visibility는 `Plain text` 또는 `Sensitive`로 설정합니다.
 
-`APP_VARIANT`는 원격 EAS 변수가 아니라 `eas.json`의 build profile에서 고정합니다. 이 값은 development/production 앱 이름과 URL scheme을 선택하고, 실제 EAS Build에서 필수 환경변수 검증을 활성화합니다.
+`APP_VARIANT`는 원격 EAS 변수가 아니라 `eas.json`의 build profile에서 고정합니다. 이 값은 앱 이름, URL scheme, iOS Bundle Identifier를 아래처럼 선택하고 실제 EAS Build에서 필수 환경변수 검증을 활성화합니다.
+
+| profile       | 앱 이름    | iOS Bundle Identifier                    | channel       |
+| ------------- | ---------- | ---------------------------------------- | ------------- |
+| `development` | `행샤 dev` | `com.wafflestudio.hangsha-ios.dev`       | `development` |
+| `production`  | `행샤`     | `com.wafflestudio.hangsha-ios`           | `production`  |
 
 ---
 
@@ -140,17 +143,24 @@ IOS_BUNDLE_IDENTIFIER=
 
 ```json
 {
+  "cli": {
+    "appVersionSource": "remote"
+  },
   "build": {
     "development": {
       "developmentClient": true,
       "distribution": "internal",
       "environment": "development",
+      "channel": "development",
       "env": {
         "APP_VARIANT": "development"
       }
     },
     "production": {
+      "distribution": "store",
       "environment": "production",
+      "channel": "production",
+      "autoIncrement": true,
       "env": {
         "APP_VARIANT": "production"
       }
@@ -238,3 +248,31 @@ npx eas-cli@latest submit --platform ios --latest
 ```
 
 > EAS Environment가 환경변수의 원본이며, `.env.local`은 로컬 개발용 복사본으로만 사용합니다.
+
+---
+
+## GitHub Actions CI/CD
+
+GitHub Actions는 환경별 진입점과 공통 실행 로직으로 분리되어 있습니다.
+
+- `.github/workflows/deploy_dev.yml`: `dev` 브랜치 이벤트
+- `.github/workflows/deploy_prod.yml`: `main` 브랜치 이벤트
+- `.github/workflows/_deploy.yml`: 설치, 검사, EAS Build/Submit 공통 로직
+
+| GitHub 이벤트                | 실행 내용                                                     |
+| ---------------------------- | ------------------------------------------------------------- |
+| `dev`, `main` 대상 PR        | `npm ci`, ESLint, TypeScript 검사                              |
+| `dev` push                   | 검사 후 development profile iOS 내부 배포 빌드를 EAS에 요청   |
+| `main` push                  | 검사 후 production profile iOS 빌드 및 TestFlight 제출을 요청 |
+| `Deploy development` 수동 실행 | development profile의 동일한 배포 흐름 실행                  |
+| `Deploy production` 수동 실행  | production profile 빌드 및 TestFlight 제출                   |
+
+GitHub repository secret에 Expo personal access token을 등록합니다.
+
+```text
+EXPO_TOKEN
+```
+
+EAS 원격 빌드는 GitHub secret이 아니라 위에서 설명한 EAS Environment Variables를 사용합니다.
+
+CI를 처음 실행하기 전 각 profile을 로컬에서 한 번 빌드해 iOS 인증서와 provisioning profile을 생성해야 합니다. 이미 TestFlight/App Store 빌드가 있다면 `eas build:version:set`으로 마지막 iOS build number를 EAS 원격 버전에 먼저 동기화합니다. production 자동 제출을 위해 `eas credentials --platform ios`에서 App Store Connect API Key도 설정합니다. `main`의 자동 제출 대상은 TestFlight이며, App Store 심사 제출과 출시는 App Store Connect에서 수동으로 진행합니다.
