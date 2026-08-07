@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, View, useColorScheme } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import type { CalendarEvent } from '@/types/event';
+import type { DayEventSegment } from '@/util/calendar/buildMonthEventLayout';
 import { EventTypeColors, Spacing, type EventTypeId } from '@/util/theme';
 
 const ROW_HEIGHT = 18;
@@ -9,13 +9,6 @@ const CELL_MIN_HEIGHT = 34 + ROW_HEIGHT * 3;
 
 const isKnownEventTypeId = (eventTypeId: number): eventTypeId is EventTypeId =>
   eventTypeId in EventTypeColors.light;
-
-export type DayEventSegment = {
-  calendarEvent: CalendarEvent;
-  rowIndex: number;
-  isStart: boolean;
-  isEnd: boolean;
-};
 
 type CalendarDayCellProps = {
   date: Date;
@@ -41,7 +34,7 @@ export function CalendarDayCell({
 
   const visibleSegments = segments.filter((segment) => segment.rowIndex < maxVisibleRows);
   const overflowCount = new Set(
-    segments.filter((segment) => segment.rowIndex >= maxVisibleRows).map((s) => s.calendarEvent.resource.event.id),
+    segments.filter((segment) => segment.rowIndex >= maxVisibleRows).map((segment) => segment.eventId),
   ).size;
 
   const dateColor = !isCurrentMonth ? '#9CA3AF' : isSunday ? '#ac3a4f' : undefined;
@@ -67,11 +60,9 @@ export function CalendarDayCell({
             return <View key={rowIndex} style={styles.rowSlot} />;
           }
 
-          const eventTypeId = segment.calendarEvent.resource.event.eventTypeId;
-          const colors = isKnownEventTypeId(eventTypeId)
-            ? eventTypeColors[eventTypeId]
+          const colors = isKnownEventTypeId(segment.eventTypeId)
+            ? eventTypeColors[segment.eventTypeId]
             : eventTypeColors[7];
-          const { isPeriodEvent } = segment.calendarEvent.resource;
 
           return (
             <View key={rowIndex} style={styles.rowSlot}>
@@ -82,17 +73,17 @@ export function CalendarDayCell({
                   segment.isStart && styles.eventBarStart,
                   segment.isEnd && styles.eventBarEnd,
                 ]}>
-                {isPeriodEvent && segment.isStart && (
+                {segment.isPeriodEvent && segment.isStart && (
                   <View style={[styles.arrowHead, styles.arrowHeadLeft, { borderRightColor: colors.background }]} />
                 )}
                 {segment.isStart && (
                   <ThemedText
                     numberOfLines={1}
                     style={[styles.eventBarText, { color: colors.text }]}>
-                    {segment.calendarEvent.title}
+                    {segment.title}
                   </ThemedText>
                 )}
-                {isPeriodEvent && segment.isEnd && (
+                {segment.isPeriodEvent && segment.isEnd && (
                   <View style={[styles.arrowHead, styles.arrowHeadRight, { borderLeftColor: colors.background }]} />
                 )}
               </View>

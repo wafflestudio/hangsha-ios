@@ -2,23 +2,18 @@ import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { CalendarDayCell, type DayEventSegment } from '@/components/calendar/CalendarDayCell';
+import { CalendarDayCell } from '@/components/calendar/CalendarDayCell';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import type { CalendarEvent, Event } from '@/types/event';
-import { calendarEventMapper } from '@/util/calendar/calendarEventMapper';
+import type { Event } from '@/types/event';
+import { buildMonthEventLayout } from '@/util/calendar/buildMonthEventLayout';
 import { formatDateToYYYYMMDD } from '@/util/calendar/dateFormatter';
 import { getMonthRange } from '@/util/calendar/getMonthRange';
-import { sortMonthCalendarEvents } from '@/util/calendar/sortMonthCalendarEvents';
 import { BottomTabInset, Spacing } from '@/util/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 const WEEKDAY_LABELS_KO = ['일', '월', '화', '수', '목', '금', '토'];
-const DAYS_PER_WEEK = 7;
 const MAX_VISIBLE_ROWS = 3;
-
-const stripTime = (date: Date): Date =>
-  new Date(date.getFullYear(), date.getMonth(), date.getDate());
 
 const addDays = (date: Date, amount: number): Date => {
   const next = new Date(date);
@@ -35,83 +30,6 @@ const buildMonthGridDates = (year: number, month: number): Date[] => {
   }
 
   return dates;
-};
-
-/**
- * 각 이벤트를 겹치지 않는 행(row)에 배정하고, 주(week) 단위로 셀 경계를 넘어가는
- * 구간을 시작/중간/끝 세그먼트로 쪼갠다. hangsha-web MyCalendar의 month-view
- * 화살표 바 레이아웃과 동일한 방식.
- */
-const buildWeekSegments = (
-  weekDates: readonly Date[],
-  calendarEvents: readonly CalendarEvent[],
-): Map<string, DayEventSegment[]> => {
-  const weekStart = weekDates[0];
-  const weekEnd = weekDates[weekDates.length - 1];
-
-  const weekEvents = calendarEvents
-    .map((calendarEvent) => {
-      const start = stripTime(calendarEvent.start);
-      const end = stripTime(calendarEvent.end);
-      if (end < weekStart || start > weekEnd) {
-        return null;
-      }
-      return {
-        calendarEvent,
-        clippedStart: start < weekStart ? weekStart : start,
-        clippedEnd: end > weekEnd ? weekEnd : end,
-        continuesBefore: start < weekStart,
-        continuesAfter: end > weekEnd,
-      };
-    })
-    .filter((value): value is NonNullable<typeof value> => value !== null);
-
-  const rowEndDates: Date[] = [];
-  const byDate = new Map<string, DayEventSegment[]>();
-
-  for (const { calendarEvent, clippedStart, clippedEnd, continuesBefore, continuesAfter } of weekEvents) {
-    let rowIndex = rowEndDates.findIndex((rowEnd) => rowEnd < clippedStart);
-    if (rowIndex === -1) {
-      rowIndex = rowEndDates.length;
-    }
-    rowEndDates[rowIndex] = clippedEnd;
-
-    for (let cursor = clippedStart; cursor <= clippedEnd; cursor = addDays(cursor, 1)) {
-      const key = formatDateToYYYYMMDD(cursor);
-      const segment: DayEventSegment = {
-        calendarEvent,
-        rowIndex,
-        isStart: cursor.getTime() === clippedStart.getTime() && !continuesBefore,
-        isEnd: cursor.getTime() === clippedEnd.getTime() && !continuesAfter,
-      };
-      const existing = byDate.get(key);
-      if (existing) {
-        existing.push(segment);
-      } else {
-        byDate.set(key, [segment]);
-      }
-    }
-  }
-
-  return byDate;
-};
-
-const buildMonthSegments = (
-  gridDates: readonly Date[],
-  events: readonly Event[],
-): Map<string, DayEventSegment[]> => {
-  const calendarEvents = sortMonthCalendarEvents(events.map(calendarEventMapper));
-  const byDate = new Map<string, DayEventSegment[]>();
-
-  for (let weekStart = 0; weekStart < gridDates.length; weekStart += DAYS_PER_WEEK) {
-    const weekDates = gridDates.slice(weekStart, weekStart + DAYS_PER_WEEK);
-    const weekSegments = buildWeekSegments(weekDates, calendarEvents);
-    for (const [key, segments] of weekSegments) {
-      byDate.set(key, segments);
-    }
-  }
-
-  return byDate;
 };
 
 type CalendarScreenProps = {
@@ -131,7 +49,7 @@ export function CalendarScreen({ events = [], onSelectDate }: CalendarScreenProp
 
   const gridDates = useMemo(() => buildMonthGridDates(year, month), [year, month]);
   const segmentsByDate = useMemo(
-    () => buildMonthSegments(gridDates, events),
+    () => buildMonthEventLayout(gridDates, events),
     [gridDates, events],
   );
   const todayKey = useMemo(() => formatDateToYYYYMMDD(today), [today]);
