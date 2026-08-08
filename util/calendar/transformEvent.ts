@@ -12,17 +12,21 @@ export const DEFAULT_EVENT_THUMBNAIL = require(
 ) as number;
 
 const normalizeEventTypeId = (eventTypeId: number): number =>
-  eventTypeId >= CATEGORY_MIN_INDEX && eventTypeId <= CATEGORY_MAX_INDEX
+  eventTypeId && eventTypeId >= CATEGORY_MIN_INDEX && eventTypeId <= CATEGORY_MAX_INDEX
     ? eventTypeId - 3
     : FALLBACK_EVENT_TYPE_ID;
 
 const inferStatusId = (
   statusId: number,
-  applyEnd: Date,
+  applyEnd: Date | null,
   today: Date,
 ): number => {
   if (statusId) {
     return statusId;
+  }
+
+  if (!applyEnd) {
+    return 2;
   }
 
   return applyEnd < today ? 2 : 1;
@@ -32,8 +36,8 @@ export const transformEvent = (
   dto: EventDTO,
   today = new Date(),
 ): Event => {
-  const applyStart = parseDateString(dto.applyStart);
-  const applyEnd = parseDateString(dto.applyEnd);
+  const applyStart = dto.applyStart ? parseDateString(dto.applyStart) : null;
+  const applyEnd = dto.applyEnd ? parseDateString(dto.applyEnd) : null;
 
   return {
     ...dto,

@@ -1,14 +1,9 @@
 import { useLocalSearchParams } from 'expo-router';
 
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+import { DailyEventsScreen } from '@/screens/DailyEventsScreen';
 
-export default function DailyEventsScreen() {
+export default function DailyEventsRoute() {
   const { date } = useLocalSearchParams<{ date: string }>();
 
-  return (
-    <ThemedView>
-      <ThemedText>{date}</ThemedText>
-    </ThemedView>
-  );
+  return <DailyEventsScreen date={date} />;
 }

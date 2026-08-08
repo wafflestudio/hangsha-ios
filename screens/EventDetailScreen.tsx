@@ -79,9 +79,11 @@ export function EventDetailScreen() {
             {event.title}
           </ThemedText>
 
-          <ThemedText themeColor="textSecondary">
-            신청 시작일 {event.applyStart.toLocaleDateString('ko-KR')}
-          </ThemedText>
+          {event.applyStart && (
+            <ThemedText themeColor="textSecondary">
+              신청 시작일 {event.applyStart.toLocaleDateString('ko-KR')}
+            </ThemedText>
+          )}
 
           <View style={styles.badgeRow}>
             <View style={[styles.badge, { backgroundColor: categoryColors.background }]}>

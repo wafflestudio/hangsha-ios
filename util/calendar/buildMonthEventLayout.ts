@@ -111,7 +111,9 @@ export const buildMonthEventLayout = (
   gridDates: readonly Date[],
   events: readonly Event[],
 ): Map<string, DayEventSegment[]> => {
-  const calendarEvents = sortMonthCalendarEvents(events.map(calendarEventMapper));
+  const calendarEvents = sortMonthCalendarEvents(
+    events.map(calendarEventMapper).filter((event): event is CalendarEvent => event !== null),
+  );
   const byDate = new Map<string, DayEventSegment[]>();
 
   for (let weekStart = 0; weekStart < gridDates.length; weekStart += DAYS_PER_WEEK) {
