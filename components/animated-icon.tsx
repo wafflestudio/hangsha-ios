@@ -1,12 +1,25 @@
 import { Image } from 'expo-image';
 import * as SplashScreen from 'expo-splash-screen';
 import { useState } from 'react';
-import { Dimensions, StyleSheet, View } from 'react-native';
+import { Dimensions, StyleSheet, Text, View } from 'react-native';
 import Animated, { Easing, Keyframe } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
 const INITIAL_SCALE_FACTOR = Dimensions.get('screen').height / 90;
-const DURATION = 600;
+const SPLASH_DURATION = 1200;
+const ICON_ANIMATION_DURATION = 600;
+
+const splashKeyframe = new Keyframe({
+  0: {
+    opacity: 1,
+  },
+  70: {
+    opacity: 1,
+  },
+  100: {
+    opacity: 0,
+  },
+});
 
 export function AnimatedSplashOverlay() {
   const [animate, setAnimate] = useState(false);
@@ -14,37 +27,27 @@ export function AnimatedSplashOverlay() {
 
   if (!visible) return null;
 
-  const splashKeyframe = new Keyframe({
-    0: {
-      transform: [{ scale: 1 }],
-      opacity: 1,
-    },
-    20: {
-      opacity: 1,
-    },
-    70: {
-      opacity: 0,
-      easing: Easing.elastic(0.7),
-    },
-    100: {
-      opacity: 0,
-      transform: [{ scale: 1 }],
-      easing: Easing.elastic(0.7),
-    },
-  });
-
-  const image = <Image style={styles.image} source={require('@/assets/images/expo-logo.png')} />;
+  const splashContent = (
+    <View style={styles.splashContent}>
+      <Image
+        style={styles.splashLogo}
+        source={require('@/assets/images/logo.png')}
+        contentFit="contain"
+      />
+      <Text style={styles.splashTitle}>서울대 행사는 행샤</Text>
+    </View>
+  );
 
   return animate ? (
     <Animated.View
-      entering={splashKeyframe.duration(DURATION).withCallback((finished) => {
+      entering={splashKeyframe.duration(SPLASH_DURATION).withCallback((finished) => {
         'worklet';
         if (finished) {
           scheduleOnRN(setVisible, false);
         }
       })}
       style={styles.splashOverlay}>
-      {image}
+      {splashContent}
     </Animated.View>
   ) : (
     <View
@@ -54,7 +57,7 @@ export function AnimatedSplashOverlay() {
         });
       }}
       style={styles.splashOverlay}>
-      {image}
+      {splashContent}
     </View>
   );
 }
@@ -102,8 +105,10 @@ export function AnimatedIcon() {
         <Image style={styles.glow} source={require('@/assets/images/logo-glow.png')} />
       </Animated.View>
 
-      <Animated.View entering={keyframe.duration(DURATION)} style={styles.background} />
-      <Animated.View style={styles.imageContainer} entering={logoKeyframe.duration(DURATION)}>
+      <Animated.View entering={keyframe.duration(ICON_ANIMATION_DURATION)} style={styles.background} />
+      <Animated.View
+        style={styles.imageContainer}
+        entering={logoKeyframe.duration(ICON_ANIMATION_DURATION)}>
         <Image style={styles.image} source={require('@/assets/images/expo-logo.png')} />
       </Animated.View>
     </View>
@@ -140,9 +145,24 @@ const styles = StyleSheet.create({
   },
   splashOverlay: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: '#208AEF',
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 1000,
+  },
+  splashContent: {
+    alignItems: 'center',
+  },
+  splashLogo: {
+    width: 100,
+    height: 100,
+  },
+  splashTitle: {
+    marginTop: 42,
+    color: '#111111',
+    fontSize: 23,
+    lineHeight: 30,
+    fontWeight: '700',
+    letterSpacing: -0.5,
   },
 });

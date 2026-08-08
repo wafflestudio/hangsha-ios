@@ -1,4 +1,4 @@
-export const SOCIAL_LOGIN_PROVIDERS = ["GOOGLE", "KAKAO", "NAVER"] as const;
+export const SOCIAL_LOGIN_PROVIDERS = ["GOOGLE"] as const;
 
 export type SocialLoginProvider = (typeof SOCIAL_LOGIN_PROVIDERS)[number];
 
@@ -8,6 +8,14 @@ export interface SocialProviderTokenResult {
 }
 
 export type SocialLoginRequest = SocialProviderTokenResult;
+
+export interface SocialLoginPayload {
+  provider: SocialLoginProvider;
+  code: null;
+  accessToken: string;
+  codeVerifier: null;
+  client_type: "MOB";
+}
 
 export interface SocialLoginResponse {
   accessToken: string;

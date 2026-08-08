@@ -3,13 +3,14 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CalendarDayCell } from '@/components/calendar/CalendarDayCell';
+import { MobileBottomNavigation } from '@/components/mobile-bottom-navigation';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import type { Event } from '@/types/event';
 import { buildMonthEventLayout } from '@/util/calendar/buildMonthEventLayout';
 import { formatDateToYYYYMMDD } from '@/util/calendar/dateFormatter';
 import { getMonthRange } from '@/util/calendar/getMonthRange';
-import { BottomTabInset, Spacing } from '@/util/theme';
+import { Spacing } from '@/util/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 const WEEKDAY_LABELS_KO = ['일', '월', '화', '수', '목', '금', '토'];
@@ -123,6 +124,8 @@ export function CalendarScreen({ events = [], onSelectDate }: CalendarScreenProp
           })}
         </View>
       </SafeAreaView>
+
+      <MobileBottomNavigation activeTab="calendar" />
     </ThemedView>
   );
 }
@@ -133,7 +136,6 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
-    paddingBottom: BottomTabInset,
   },
   header: {
     flexDirection: 'row',

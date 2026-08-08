@@ -1,0 +1,22 @@
+name: Deploy production
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/_deploy.yml
+    with:
+      profile: production
+      deploy: ${{ github.event_name != 'pull_request' }}
+      auto_submit: true
+    secrets: inherit
