@@ -23,9 +23,9 @@ const NAV_ITEMS = [
     height: 30,
   },
   {
-    id: 'reviews',
-    label: '후기',
-    href: null,
+    id: 'memos',
+    label: '메모',
+    href: '/memos' as const,
     inactiveIcon: require('@/assets/images/bottom_reviews.svg'),
     activeIcon: require('@/assets/images/bottom_reviews_active.svg'),
     width: 30,

@@ -452,7 +452,11 @@ export default function MyPageScreen() {
             </View>
 
             <View style={styles.section}>
-              <View style={styles.sectionHeader}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="내 메모 목록 전체 보기"
+                onPress={() => router.push('/memos')}
+                style={({ pressed }) => [styles.memoSectionHeader, pressed && styles.pressed]}>
                 <View style={styles.cardTitleRow}>
                   <Text style={styles.sectionTitle}>내 메모 목록</Text>
                   <ExpoImage
@@ -461,26 +465,37 @@ export default function MyPageScreen() {
                     contentFit="contain"
                   />
                 </View>
-                <Text style={styles.countText}>{eventMemos.length}개</Text>
-              </View>
+                <Text style={styles.memoChevron}>›</Text>
+              </Pressable>
               {eventMemos.length === 0 ? (
                 <Text style={styles.emptyText}>
                   아직 메모가 없습니다.{`\n`}관심 있는 행사에 메모를 남겨보세요!
                 </Text>
               ) : (
-                eventMemos.slice(0, 3).map((memo) => (
-                  <View key={memo.id} style={styles.memoCard}>
-                    <Text numberOfLines={2} style={styles.memoContent}>
-                      {memo.content}
-                    </Text>
-                    <View style={styles.memoMetaRow}>
-                      <Text numberOfLines={1} style={styles.memoEventTitle}>
+                <View style={styles.memoPreviewGrid}>
+                  {eventMemos.slice(0, 2).map((memo) => (
+                    <View key={memo.id} style={styles.memoPreview}>
+                      <Text numberOfLines={2} style={styles.memoPreviewContent}>
+                        {memo.content}
+                      </Text>
+                      <Text numberOfLines={1} style={styles.memoPreviewEventTitle}>
                         {memo.eventTitle}
                       </Text>
-                      <Text style={styles.memoDate}>{formatMemoDate(memo.createdAt)}</Text>
+                      <Text style={styles.memoPreviewDate}>{formatMemoDate(memo.createdAt)}</Text>
+                      {memo.tags.length > 0 && (
+                        <View style={styles.memoTagRow}>
+                          {memo.tags.slice(0, 3).map((tag) => (
+                            <View key={tag.id} style={styles.memoTag}>
+                              <Text numberOfLines={1} style={styles.memoTagText}>
+                                {tag.name}
+                              </Text>
+                            </View>
+                          ))}
+                        </View>
+                      )}
                     </View>
-                  </View>
-                ))
+                  ))}
+                </View>
               )}
             </View>
 
@@ -846,18 +861,43 @@ const styles = StyleSheet.create({
   listText: { flex: 1 },
   listTitle: { color: '#222222', fontSize: 14, fontWeight: '700' },
   listSubtitle: { marginTop: 5, color: '#777777', fontSize: 12 },
-  memoCard: {
-    padding: 14,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: '#E7E7E7',
-    borderRadius: 12,
-    backgroundColor: '#FFFFFF',
+  memoSectionHeader: {
+    marginBottom: 28,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
-  memoContent: { color: '#333333', fontSize: 14, lineHeight: 20 },
-  memoMetaRow: { flexDirection: 'row', alignItems: 'center', marginTop: 10 },
-  memoEventTitle: { flex: 1, color: '#777777', fontSize: 12, fontWeight: '600' },
-  memoDate: { marginLeft: 8, color: '#999999', fontSize: 11 },
+  memoChevron: { color: '#ABABAB', fontSize: 36, lineHeight: 36, fontWeight: '300' },
+  memoPreviewGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 28,
+  },
+  memoPreview: { width: '47%', minWidth: 0 },
+  memoPreviewContent: {
+    minHeight: 126,
+    color: '#222222',
+    fontSize: 16,
+    lineHeight: 23,
+    fontWeight: '700',
+  },
+  memoPreviewEventTitle: {
+    marginTop: 22,
+    color: '#999999',
+    fontSize: 15,
+    lineHeight: 21,
+    fontWeight: '800',
+  },
+  memoPreviewDate: { marginTop: 7, color: '#999999', fontSize: 14, lineHeight: 20 },
+  memoTagRow: { marginTop: 14, flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
+  memoTag: {
+    maxWidth: '100%',
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 6,
+    backgroundColor: '#ECECEC',
+  },
+  memoTagText: { color: '#707070', fontSize: 12, fontWeight: '700' },
   bugHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   bugTitle: { color: '#222222', fontSize: 18, lineHeight: 25, fontWeight: '800' },
   sectionDescription: {
