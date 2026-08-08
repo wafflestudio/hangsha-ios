@@ -1,0 +1,910 @@
+import * as ImagePicker from 'expo-image-picker';
+import { Image as ExpoImage } from 'expo-image';
+import { useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  type ImageSourcePropType,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+import { MobileBottomNavigation } from '@/components/mobile-bottom-navigation';
+import { useAuth } from '@/contexts/AuthProvider';
+import { useBugReport } from '@/contexts/BugReportContext';
+import { useOnboarding } from '@/contexts/OnboardingContext';
+import { useUserData } from '@/contexts/UserDataContext';
+import type { Category } from '@/types/category';
+import type { ProfileImage } from '@/types/auth';
+
+const MAX_NAME_WEIGHT = 20;
+const MAX_PREFERENCES = 3;
+
+const isKoreanCharacter = (character: string) => /[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(character);
+
+const getNameWeight = (value: string) =>
+  [...value].reduce((total, character) => total + (isKoreanCharacter(character) ? 2 : 1), 0);
+
+const truncateToWeight = (value: string, maxWeight: number) => {
+  let result = '';
+  let weight = 0;
+
+  for (const character of value) {
+    const nextWeight = weight + (isKoreanCharacter(character) ? 2 : 1);
+    if (nextWeight > maxWeight) break;
+    result += character;
+    weight = nextWeight;
+  }
+
+  return result;
+};
+
+const formatMemoDate = (date: Date) =>
+  `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(
+    date.getDate(),
+  ).padStart(2, '0')}`;
+
+export default function MyPageScreen() {
+  const router = useRouter();
+  const {
+    user,
+    isLoading: isAuthLoading,
+    userQuery,
+    updateUsername,
+    setProfileImg,
+    logout,
+    deleteAccount,
+    logoutMutation,
+    deleteAccountMutation,
+    updateUsernameMutation,
+    uploadProfileImageMutation,
+  } = useAuth();
+  const {
+    bookmarkedEvents,
+    eventMemos,
+    interestCategories,
+    interestCategoriesLoading,
+    interestCategoriesSaving,
+    refreshUserData,
+    saveInterestPreferences,
+  } = useUserData();
+  const { programTypes, organizations, isLoadingMeta, metadataError, refreshMetadata } =
+    useOnboarding();
+  const { isSubmitting: isSubmittingBugReport, submitBugReport } = useBugReport();
+
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [username, setUsername] = useState('');
+  const [pendingImage, setPendingImage] = useState<ProfileImage | null>(null);
+  const [profileImageFailed, setProfileImageFailed] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isInterestEditorOpen, setIsInterestEditorOpen] = useState(false);
+  const [draftInterests, setDraftInterests] = useState<Category[]>([]);
+  const [bugTitle, setBugTitle] = useState('');
+  const [bugContent, setBugContent] = useState('');
+
+  const isSavingProfile =
+    updateUsernameMutation.isPending || uploadProfileImageMutation.isPending;
+  const profileNameWeight = getNameWeight(username);
+
+  useEffect(() => {
+    setUsername(user?.username ?? '');
+  }, [user?.username]);
+
+  useEffect(() => {
+    setProfileImageFailed(false);
+  }, [user?.profileImageUrl]);
+
+  const profileSource: ImageSourcePropType = pendingImage
+    ? { uri: pendingImage.uri }
+    : user?.profileImageUrl && !profileImageFailed
+      ? { uri: user.profileImageUrl }
+      : require('@/assets/images/defaultProfile.png');
+
+  const startEditingProfile = () => {
+    setUsername(user?.username ?? '');
+    setPendingImage(null);
+    setIsEditingProfile(true);
+  };
+
+  const cancelEditingProfile = () => {
+    setUsername(user?.username ?? '');
+    setPendingImage(null);
+    setIsEditingProfile(false);
+  };
+
+  const pickProfileImage = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert('사진 접근 권한 필요', '프로필 사진을 선택하려면 사진 보관함 접근을 허용해주세요.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+    if (result.canceled) return;
+
+    const asset = result.assets[0];
+    setPendingImage({
+      uri: asset.uri,
+      name: asset.fileName ?? 'profile-image.jpg',
+      type: asset.mimeType ?? 'image/jpeg',
+    });
+  };
+
+  const saveProfile = async () => {
+    const trimmedUsername = username.trim();
+    if (!trimmedUsername) {
+      Alert.alert('이름을 확인해주세요', '이름을 한 글자 이상 입력해주세요.');
+      return;
+    }
+    if (isSavingProfile) return;
+
+    try {
+      if (trimmedUsername !== user?.username) await updateUsername(trimmedUsername);
+      if (pendingImage) await setProfileImg(pendingImage);
+      setPendingImage(null);
+      setIsEditingProfile(false);
+    } catch {
+      Alert.alert('저장 실패', '프로필을 저장하지 못했습니다. 잠시 후 다시 시도해주세요.');
+    }
+  };
+
+  const refresh = async () => {
+    if (!user || isRefreshing) return;
+    setIsRefreshing(true);
+    try {
+      await Promise.all([userQuery.refetch(), refreshUserData()]);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  const openInterestEditor = () => {
+    setDraftInterests(interestCategories);
+    setIsInterestEditorOpen(true);
+  };
+
+  const toggleInterest = (category: Category) => {
+    setDraftInterests((current) => {
+      const isSelected = current.some(
+        (item) => item.id === category.id && item.groupId === category.groupId,
+      );
+      if (isSelected) {
+        return current.filter(
+          (item) => !(item.id === category.id && item.groupId === category.groupId),
+        );
+      }
+      if (current.length >= MAX_PREFERENCES) {
+        Alert.alert('선택 제한', `행사 보기 우선순위는 최대 ${MAX_PREFERENCES}개까지 설정할 수 있습니다.`);
+        return current;
+      }
+      return [...current, category];
+    });
+  };
+
+  const saveInterests = async () => {
+    if (interestCategoriesSaving) return;
+    try {
+      await saveInterestPreferences(draftInterests);
+      setIsInterestEditorOpen(false);
+    } catch {
+      Alert.alert('저장 실패', '행사 보기 우선순위를 저장하지 못했습니다.');
+    }
+  };
+
+  const submitBug = async () => {
+    const title = bugTitle.trim();
+    const content = bugContent.trim();
+    if (!title || !content) {
+      Alert.alert('내용을 확인해주세요', '제목과 내용을 모두 입력해주세요.');
+      return;
+    }
+    if (isSubmittingBugReport) return;
+
+    try {
+      await submitBugReport({ title, content });
+      setBugTitle('');
+      setBugContent('');
+      Alert.alert('접수 완료', '버그 신고가 접수되었습니다.');
+    } catch {
+      Alert.alert('접수 실패', '버그 신고를 접수하지 못했습니다. 잠시 후 다시 시도해주세요.');
+    }
+  };
+
+  const handleLogout = async () => {
+    if (logoutMutation.isPending) return;
+    try {
+      await logout();
+      router.replace('/');
+    } catch {
+      Alert.alert('로그아웃 실패', '잠시 후 다시 시도해주세요.');
+    }
+  };
+
+  const confirmAccountDeletion = () => {
+    Alert.alert(
+      '정말 회원탈퇴를 진행하시겠어요?',
+      '계정을 삭제하면 저장된 정보는 복구할 수 없습니다.',
+      [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '탈퇴하기',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteAccount();
+              router.replace('/');
+            } catch {
+              Alert.alert('회원탈퇴 실패', '잠시 후 다시 시도해주세요.');
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  if (isAuthLoading) {
+    return (
+      <View style={styles.root}>
+        <SafeAreaView style={styles.centered} edges={['top', 'left', 'right']}>
+          <ActivityIndicator color="#208AEF" />
+          <Text style={styles.loadingText}>사용자 정보를 불러오는 중...</Text>
+        </SafeAreaView>
+        <MobileBottomNavigation activeTab="profile" />
+      </View>
+    );
+  }
+
+  if (!user) {
+    return (
+      <View style={styles.root}>
+        <SafeAreaView style={styles.guestPage} edges={['top', 'left', 'right']}>
+          <Text style={styles.pageTitle}>마이페이지</Text>
+          <View style={styles.guestCard}>
+            <Text style={styles.guestTitle}>로그인이 필요해요</Text>
+            <Text style={styles.guestDescription}>
+              프로필과 저장한 행사 정보를 확인하려면 로그인해주세요.
+            </Text>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => router.replace('/')}
+              style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}>
+              <Text style={styles.primaryButtonText}>로그인 · 회원가입</Text>
+            </Pressable>
+          </View>
+        </SafeAreaView>
+        <MobileBottomNavigation activeTab="profile" />
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.root}>
+      <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+        <KeyboardAvoidingView
+          style={styles.flex}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <ScrollView
+            style={styles.flex}
+            contentContainerStyle={styles.content}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl refreshing={isRefreshing} onRefresh={refresh} tintColor="#208AEF" />
+            }>
+            <Text style={styles.pageTitle}>마이페이지</Text>
+
+            <View style={styles.profileSection}>
+              <View style={styles.profileRow}>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="프로필 사진 변경"
+                  disabled={!isEditingProfile || isSavingProfile}
+                  onPress={pickProfileImage}
+                  style={styles.avatarWrapper}>
+                  <Image
+                    source={profileSource}
+                    style={styles.avatar}
+                    resizeMode="cover"
+                    onError={() => setProfileImageFailed(true)}
+                  />
+                  {isEditingProfile && (
+                    <View style={styles.cameraBadge}>
+                      <Text style={styles.cameraBadgeText}>＋</Text>
+                    </View>
+                  )}
+                </Pressable>
+
+                <View style={styles.identity}>
+                  {isEditingProfile ? (
+                    <TextInput
+                      value={username}
+                      onChangeText={(value) =>
+                        setUsername(truncateToWeight(value, MAX_NAME_WEIGHT))
+                      }
+                      onSubmitEditing={saveProfile}
+                      editable={!isSavingProfile}
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      returnKeyType="done"
+                      placeholder="이름을 입력하세요"
+                      placeholderTextColor="#8F8F8F"
+                      style={styles.nameInput}
+                    />
+                  ) : (
+                    <Text style={styles.username}>{user.username}</Text>
+                  )}
+                  <Text numberOfLines={1} style={styles.email}>
+                    {user.email}
+                  </Text>
+                  {isEditingProfile && (
+                    <Text
+                      style={[
+                        styles.nameHint,
+                        profileNameWeight >= MAX_NAME_WEIGHT && styles.nameHintMax,
+                      ]}>
+                      한글 10자 · 영어 20자 이내 ({profileNameWeight}/{MAX_NAME_WEIGHT})
+                    </Text>
+                  )}
+                </View>
+
+                {isEditingProfile ? (
+                  <View style={styles.editActions}>
+                    <Pressable onPress={cancelEditingProfile} disabled={isSavingProfile}>
+                      <Text style={styles.cancelText}>취소</Text>
+                    </Pressable>
+                    <Pressable onPress={saveProfile} disabled={isSavingProfile}>
+                      <Text style={styles.doneText}>{isSavingProfile ? '저장 중' : '완료'}</Text>
+                    </Pressable>
+                  </View>
+                ) : (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="프로필 수정"
+                    hitSlop={12}
+                    onPress={startEditingProfile}>
+                    <Text style={styles.editText}>수정</Text>
+                  </Pressable>
+                )}
+              </View>
+
+              <Pressable
+                accessibilityRole="button"
+                onPress={openInterestEditor}
+                style={({ pressed }) => [styles.preferenceCard, pressed && styles.cardPressed]}>
+                <View style={styles.cardHeaderRow}>
+                  <View style={styles.cardTitleRow}>
+                    <Text style={styles.star}>★</Text>
+                    <Text style={styles.cardTitle}>행사 보기 우선순위</Text>
+                  </View>
+                  <Text style={styles.chevron}>›</Text>
+                </View>
+                {interestCategoriesLoading ? (
+                  <ActivityIndicator size="small" color="#208AEF" style={styles.inlineLoader} />
+                ) : interestCategories.length > 0 ? (
+                  <View style={styles.chipRow}>
+                    {interestCategories.map((category, index) => (
+                      <View
+                        key={`${category.groupId}-${category.id}`}
+                        style={[
+                          styles.preferenceChip,
+                          category.groupId === 2
+                            ? styles.organizationChip
+                            : styles.categoryChip,
+                        ]}>
+                        <Text style={styles.preferenceChipText}>
+                          {index + 1}순위: {category.name}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                ) : (
+                  <Text style={styles.emptyPreference}>
+                    눌러서 우선순위로 확인할 행사를 설정해보세요.
+                  </Text>
+                )}
+              </Pressable>
+            </View>
+
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <View style={styles.cardTitleRow}>
+                  <Text style={styles.sectionTitle}>내 찜 목록</Text>
+                  <ExpoImage
+                    source={require('@/assets/images/Bookmarked.svg')}
+                    style={styles.sectionIcon}
+                    contentFit="contain"
+                  />
+                </View>
+                <Text style={styles.countText}>{bookmarkedEvents.length}개</Text>
+              </View>
+              {bookmarkedEvents.length === 0 ? (
+                <Text style={styles.emptyText}>
+                  아직 찜한 행사가 없습니다.{`\n`}관심 있는 행사를 찜해보세요!
+                </Text>
+              ) : (
+                bookmarkedEvents.slice(0, 3).map((event) => (
+                  <View key={event.id} style={styles.listRow}>
+                    <View style={styles.listText}>
+                      <Text numberOfLines={1} style={styles.listTitle}>
+                        {event.title}
+                      </Text>
+                      <Text numberOfLines={1} style={styles.listSubtitle}>
+                        {event.organization}
+                      </Text>
+                    </View>
+                  </View>
+                ))
+              )}
+            </View>
+
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <View style={styles.cardTitleRow}>
+                  <Text style={styles.sectionTitle}>내 메모 목록</Text>
+                  <ExpoImage
+                    source={require('@/assets/images/pencil.svg')}
+                    style={styles.sectionIcon}
+                    contentFit="contain"
+                  />
+                </View>
+                <Text style={styles.countText}>{eventMemos.length}개</Text>
+              </View>
+              {eventMemos.length === 0 ? (
+                <Text style={styles.emptyText}>
+                  아직 메모가 없습니다.{`\n`}관심 있는 행사에 메모를 남겨보세요!
+                </Text>
+              ) : (
+                eventMemos.slice(0, 3).map((memo) => (
+                  <View key={memo.id} style={styles.memoCard}>
+                    <Text numberOfLines={2} style={styles.memoContent}>
+                      {memo.content}
+                    </Text>
+                    <View style={styles.memoMetaRow}>
+                      <Text numberOfLines={1} style={styles.memoEventTitle}>
+                        {memo.eventTitle}
+                      </Text>
+                      <Text style={styles.memoDate}>{formatMemoDate(memo.createdAt)}</Text>
+                    </View>
+                  </View>
+                ))
+              )}
+            </View>
+
+            <View style={styles.section}>
+              <View style={styles.bugHeader}>
+                <Text style={styles.bugIcon}>●</Text>
+                <View>
+                  <Text style={styles.sectionTitle}>버그 신고</Text>
+                  <Text style={styles.sectionDescription}>이용 중 발견한 문제를 알려주세요.</Text>
+                </View>
+              </View>
+              <TextInput
+                value={bugTitle}
+                onChangeText={setBugTitle}
+                editable={!isSubmittingBugReport}
+                maxLength={100}
+                placeholder="제목"
+                placeholderTextColor="#999999"
+                style={styles.reportInput}
+              />
+              <TextInput
+                value={bugContent}
+                onChangeText={setBugContent}
+                editable={!isSubmittingBugReport}
+                maxLength={1000}
+                multiline
+                textAlignVertical="top"
+                placeholder="문제가 발생한 상황을 자세히 적어주세요."
+                placeholderTextColor="#999999"
+                style={[styles.reportInput, styles.reportTextArea]}
+              />
+              <Pressable
+                accessibilityRole="button"
+                onPress={submitBug}
+                disabled={isSubmittingBugReport}
+                style={({ pressed }) => [
+                  styles.reportButton,
+                  pressed && styles.pressed,
+                  isSubmittingBugReport && styles.disabled,
+                ]}>
+                <Text style={styles.reportButtonText}>
+                  {isSubmittingBugReport ? '접수 중' : '신고하기'}
+                </Text>
+              </Pressable>
+            </View>
+
+            <View style={styles.accountSection}>
+              <View style={styles.accountText}>
+                <Text style={styles.accountTitle}>로그아웃</Text>
+                <Text style={styles.accountDescription}>현재 계정에서 로그아웃합니다.</Text>
+              </View>
+              <Pressable
+                accessibilityRole="button"
+                onPress={handleLogout}
+                disabled={logoutMutation.isPending}
+                style={({ pressed }) => [styles.outlineButton, pressed && styles.pressed]}>
+                <Text style={styles.outlineButtonText}>
+                  {logoutMutation.isPending ? '로그아웃 중' : '로그아웃'}
+                </Text>
+              </Pressable>
+            </View>
+
+            <View style={styles.accountSection}>
+              <View style={styles.accountText}>
+                <Text style={styles.accountTitle}>회원탈퇴</Text>
+                <Text style={styles.accountDescription}>
+                  계정을 삭제하면 저장된 정보가 복구되지 않습니다.
+                </Text>
+              </View>
+              <Pressable
+                accessibilityRole="button"
+                onPress={confirmAccountDeletion}
+                disabled={deleteAccountMutation.isPending}
+                style={({ pressed }) => [
+                  styles.outlineButton,
+                  styles.deleteButton,
+                  pressed && styles.pressed,
+                ]}>
+                <Text style={styles.deleteButtonText}>
+                  {deleteAccountMutation.isPending ? '처리 중' : '회원탈퇴'}
+                </Text>
+              </Pressable>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+
+      <MobileBottomNavigation activeTab="profile" />
+
+      <Modal
+        visible={isInterestEditorOpen}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setIsInterestEditorOpen(false)}>
+        <SafeAreaView style={styles.editorSafeArea}>
+          <View style={styles.editorHeader}>
+            <Pressable onPress={() => setIsInterestEditorOpen(false)} disabled={interestCategoriesSaving}>
+              <Text style={styles.cancelText}>취소</Text>
+            </Pressable>
+            <Text style={styles.editorTitle}>행사 보기 우선순위</Text>
+            <Pressable onPress={saveInterests} disabled={interestCategoriesSaving}>
+              <Text style={styles.doneText}>{interestCategoriesSaving ? '저장 중' : '완료'}</Text>
+            </Pressable>
+          </View>
+
+          <View style={styles.selectedInterests}>
+            {draftInterests.length === 0 ? (
+              <Text style={styles.selectedHint}>최대 3개까지, 선택한 순서대로 저장돼요.</Text>
+            ) : (
+              draftInterests.map((item, index) => (
+                <View key={`${item.groupId}-${item.id}`} style={styles.selectedChip}>
+                  <Text style={styles.selectedChipText}>
+                    {index + 1}순위: {item.name}
+                  </Text>
+                </View>
+              ))
+            )}
+          </View>
+
+          {isLoadingMeta ? (
+            <View style={styles.editorLoading}>
+              <ActivityIndicator color="#208AEF" />
+            </View>
+          ) : metadataError ? (
+            <View style={styles.editorLoading}>
+              <Text style={styles.loadingText}>선택 목록을 불러오지 못했습니다.</Text>
+              <Pressable onPress={refreshMetadata} style={styles.retryButton}>
+                <Text style={styles.doneText}>다시 시도</Text>
+              </Pressable>
+            </View>
+          ) : (
+            <ScrollView contentContainerStyle={styles.optionSections}>
+              <InterestOptions
+                title="카테고리"
+                items={programTypes}
+                selected={draftInterests}
+                onToggle={toggleInterest}
+              />
+              <InterestOptions
+                title="주최기관"
+                items={organizations}
+                selected={draftInterests}
+                onToggle={toggleInterest}
+              />
+            </ScrollView>
+          )}
+        </SafeAreaView>
+      </Modal>
+    </View>
+  );
+}
+
+function InterestOptions({
+  title,
+  items,
+  selected,
+  onToggle,
+}: {
+  title: string;
+  items: Category[];
+  selected: Category[];
+  onToggle: (category: Category) => void;
+}) {
+  return (
+    <View style={styles.optionSection}>
+      <Text style={styles.optionTitle}>{title}</Text>
+      <View style={styles.optionRow}>
+        {items.map((item) => {
+          const isSelected = selected.some(
+            (value) => value.id === item.id && value.groupId === item.groupId,
+          );
+          return (
+            <Pressable
+              key={`${item.groupId}-${item.id}`}
+              onPress={() => onToggle(item)}
+              style={[styles.optionChip, isSelected && styles.optionChipSelected]}>
+              <Text style={[styles.optionChipText, isSelected && styles.optionChipTextSelected]}>
+                {item.name}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: '#FFFFFF' },
+  flex: { flex: 1 },
+  safeArea: { flex: 1, backgroundColor: '#FFFFFF' },
+  content: { width: '100%', maxWidth: 800, alignSelf: 'center', paddingBottom: 32 },
+  pageTitle: {
+    paddingHorizontal: 20,
+    paddingTop: 18,
+    paddingBottom: 20,
+    color: '#111111',
+    fontSize: 25,
+    fontWeight: '800',
+  },
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
+  loadingText: { color: '#777777', fontSize: 14 },
+  guestPage: { flex: 1 },
+  guestCard: {
+    marginHorizontal: 20,
+    marginTop: 80,
+    padding: 28,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E6E6E6',
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+  },
+  guestTitle: { color: '#222222', fontSize: 21, fontWeight: '800' },
+  guestDescription: {
+    marginTop: 10,
+    color: '#777777',
+    fontSize: 14,
+    lineHeight: 21,
+    textAlign: 'center',
+  },
+  primaryButton: {
+    width: '100%',
+    height: 50,
+    marginTop: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 12,
+    backgroundColor: '#208AEF',
+  },
+  primaryButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '800' },
+  profileSection: { paddingHorizontal: 20, paddingBottom: 24 },
+  profileRow: { minHeight: 100, flexDirection: 'row', alignItems: 'center', marginBottom: 28 },
+  avatarWrapper: { width: 88, height: 88 },
+  avatar: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: '#E6E6E6',
+    backgroundColor: '#F3F3F3',
+  },
+  cameraBadge: {
+    position: 'absolute',
+    right: 0,
+    bottom: 0,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#BEBEBE',
+    backgroundColor: '#FFFFFF',
+  },
+  cameraBadgeText: { color: '#777777', fontSize: 19, lineHeight: 21, fontWeight: '600' },
+  identity: { flex: 1, minWidth: 0, marginLeft: 16 },
+  username: { color: '#111111', fontSize: 21, lineHeight: 27, fontWeight: '800' },
+  email: { marginTop: 4, color: '#555555', fontSize: 14 },
+  editText: { padding: 6, color: '#777777', fontSize: 14, fontWeight: '700' },
+  nameInput: {
+    height: 40,
+    paddingHorizontal: 10,
+    borderWidth: 1,
+    borderColor: '#DADADA',
+    borderRadius: 10,
+    color: '#111111',
+    fontSize: 16,
+    fontWeight: '700',
+    backgroundColor: '#FFFFFF',
+  },
+  nameHint: { marginTop: 6, color: '#8F8F8F', fontSize: 10, lineHeight: 14 },
+  nameHintMax: { color: '#D33B3B' },
+  editActions: { marginLeft: 8, alignItems: 'flex-end', gap: 12 },
+  cancelText: { color: '#777777', fontSize: 14, fontWeight: '600' },
+  doneText: { color: '#208AEF', fontSize: 14, fontWeight: '800' },
+  preferenceCard: {
+    width: '100%',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderWidth: 1,
+    borderColor: '#D0D0D0',
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+  },
+  cardPressed: { backgroundColor: '#F7F7F7' },
+  cardHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  cardTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 9 },
+  cardTitle: { color: '#222222', fontSize: 16, fontWeight: '700' },
+  star: { color: '#828282', fontSize: 21 },
+  chevron: { color: '#ABABAB', fontSize: 27, lineHeight: 27 },
+  inlineLoader: { alignSelf: 'flex-start', marginTop: 12 },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
+  preferenceChip: { paddingHorizontal: 11, paddingVertical: 6, borderRadius: 999 },
+  categoryChip: { backgroundColor: '#6FD2FF' },
+  organizationChip: { backgroundColor: '#36C986' },
+  preferenceChipText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
+  emptyPreference: { marginTop: 12, color: '#6A6A6A', fontSize: 13, fontWeight: '600' },
+  section: {
+    marginHorizontal: 20,
+    paddingVertical: 24,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: '#DDDDDD',
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  sectionTitle: { color: '#222222', fontSize: 18, fontWeight: '800' },
+  sectionIcon: { width: 18, height: 18 },
+  countText: { color: '#888888', fontSize: 13, fontWeight: '600' },
+  emptyText: { paddingVertical: 18, color: '#777777', fontSize: 13, lineHeight: 20, textAlign: 'center' },
+  listRow: {
+    minHeight: 58,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    justifyContent: 'center',
+    borderRadius: 12,
+    backgroundColor: '#F7F8FA',
+    marginBottom: 8,
+  },
+  listText: { flex: 1 },
+  listTitle: { color: '#222222', fontSize: 14, fontWeight: '700' },
+  listSubtitle: { marginTop: 5, color: '#777777', fontSize: 12 },
+  memoCard: {
+    padding: 14,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#E7E7E7',
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+  },
+  memoContent: { color: '#333333', fontSize: 14, lineHeight: 20 },
+  memoMetaRow: { flexDirection: 'row', alignItems: 'center', marginTop: 10 },
+  memoEventTitle: { flex: 1, color: '#777777', fontSize: 12, fontWeight: '600' },
+  memoDate: { marginLeft: 8, color: '#999999', fontSize: 11 },
+  bugHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16 },
+  bugIcon: { color: '#D04D4D', fontSize: 16 },
+  sectionDescription: { marginTop: 4, color: '#777777', fontSize: 12 },
+  reportInput: {
+    height: 46,
+    paddingHorizontal: 13,
+    borderWidth: 1,
+    borderColor: '#DADADA',
+    borderRadius: 10,
+    color: '#222222',
+    fontSize: 14,
+    backgroundColor: '#FFFFFF',
+    marginBottom: 10,
+  },
+  reportTextArea: { height: 112, paddingTop: 12 },
+  reportButton: {
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 10,
+    backgroundColor: '#555555',
+  },
+  reportButtonText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
+  accountSection: {
+    marginHorizontal: 20,
+    paddingVertical: 24,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: '#DDDDDD',
+  },
+  accountText: { marginBottom: 14 },
+  accountTitle: { color: '#222222', fontSize: 17, fontWeight: '800' },
+  accountDescription: { marginTop: 6, color: '#777777', fontSize: 13, lineHeight: 18 },
+  outlineButton: {
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#D9D9D9',
+    borderRadius: 10,
+    backgroundColor: '#FFFFFF',
+  },
+  outlineButtonText: { color: '#494949', fontSize: 14, fontWeight: '800' },
+  deleteButton: { borderColor: '#F1B8B8' },
+  deleteButtonText: { color: '#D33B3B', fontSize: 14, fontWeight: '800' },
+  pressed: { opacity: 0.65 },
+  disabled: { opacity: 0.55 },
+  editorSafeArea: { flex: 1, backgroundColor: '#FFFFFF' },
+  editorHeader: {
+    height: 56,
+    paddingHorizontal: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#DDDDDD',
+  },
+  editorTitle: { color: '#222222', fontSize: 17, fontWeight: '800' },
+  selectedInterests: {
+    minHeight: 78,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignContent: 'flex-start',
+    gap: 8,
+  },
+  selectedHint: { color: '#888888', fontSize: 13 },
+  selectedChip: { paddingHorizontal: 11, paddingVertical: 7, borderRadius: 18, backgroundColor: '#E6F4FE' },
+  selectedChipText: { color: '#176DB9', fontSize: 12, fontWeight: '800' },
+  editorLoading: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 14 },
+  retryButton: { paddingHorizontal: 16, paddingVertical: 10 },
+  optionSections: { padding: 20, paddingBottom: 40, gap: 30 },
+  optionSection: { gap: 14 },
+  optionTitle: { color: '#222222', fontSize: 18, fontWeight: '800' },
+  optionRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 9 },
+  optionChip: {
+    paddingHorizontal: 13,
+    paddingVertical: 9,
+    borderWidth: 1,
+    borderColor: '#D4D4D4',
+    borderRadius: 22,
+    backgroundColor: '#FFFFFF',
+  },
+  optionChipSelected: { borderColor: '#208AEF', backgroundColor: '#208AEF' },
+  optionChipText: { color: '#555555', fontSize: 13, fontWeight: '600' },
+  optionChipTextSelected: { color: '#FFFFFF' },
+});

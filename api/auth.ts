@@ -8,6 +8,7 @@ import type {
   User,
 } from "@/types/auth";
 import type {
+  SocialLoginPayload,
   SocialLoginRequest,
   SocialLoginResponse,
 } from "@/types/socialAuth";
@@ -33,13 +34,17 @@ export async function signup(input: SignupInput) {
 }
 
 export async function loginWithSocial(input: SocialLoginRequest) {
+  const payload: SocialLoginPayload = {
+    provider: input.provider,
+    code: null,
+    accessToken: input.accessToken,
+    codeVerifier: null,
+    client_type: "MOB",
+  };
+
   const response = await apiClient.post<SocialLoginResponse>(
     "auth/login/social",
-    {
-      provider: input.provider.toUpperCase(),
-      code: "",
-      accessToken: input.accessToken,
-    },
+    payload,
   );
   return response.data;
 }
