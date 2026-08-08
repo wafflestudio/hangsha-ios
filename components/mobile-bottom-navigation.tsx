@@ -34,7 +34,7 @@ const NAV_ITEMS = [
   {
     id: 'profile',
     label: '프로필',
-    href: null,
+    href: '/mypage' as const,
     inactiveIcon: require('@/assets/images/bottom_profile.svg'),
     activeIcon: require('@/assets/images/bottom_profile_active.svg'),
     width: 30,
