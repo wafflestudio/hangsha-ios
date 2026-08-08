@@ -2,6 +2,8 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
     Alert,
+    Image,
+    ImageSourcePropType,
     KeyboardAvoidingView,
     Platform,
     Pressable,
@@ -124,7 +126,11 @@ export default function HomeScreen() {
           <View style={styles.container}>
             {/* Logo */}
             <View style={styles.brandContainer}>
-              <Text style={styles.logo}>🎉</Text>
+              <Image
+                source={require("@/assets/images/logo.png")}
+                style={styles.logo}
+                resizeMode="contain"
+              />
 
               <Text style={styles.title}>행샤</Text>
             </View>
@@ -199,7 +205,7 @@ export default function HomeScreen() {
             <View style={styles.actionsContainer}>
               <SocialLoginButton
                 text="구글 계정으로 계속하기"
-                iconLabel="G"
+                iconSource={require("@/assets/images/googleLogo.png")}
                 onPress={handleGoogleLogin}
                 disabled={isBusy}
                 isLoading={isSocialLoginPending}
@@ -207,14 +213,14 @@ export default function HomeScreen() {
 
               <SocialLoginButton
                 text="카카오톡 계정으로 계속하기"
-                iconLabel="K"
+                iconSource={require("@/assets/images/kakaoLogo.png")}
                 onPress={handleKakaoLogin}
                 disabled={isBusy}
               />
 
               <SocialLoginButton
                 text="네이버 계정으로 계속하기"
-                iconLabel="N"
+                iconSource={require("@/assets/images/naverLogo.png")}
                 onPress={handleNaverLogin}
                 disabled={isBusy}
               />
@@ -253,7 +259,7 @@ export default function HomeScreen() {
 
 interface SocialLoginButtonProps {
   text: string;
-  iconLabel: string;
+  iconSource: ImageSourcePropType;
   onPress: () => void;
   disabled?: boolean;
   isLoading?: boolean;
@@ -261,7 +267,7 @@ interface SocialLoginButtonProps {
 
 function SocialLoginButton({
   text,
-  iconLabel,
+  iconSource,
   onPress,
   disabled = false,
   isLoading = false,
@@ -277,7 +283,11 @@ function SocialLoginButton({
       onPress={onPress}
       disabled={disabled}
     >
-      <Text style={styles.socialIcon}>{iconLabel}</Text>
+      <Image
+        source={iconSource}
+        style={styles.socialIcon}
+        resizeMode="contain"
+      />
 
       <Text style={styles.socialButtonText}>{isLoading ? "로그인 중..." : text}</Text>
     </Pressable>
@@ -322,13 +332,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
 
     marginTop: 120,
-    marginBottom: 148,
+    marginBottom: 72,
   },
 
   logo: {
     marginRight: 20,
-    fontSize: 68,
-    lineHeight: 88,
+    width: 88,
+    height: 88,
   },
 
   title: {
@@ -389,7 +399,7 @@ const styles = StyleSheet.create({
   button: {
     position: "relative",
     width: "100%",
-    height: 56,
+    height: 50,
 
     flexDirection: "row",
     alignItems: "center",
@@ -473,11 +483,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: 20,
     width: 30,
-    color: "#111111",
-    fontSize: 18,
-    fontWeight: "800",
-    lineHeight: 30,
-    textAlign: "center",
+    height: 30,
   },
 
   socialButtonText: {

@@ -31,30 +31,32 @@ module.exports = {
     scheme: isDevelopment ? "hangsha-dev" : "hangsha",
     version: "1.0.0",
     orientation: "portrait",
-    icon: "./assets/images/icon.png",
+    icon: "./assets/images/logo.png",
     userInterfaceStyle: "automatic",
+
+    updates: {
+      url: "https://u.expo.dev/1b6d9447-08ed-4cfc-913c-dd10ff45ce21",
+    },
+
+    runtimeVersion: {
+      policy: "appVersion",
+    },
 
     ios: {
       bundleIdentifier: iosBundleIdentifier,
-      icon: "./assets/expo.icon",
+      icon: "./assets/images/logo.png",
       config: {
         usesNonExemptEncryption: false,
       },
     },
 
     android: {
-      adaptiveIcon: {
-        backgroundColor: "#E6F4FE",
-        foregroundImage: "./assets/images/android-icon-foreground.png",
-        backgroundImage: "./assets/images/android-icon-background.png",
-        monochromeImage: "./assets/images/android-icon-monochrome.png",
-      },
       predictiveBackGestureEnabled: false,
     },
 
     web: {
       output: "static",
-      favicon: "./assets/images/favicon.png",
+      favicon: "./assets/images/logo.png",
     },
 
     plugins: [
@@ -62,9 +64,10 @@ module.exports = {
       [
         "expo-splash-screen",
         {
-          backgroundColor: "#208AEF",
-          image: "./assets/images/splash-icon.png",
-          imageWidth: 76,
+          backgroundColor: "#FFFFFF",
+          image: "./assets/images/logo.png",
+          imageWidth: 100,
+          resizeMode: "contain",
         },
       ],
       "expo-secure-store",
