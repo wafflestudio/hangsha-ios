@@ -4,7 +4,8 @@ import { createContext, type ReactNode, useContext, useEffect } from 'react';
 import * as userApi from '@/api/user';
 import { useAuth } from '@/contexts/AuthProvider';
 import type { Category } from '@/types/category';
-import type { Event, ExcludedKeyword, Memo, MemoUpdates } from '@/types/userData';
+import type { Event } from '@/types/event';
+import type { ExcludedKeyword, Memo, MemoUpdates } from '@/types/userData';
 
 export const userDataKeys = {
   all: ['user-data'] as const,

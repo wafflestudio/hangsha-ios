@@ -1,29 +1,13 @@
 import apiClient from '@/api/client';
 import type { Category, CategoryGroupWithCategories } from '@/types/category';
+import type { EventDTO } from '@/types/event';
 import type {
-  Event,
-  EventDTO,
   ExcludedKeyword,
   Memo,
   MemoDTO,
   MemoUpdates,
 } from '@/types/userData';
-
-function transformEvent(event: EventDTO): Event {
-  const today = new Date();
-  return {
-    ...event,
-    eventTypeId:
-      event.eventTypeId >= 4 && event.eventTypeId <= 10 ? event.eventTypeId - 3 : 6,
-    applyStart: event.applyStart ? new Date(event.applyStart) : null,
-    applyEnd: event.applyEnd ? new Date(event.applyEnd) : null,
-    eventStart: event.eventStart ? new Date(event.eventStart) : null,
-    eventEnd: event.eventEnd ? new Date(event.eventEnd) : null,
-    statusId:
-      event.statusId ||
-      (event.applyEnd ? (new Date(event.applyEnd) < today ? 2 : 1) : 2),
-  };
-}
+import { transformEvent } from '@/util/calendar/transformEvent';
 
 function transformMemo(memo: MemoDTO): Memo {
   return { ...memo, createdAt: new Date(memo.createdAt) };
@@ -80,7 +64,7 @@ export async function getBookmarks(page = 1, size = 20) {
   const response = await apiClient.get<{ items: EventDTO[] }>('users/me/bookmarks', {
     params: { page, size },
   });
-  return response.data.items.map(transformEvent);
+  return response.data.items.map((event) => transformEvent(event));
 }
 
 export async function addBookmark(eventId: number) {
