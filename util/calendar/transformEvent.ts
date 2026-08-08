@@ -1,4 +1,4 @@
-import type { Event, EventDTO } from "@/types/event";
+import type { Event, EventDetail, EventDetailDTO, EventDTO } from "@/types/event";
 
 import { parseDateString } from "./dateFormatter";
 
@@ -48,3 +48,12 @@ export const transformEvent = (
     eventEnd: dto.eventEnd ? parseDateString(dto.eventEnd) : null,
   };
 };
+
+export const transformEventDetail = (
+  dto: EventDetailDTO,
+  today = new Date(),
+): EventDetail => ({
+  ...transformEvent(dto, today),
+  bookmarkCount: dto.bookmarkCount,
+  detail: dto.detail,
+});
