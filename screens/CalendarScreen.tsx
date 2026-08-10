@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { SymbolView } from 'expo-symbols';
 import { useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -86,28 +87,48 @@ export function CalendarScreen({ onSelectDate }: CalendarScreenProps) {
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
         <View style={styles.header}>
+          <View style={styles.monthNav}>
+            <ThemedText type="subtitle" style={styles.monthLabel}>
+              {year}년 {month + 1}월
+            </ThemedText>
+
+            <Pressable
+              onPress={goToPreviousMonth}
+              hitSlop={Spacing.two}
+              accessibilityRole="button"
+              accessibilityLabel="이전 달">
+              <ThemedText
+                type="subtitle"
+                themeColor="textSecondary"
+                style={[styles.headerArrow, styles.monthLabel]}>
+                ‹
+              </ThemedText>
+            </Pressable>
+
+            <Pressable
+              onPress={goToNextMonth}
+              hitSlop={Spacing.two}
+              accessibilityRole="button"
+              accessibilityLabel="다음 달">
+              <ThemedText
+                type="subtitle"
+                themeColor="textSecondary"
+                style={[styles.headerArrow, styles.monthLabel]}>
+                ›
+              </ThemedText>
+            </Pressable>
+          </View>
+
           <Pressable
-            onPress={goToPreviousMonth}
+            style={[styles.filterButton, { borderColor: theme.backgroundElement }]}
             hitSlop={Spacing.two}
             accessibilityRole="button"
-            accessibilityLabel="이전 달">
-            <ThemedText type="subtitle" style={styles.headerArrow}>
-              ‹
-            </ThemedText>
-          </Pressable>
-
-          <ThemedText type="subtitle">
-            {year}년 {month + 1}월
-          </ThemedText>
-
-          <Pressable
-            onPress={goToNextMonth}
-            hitSlop={Spacing.two}
-            accessibilityRole="button"
-            accessibilityLabel="다음 달">
-            <ThemedText type="subtitle" style={styles.headerArrow}>
-              ›
-            </ThemedText>
+            accessibilityLabel="필터">
+            <SymbolView
+              name="slider.horizontal.3"
+              tintColor={theme.text}
+              size={14}
+            />
           </Pressable>
         </View>
 
@@ -177,8 +198,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.three,
   },
+  monthNav: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 2,
+  },
   headerArrow: {
-    paddingHorizontal: Spacing.three,
+    paddingHorizontal: Spacing.one,
+  },
+  monthLabel: {
+    fontSize: 20,
+    lineHeight: 26,
+  },
+  filterButton: {
+    width: 30,
+    height: 30,
+    borderRadius: 5,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   weekdayRow: {
     flexDirection: 'row',
@@ -195,6 +234,7 @@ const styles = StyleSheet.create({
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    marginHorizontal: Spacing.three,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderLeftWidth: StyleSheet.hairlineWidth,
   },

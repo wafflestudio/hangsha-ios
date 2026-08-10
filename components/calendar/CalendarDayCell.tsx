@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, View, useColorScheme } from 'react-native';
+import { Dimensions, Pressable, StyleSheet, View, useColorScheme } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import type { DayEventSegment } from '@/util/calendar/buildMonthEventLayout';
@@ -6,6 +6,11 @@ import { EventTypeColors, Spacing, type EventTypeId } from '@/util/theme';
 
 const ROW_HEIGHT = 18;
 const CELL_MIN_HEIGHT = 34 + ROW_HEIGHT * 3;
+const DAYS_PER_WEEK = 7;
+const GRID_HORIZONTAL_MARGIN = Spacing.three * 2;
+const CELL_WIDTH = Math.floor(
+  (Dimensions.get('window').width - GRID_HORIZONTAL_MARGIN) / DAYS_PER_WEEK,
+);
 
 const isKnownEventTypeId = (eventTypeId: number): eventTypeId is EventTypeId =>
   eventTypeId in EventTypeColors.light;
@@ -103,7 +108,7 @@ export function CalendarDayCell({
 
 const styles = StyleSheet.create({
   container: {
-    flexBasis: '14.2857%',
+    width: CELL_WIDTH,
     minHeight: CELL_MIN_HEIGHT,
     borderRightWidth: StyleSheet.hairlineWidth,
     borderBottomWidth: StyleSheet.hairlineWidth,
