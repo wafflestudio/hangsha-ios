@@ -5,7 +5,7 @@ import { SymbolView } from 'expo-symbols';
 import { ActivityIndicator, ScrollView, StyleSheet, View, useColorScheme } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { getEventDetail } from '@/api/event';
+import { eventKeys, getEventDetail } from '@/api/event';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useTheme } from '@/hooks/use-theme';
@@ -32,7 +32,7 @@ export function EventDetailScreen() {
     isPending,
     isError,
   } = useQuery({
-    queryKey: ['event', eventId],
+    queryKey: eventKeys.detail(eventId),
     queryFn: () => getEventDetail(eventId),
     enabled: Number.isFinite(eventId),
   });

@@ -10,7 +10,8 @@ import type { ExcludedKeyword, Memo, MemoUpdates } from '@/types/userData';
 export const userDataKeys = {
   all: ['user-data'] as const,
   excludedKeywords: () => [...userDataKeys.all, 'excluded-keywords'] as const,
-  bookmarks: (page = 1, size = 20) => [...userDataKeys.all, 'bookmarks', page, size] as const,
+  bookmarksAll: () => [...userDataKeys.all, 'bookmarks'] as const,
+  bookmarks: (page = 1, size = 20) => [...userDataKeys.bookmarksAll(), page, size] as const,
   interests: () => [...userDataKeys.all, 'interest-categories'] as const,
   memos: () => [...userDataKeys.all, 'memos'] as const,
   memosByTag: (tagId: number) => [...userDataKeys.memos(), 'tag', tagId] as const,
@@ -89,7 +90,7 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
       const isBookmarked = cachedBookmarks?.some(({ id }) => id === event.id) ?? event.isBookmarked ?? false;
       await (isBookmarked ? userApi.removeBookmark(event.id) : userApi.addBookmark(event.id));
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: [...userDataKeys.all, 'bookmarks'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: userDataKeys.bookmarksAll() }),
   });
   const addMemoMutation = useMutation({
     mutationFn: ({ eventId, content, tagNames }: { eventId: number; content: string; tagNames: string[] }) =>

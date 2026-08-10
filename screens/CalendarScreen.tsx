@@ -1,12 +1,13 @@
+import { useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { eventKeys, getMonthEvents } from '@/api/event';
 import { CalendarDayCell } from '@/components/calendar/CalendarDayCell';
 import { MobileBottomNavigation } from '@/components/mobile-bottom-navigation';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import type { Event } from '@/types/event';
 import { buildMonthEventLayout } from '@/util/calendar/buildMonthEventLayout';
 import { formatDateToYYYYMMDD } from '@/util/calendar/dateFormatter';
 import { getMonthRange } from '@/util/calendar/getMonthRange';
@@ -34,11 +35,10 @@ const buildMonthGridDates = (year: number, month: number): Date[] => {
 };
 
 type CalendarScreenProps = {
-  events?: readonly Event[];
   onSelectDate?: (dateKey: string) => void;
 };
 
-export function CalendarScreen({ events = [], onSelectDate }: CalendarScreenProps) {
+export function CalendarScreen({ onSelectDate }: CalendarScreenProps) {
   const theme = useTheme();
   const today = useMemo(() => new Date(), []);
   const [visibleMonth, setVisibleMonth] = useState(
@@ -49,6 +49,25 @@ export function CalendarScreen({ events = [], onSelectDate }: CalendarScreenProp
   const month = visibleMonth.getMonth();
 
   const gridDates = useMemo(() => buildMonthGridDates(year, month), [year, month]);
+  const rangeFrom = useMemo(() => formatDateToYYYYMMDD(gridDates[0]), [gridDates]);
+  const rangeTo = useMemo(
+    () => formatDateToYYYYMMDD(gridDates[gridDates.length - 1]),
+    [gridDates],
+  );
+
+  const {
+    data: monthData,
+    isPending,
+    isError,
+  } = useQuery({
+    queryKey: eventKeys.month(rangeFrom, rangeTo),
+    queryFn: () => getMonthEvents({ from: rangeFrom, to: rangeTo }),
+  });
+
+  const events = useMemo(
+    () => Object.values(monthData?.byDate ?? {}).flatMap((bucket) => bucket.events),
+    [monthData],
+  );
   const segmentsByDate = useMemo(
     () => buildMonthEventLayout(gridDates, events),
     [gridDates, events],
@@ -105,24 +124,38 @@ export function CalendarScreen({ events = [], onSelectDate }: CalendarScreenProp
           ))}
         </View>
 
-        <View style={[styles.grid, { borderColor: theme.backgroundElement }]}>
-          {gridDates.map((date) => {
-            const dateKey = formatDateToYYYYMMDD(date);
+        {isPending && (
+          <View style={styles.centered}>
+            <ActivityIndicator color={theme.text} />
+          </View>
+        )}
 
-            return (
-              <CalendarDayCell
-                key={dateKey}
-                date={date}
-                isCurrentMonth={date.getMonth() === month}
-                isToday={dateKey === todayKey}
-                isSunday={date.getDay() === 0}
-                segments={segmentsByDate.get(dateKey) ?? []}
-                maxVisibleRows={MAX_VISIBLE_ROWS}
-                onPress={onSelectDate ? () => onSelectDate(dateKey) : undefined}
-              />
-            );
-          })}
-        </View>
+        {isError && (
+          <View style={styles.centered}>
+            <ThemedText themeColor="textSecondary">행사 정보를 불러오지 못했어요.</ThemedText>
+          </View>
+        )}
+
+        {!isPending && !isError && (
+          <View style={[styles.grid, { borderColor: theme.backgroundElement }]}>
+            {gridDates.map((date) => {
+              const dateKey = formatDateToYYYYMMDD(date);
+
+              return (
+                <CalendarDayCell
+                  key={dateKey}
+                  date={date}
+                  isCurrentMonth={date.getMonth() === month}
+                  isToday={dateKey === todayKey}
+                  isSunday={date.getDay() === 0}
+                  segments={segmentsByDate.get(dateKey) ?? []}
+                  maxVisibleRows={MAX_VISIBLE_ROWS}
+                  onPress={onSelectDate ? () => onSelectDate(dateKey) : undefined}
+                />
+              );
+            })}
+          </View>
+        )}
       </SafeAreaView>
 
       <MobileBottomNavigation activeTab="calendar" />
@@ -164,5 +197,10 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     borderTopWidth: StyleSheet.hairlineWidth,
     borderLeftWidth: StyleSheet.hairlineWidth,
+  },
+  centered: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

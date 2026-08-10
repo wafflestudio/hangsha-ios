@@ -79,3 +79,27 @@ export type DayViewResponse = {
   date: string;
   items: Event[];
 };
+
+export type MonthViewParams = {
+  from: string;
+  to: string;
+  statusId?: number[];
+  eventTypeId?: number[];
+  orgId?: number[];
+};
+
+export type MonthViewResponseDTO = {
+  range: {
+    from: string;
+    to: string;
+  };
+  byDate: Record<string, { events: EventDTO[] }>;
+};
+
+export type MonthViewResponse = {
+  range: {
+    from: Date;
+    to: Date;
+  };
+  byDate: Record<string, { events: Event[] }>;
+};

@@ -7,7 +7,7 @@ import { DailyEventCard } from '@/components/calendar/DailyEventCard';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import type { Event } from '@/types/event';
-import { getDayEvents } from '@/api/event';
+import { eventKeys, getDayEvents } from '@/api/event';
 import { parseDateString } from '@/util/calendar/dateFormatter';
 import { BottomTabInset, Spacing } from '@/util/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -25,7 +25,7 @@ export function DailyEventsScreen({ date }: DailyEventsScreenProps) {
     isPending,
     isError,
   } = useQuery({
-    queryKey: ['dayEvents', date],
+    queryKey: eventKeys.day(date),
     queryFn: () => getDayEvents({ date }),
     enabled: Boolean(date),
   });
