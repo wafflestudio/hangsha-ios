@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
+import { useMemo } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -9,6 +10,7 @@ import { ThemedView } from '@/components/themed-view';
 import type { Event } from '@/types/event';
 import { eventKeys, getDayEvents } from '@/api/event';
 import { parseDateString } from '@/util/calendar/dateFormatter';
+import { filterDayEvents } from '@/util/calendar/filterDayEvents';
 import { BottomTabInset, Spacing } from '@/util/theme';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -38,6 +40,11 @@ export function DailyEventsScreen({ date }: DailyEventsScreenProps) {
       })
     : '';
 
+  const events = useMemo(
+    () => (date && data ? filterDayEvents(parseDateString(date), data.items) : []),
+    [date, data],
+  );
+
   if (isPending) {
     return (
       <ThemedView style={styles.centered}>
@@ -62,7 +69,7 @@ export function DailyEventsScreen({ date }: DailyEventsScreenProps) {
         </ThemedText>
 
         <FlatList
-          data={data.items}
+          data={events}
           keyExtractor={(event: Event) => String(event.id)}
           contentContainerStyle={styles.listContent}
           renderItem={({ item }) => (
