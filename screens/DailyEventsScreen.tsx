@@ -1,21 +1,30 @@
 import { useQuery } from '@tanstack/react-query';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
+import { SymbolView } from 'expo-symbols';
 import { useMemo } from 'react';
-import { ActivityIndicator, FlatList, StyleSheet } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { CalendarHeader } from '@/components/calendar/CalendarHeader';
 import { DailyEventCard } from '@/components/calendar/DailyEventCard';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import type { Event } from '@/types/event';
 import { eventKeys, getDayEvents } from '@/api/event';
-import { parseDateString } from '@/util/calendar/dateFormatter';
+import { formatDateToYYYYMMDD, parseDateString } from '@/util/calendar/dateFormatter';
 import { filterDayEvents } from '@/util/calendar/filterDayEvents';
 import { BottomTabInset, Spacing } from '@/util/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 type DailyEventsScreenProps = {
   date: string;
+};
+
+const addDays = (date: Date, amount: number): Date => {
+  const next = new Date(date);
+  next.setDate(next.getDate() + amount);
+  return next;
 };
 
 export function DailyEventsScreen({ date }: DailyEventsScreenProps) {
@@ -32,8 +41,10 @@ export function DailyEventsScreen({ date }: DailyEventsScreenProps) {
     enabled: Boolean(date),
   });
 
-  const headerLabel = date
-    ? parseDateString(date).toLocaleDateString('ko-KR', {
+  const selectedDate = date ? parseDateString(date) : null;
+
+  const headerLabel = selectedDate
+    ? selectedDate.toLocaleDateString('ko-KR', {
         year: 'numeric',
         month: 'long',
         day: 'numeric',
@@ -44,6 +55,14 @@ export function DailyEventsScreen({ date }: DailyEventsScreenProps) {
     () => (date && data ? filterDayEvents(parseDateString(date), data.items) : []),
     [date, data],
   );
+
+  const goToDate = (nextDate: Date) => {
+    router.setParams({ date: formatDateToYYYYMMDD(nextDate) });
+  };
+
+  const goToToday = () => goToDate(new Date());
+  const goToPreviousDay = () => selectedDate && goToDate(addDays(selectedDate, -1));
+  const goToNextDay = () => selectedDate && goToDate(addDays(selectedDate, 1));
 
   if (isPending) {
     return (
@@ -63,10 +82,64 @@ export function DailyEventsScreen({ date }: DailyEventsScreenProps) {
 
   return (
     <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-        <ThemedText type="subtitle" style={styles.header}>
-          {headerLabel}
-        </ThemedText>
+      <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+        <CalendarHeader
+          label={headerLabel}
+          left={
+            <>
+              <Pressable
+                style={styles.todayButton}
+                onPress={goToToday}
+                hitSlop={Spacing.two}
+                accessibilityRole="button"
+                accessibilityLabel="오늘로 이동">
+                <ThemedText type="small" themeColor="textSecondary">
+                  오늘
+                </ThemedText>
+              </Pressable>
+
+              <Pressable
+                style={styles.headerArrow}
+                onPress={goToPreviousDay}
+                hitSlop={Spacing.two}
+                accessibilityRole="button"
+                accessibilityLabel="이전 날">
+                <SymbolView
+                  name="chevron.left"
+                  tintColor={theme.textSecondary}
+                  size={18}
+                  weight="bold"
+                />
+              </Pressable>
+
+              <Pressable
+                style={styles.headerArrow}
+                onPress={goToNextDay}
+                hitSlop={Spacing.two}
+                accessibilityRole="button"
+                accessibilityLabel="다음 날">
+                <SymbolView
+                  name="chevron.right"
+                  tintColor={theme.textSecondary}
+                  size={18}
+                  weight="bold"
+                />
+              </Pressable>
+
+              <Pressable
+                style={styles.filterButton}
+                hitSlop={Spacing.two}
+                accessibilityRole="button"
+                accessibilityLabel="필터">
+                <Image
+                  source={require('@/assets/images/filter.svg')}
+                  style={styles.filterIcon}
+                  contentFit="contain"
+                />
+              </Pressable>
+            </>
+          }
+        />
 
         <FlatList
           data={events}
@@ -106,9 +179,40 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  header: {
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.three,
+  todayButton: {
+    paddingHorizontal: 7,
+    paddingVertical: Spacing.half,
+    borderRadius: Spacing.three,
+    borderWidth: 1,
+    borderColor: '#D9D9D9',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  headerArrow: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.one,
+  },
+  filterButton: {
+    width: 50,
+    height: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: '#FFFFFF',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  filterIcon: {
+    width: 19,
+    height: 19,
   },
   listContent: {
     paddingHorizontal: Spacing.three,

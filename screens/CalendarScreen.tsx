@@ -1,10 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
+import { Image } from 'expo-image';
 import { SymbolView } from 'expo-symbols';
 import { useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { eventKeys, getMonthEvents } from '@/api/event';
+import { CalendarHeader } from '@/components/calendar/CalendarHeader';
 import { CalendarWeekRow } from '@/components/calendar/CalendarWeekRow';
 import { MobileBottomNavigation } from '@/components/mobile-bottom-navigation';
 import { ThemedText } from '@/components/themed-text';
@@ -107,57 +109,57 @@ export function CalendarScreen({ onSelectDate }: CalendarScreenProps) {
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-        <View style={styles.header}>
-          <View style={styles.monthNav}>
-            <ThemedText type="subtitle" style={styles.monthLabel}>
-              {year}년 {month + 1}월
-            </ThemedText>
+        <CalendarHeader
+          label={`${year}년 ${month + 1}월`}
+          left={
+            <>
+              <Pressable
+                style={styles.headerArrow}
+                onPress={goToPreviousMonth}
+                hitSlop={Spacing.two}
+                accessibilityRole="button"
+                accessibilityLabel="이전 달">
+                <SymbolView
+                  name="chevron.left"
+                  tintColor={theme.textSecondary}
+                  size={18}
+                  weight="bold"
+                />
+              </Pressable>
 
-            <Pressable
-              style={styles.headerArrow}
-              onPress={goToPreviousMonth}
-              hitSlop={Spacing.two}
-              accessibilityRole="button"
-              accessibilityLabel="이전 달">
-              <SymbolView
-                name="chevron.left"
-                tintColor={theme.textSecondary}
-                size={18}
-                weight="bold"
-              />
+              <Pressable
+                style={styles.headerArrow}
+                onPress={goToNextMonth}
+                hitSlop={Spacing.two}
+                accessibilityRole="button"
+                accessibilityLabel="다음 달">
+                <SymbolView
+                  name="chevron.right"
+                  tintColor={theme.textSecondary}
+                  size={18}
+                  weight="bold"
+                />
+              </Pressable>
+
+              <Pressable
+                style={styles.filterButton}
+                hitSlop={Spacing.two}
+                accessibilityRole="button"
+                accessibilityLabel="필터">
+                <Image
+                  source={require('@/assets/images/filter.svg')}
+                  style={styles.filterIcon}
+                  contentFit="contain"
+                />
+              </Pressable>
+            </>
+          }
+          right={
+            <Pressable hitSlop={Spacing.two} accessibilityRole="button" accessibilityLabel="검색">
+              <SymbolView name="magnifyingglass" tintColor={theme.text} size={20} />
             </Pressable>
-
-            <Pressable
-              style={styles.headerArrow}
-              onPress={goToNextMonth}
-              hitSlop={Spacing.two}
-              accessibilityRole="button"
-              accessibilityLabel="다음 달">
-              <SymbolView
-                name="chevron.right"
-                tintColor={theme.textSecondary}
-                size={18}
-                weight="bold"
-              />
-            </Pressable>
-
-            <Pressable
-              style={styles.filterButton}
-              hitSlop={Spacing.two}
-              accessibilityRole="button"
-              accessibilityLabel="필터">
-              <SymbolView
-                name="slider.horizontal.3"
-                tintColor={theme.text}
-                size={25}
-              />
-            </Pressable>
-          </View>
-
-          <Pressable hitSlop={Spacing.two} accessibilityRole="button" accessibilityLabel="검색">
-            <SymbolView name="magnifyingglass" tintColor={theme.text} size={20} />
-          </Pressable>
-        </View>
+          }
+        />
 
         <View style={styles.weekdayRow}>
           {WEEKDAY_LABELS_KO.map((label, index) => (
@@ -222,30 +224,10 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 15,
-    paddingTop: 40,
-    paddingRight: 19,
-    paddingBottom: 10,
-    paddingLeft: 19,
-  },
-  monthNav: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingVertical: 2,
-  },
   headerArrow: {
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: Spacing.one,
-  },
-  monthLabel: {
-    fontSize: 20,
-    lineHeight: 26,
   },
   filterButton: {
     width: 50,
@@ -260,6 +242,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
+  },
+  filterIcon: {
+    width: 19,
+    height: 19,
   },
   weekdayRow: {
     flexDirection: 'row',
