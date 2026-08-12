@@ -9,12 +9,12 @@ import { CalendarWeekRow } from '@/components/calendar/CalendarWeekRow';
 import { MobileBottomNavigation } from '@/components/mobile-bottom-navigation';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { useTheme } from '@/hooks/use-theme';
 import type { Event, MonthViewResponse } from '@/types/event';
 import { buildMonthEventLayout } from '@/util/calendar/buildMonthEventLayout';
 import { formatDateToYYYYMMDD } from '@/util/calendar/dateFormatter';
 import { getMonthRange } from '@/util/calendar/getMonthRange';
 import { Spacing } from '@/util/theme';
-import { useTheme } from '@/hooks/use-theme';
 
 const WEEKDAY_LABELS_KO = ['일', '월', '화', '수', '목', '금', '토'];
 const MAX_VISIBLE_ROWS = 4;
@@ -114,42 +114,48 @@ export function CalendarScreen({ onSelectDate }: CalendarScreenProps) {
             </ThemedText>
 
             <Pressable
+              style={styles.headerArrow}
               onPress={goToPreviousMonth}
               hitSlop={Spacing.two}
               accessibilityRole="button"
               accessibilityLabel="이전 달">
-              <ThemedText
-                type="subtitle"
-                themeColor="textSecondary"
-                style={[styles.headerArrow, styles.monthLabel]}>
-                ‹
-              </ThemedText>
+              <SymbolView
+                name="chevron.left"
+                tintColor={theme.textSecondary}
+                size={18}
+                weight="bold"
+              />
             </Pressable>
 
             <Pressable
+              style={styles.headerArrow}
               onPress={goToNextMonth}
               hitSlop={Spacing.two}
               accessibilityRole="button"
               accessibilityLabel="다음 달">
-              <ThemedText
-                type="subtitle"
-                themeColor="textSecondary"
-                style={[styles.headerArrow, styles.monthLabel]}>
-                ›
-              </ThemedText>
+              <SymbolView
+                name="chevron.right"
+                tintColor={theme.textSecondary}
+                size={18}
+                weight="bold"
+              />
+            </Pressable>
+
+            <Pressable
+              style={styles.filterButton}
+              hitSlop={Spacing.two}
+              accessibilityRole="button"
+              accessibilityLabel="필터">
+              <SymbolView
+                name="slider.horizontal.3"
+                tintColor={theme.text}
+                size={25}
+              />
             </Pressable>
           </View>
 
-          <Pressable
-            style={styles.filterButton}
-            hitSlop={Spacing.two}
-            accessibilityRole="button"
-            accessibilityLabel="필터">
-            <SymbolView
-              name="slider.horizontal.3"
-              tintColor={theme.text}
-              size={14}
-            />
+          <Pressable hitSlop={Spacing.two} accessibilityRole="button" accessibilityLabel="검색">
+            <SymbolView name="magnifyingglass" tintColor={theme.text} size={20} />
           </Pressable>
         </View>
 
@@ -233,6 +239,8 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   headerArrow: {
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingHorizontal: Spacing.one,
   },
   monthLabel: {
@@ -240,8 +248,8 @@ const styles = StyleSheet.create({
     lineHeight: 26,
   },
   filterButton: {
-    width: 30,
-    height: 30,
+    width: 50,
+    height: 50,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 5,
