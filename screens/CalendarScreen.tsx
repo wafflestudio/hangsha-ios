@@ -1,14 +1,15 @@
 import { useQuery } from '@tanstack/react-query';
 import { SymbolView } from 'expo-symbols';
 import { useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { eventKeys, getMonthEvents } from '@/api/event';
-import { CalendarDayCell } from '@/components/calendar/CalendarDayCell';
+import { CalendarWeekRow } from '@/components/calendar/CalendarWeekRow';
 import { MobileBottomNavigation } from '@/components/mobile-bottom-navigation';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import type { Event, MonthViewResponse } from '@/types/event';
 import { buildMonthEventLayout } from '@/util/calendar/buildMonthEventLayout';
 import { formatDateToYYYYMMDD } from '@/util/calendar/dateFormatter';
 import { getMonthRange } from '@/util/calendar/getMonthRange';
@@ -17,6 +18,7 @@ import { useTheme } from '@/hooks/use-theme';
 
 const WEEKDAY_LABELS_KO = ['일', '월', '화', '수', '목', '금', '토'];
 const MAX_VISIBLE_ROWS = 4;
+const DAYS_PER_WEEK = 7;
 
 const addDays = (date: Date, amount: number): Date => {
   const next = new Date(date);
@@ -33,6 +35,28 @@ const buildMonthGridDates = (year: number, month: number): Date[] => {
   }
 
   return dates;
+};
+
+/**
+ * byDate 버킷을 날짜 키 오름차순으로 순회하며 이벤트를 평탄화한다. 같은
+ * 이벤트가 여러 날짜 버킷에 중복으로 들어있을 수 있어(여러 날에 걸친
+ * 이벤트) id 기준으로 처음 등장한 자리만 남긴다. hangsha-web
+ * CalendarView.tsx의 flattenByDate와 동일한 규칙 — 없으면 여러 날에 걸친
+ * 이벤트가 걸친 일수만큼 중복 카운트된다.
+ */
+const flattenByDate = (byDate: MonthViewResponse['byDate'] | undefined): Event[] => {
+  const seen = new Map<number, Event>();
+  const buckets = byDate ?? {};
+
+  for (const dateKey of Object.keys(buckets).sort()) {
+    for (const event of buckets[dateKey].events) {
+      if (!seen.has(event.id)) {
+        seen.set(event.id, event);
+      }
+    }
+  }
+
+  return Array.from(seen.values());
 };
 
 type CalendarScreenProps = {
@@ -65,11 +89,8 @@ export function CalendarScreen({ onSelectDate }: CalendarScreenProps) {
     queryFn: () => getMonthEvents({ from: rangeFrom, to: rangeTo }),
   });
 
-  const events = useMemo(
-    () => Object.values(monthData?.byDate ?? {}).flatMap((bucket) => bucket.events),
-    [monthData],
-  );
-  const segmentsByDate = useMemo(
+  const events = useMemo(() => flattenByDate(monthData?.byDate), [monthData]);
+  const weeks = useMemo(
     () => buildMonthEventLayout(gridDates, events),
     [gridDates, events],
   );
@@ -158,24 +179,28 @@ export function CalendarScreen({ onSelectDate }: CalendarScreenProps) {
         )}
 
         {!isPending && !isError && (
-          <View style={[styles.grid, { borderColor: theme.backgroundElement }]}>
-            {gridDates.map((date) => {
-              const dateKey = formatDateToYYYYMMDD(date);
+          <ScrollView
+            style={styles.gridScroll}
+            contentContainerStyle={[styles.grid, { borderColor: theme.backgroundElement }]}>
+            {weeks.map((weekBars, weekIndex) => {
+              const weekDates = gridDates.slice(
+                weekIndex * DAYS_PER_WEEK,
+                weekIndex * DAYS_PER_WEEK + DAYS_PER_WEEK,
+              );
 
               return (
-                <CalendarDayCell
-                  key={dateKey}
-                  date={date}
-                  isCurrentMonth={date.getMonth() === month}
-                  isToday={dateKey === todayKey}
-                  isSunday={date.getDay() === 0}
-                  segments={segmentsByDate.get(dateKey) ?? []}
+                <CalendarWeekRow
+                  key={formatDateToYYYYMMDD(weekDates[0])}
+                  weekDates={weekDates}
+                  currentMonth={month}
+                  todayKey={todayKey}
+                  bars={weekBars}
                   maxVisibleRows={MAX_VISIBLE_ROWS}
-                  onPress={onSelectDate ? () => onSelectDate(dateKey) : undefined}
+                  onSelectDate={onSelectDate}
                 />
               );
             })}
-          </View>
+          </ScrollView>
         )}
       </SafeAreaView>
 
@@ -241,9 +266,10 @@ const styles = StyleSheet.create({
   sundayText: {
     color: '#ac3a4f',
   },
+  gridScroll: {
+    flex: 1,
+  },
   grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
     marginHorizontal: 15,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderLeftWidth: StyleSheet.hairlineWidth,
