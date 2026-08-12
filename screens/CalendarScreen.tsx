@@ -120,7 +120,7 @@ export function CalendarScreen({ onSelectDate }: CalendarScreenProps) {
           </View>
 
           <Pressable
-            style={[styles.filterButton, { borderColor: theme.backgroundElement }]}
+            style={styles.filterButton}
             hitSlop={Spacing.two}
             accessibilityRole="button"
             accessibilityLabel="필터">
@@ -195,8 +195,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.three,
+    gap: 15,
+    paddingTop: 40,
+    paddingRight: 19,
+    paddingBottom: 10,
+    paddingLeft: 19,
   },
   monthNav: {
     flexDirection: 'row',
@@ -214,13 +217,20 @@ const styles = StyleSheet.create({
   filterButton: {
     width: 30,
     height: 30,
-    borderRadius: 5,
-    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: '#FFFFFF',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   weekdayRow: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     paddingHorizontal: Spacing.three,
   },
   weekdayCell: {
@@ -234,7 +244,7 @@ const styles = StyleSheet.create({
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginHorizontal: Spacing.three,
+    marginHorizontal: 15,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderLeftWidth: StyleSheet.hairlineWidth,
   },
