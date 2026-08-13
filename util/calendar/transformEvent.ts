@@ -24,7 +24,7 @@ export const normalizeEventTypeId = (eventTypeId: number): number =>
 
 const inferStatusId = (
   statusId: number,
-  applyEnd: Date | null | null,
+  applyEnd: Date | null,
   today: Date,
 ): number => {
   if (statusId) {
