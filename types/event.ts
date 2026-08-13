@@ -23,15 +23,15 @@ export type EventBase<TImageSource = string> = {
 };
 
 export type EventDTO = EventBase<string> & {
-  applyStart: string;
-  applyEnd: string;
-  eventStart: string;
-  eventEnd: string;
+  applyStart: string | null;
+  applyEnd: string | null;
+  eventStart: string | null;
+  eventEnd: string | null;
 };
 
 export type Event = EventBase<EventImageSource> & {
-  applyStart: Date;
-  applyEnd: Date;
+  applyStart: Date | null;
+  applyEnd: Date | null;
   eventStart: Date | null;
   eventEnd: Date | null;
 };
@@ -53,4 +53,53 @@ export type CalendarEvent = {
     event: Event | EventDetail;
     isPeriodEvent: boolean;
   };
+};
+
+export type DayViewParams = {
+  date: string;
+  page?: number;
+  size?: number;
+  statusId?: number[];
+  eventTypeId?: number[];
+  orgId?: number[];
+};
+
+export type DayViewResponseDTO = {
+  page: number;
+  size: number;
+  total: number;
+  date: string;
+  items: EventDTO[];
+};
+
+export type DayViewResponse = {
+  page: number;
+  size: number;
+  total: number;
+  date: string;
+  items: Event[];
+};
+
+export type MonthViewParams = {
+  from: string;
+  to: string;
+  statusId?: number[];
+  eventTypeId?: number[];
+  orgId?: number[];
+};
+
+export type MonthViewResponseDTO = {
+  range: {
+    from: string;
+    to: string;
+  };
+  byDate: Record<string, { events: EventDTO[] }>;
+};
+
+export type MonthViewResponse = {
+  range: {
+    from: Date;
+    to: Date;
+  };
+  byDate: Record<string, { events: Event[] }>;
 };

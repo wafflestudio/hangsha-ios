@@ -54,6 +54,20 @@ export const EventTypeColors = {
 
 export type EventTypeId = keyof typeof EventTypeColors.light;
 
+/**
+ * eventTypeId(1~7) 라벨 — hangsha-web `src/util/constants/index.ts`의
+ * CATEGORY_LIST 그대로 이식.
+ */
+export const EventTypeLabels: Record<EventTypeId, string> = {
+  1: '교육(특강/세미나)',
+  2: '공모전/경진대회',
+  3: '현장학습/인턴',
+  4: '사회공헌(봉사)',
+  5: '학습/진로상담',
+  6: 'OpenLnL',
+  7: '기타',
+};
+
 export const Fonts = Platform.select({
   ios: {
     /** iOS `UIFontDescriptorSystemDesignDefault` */
