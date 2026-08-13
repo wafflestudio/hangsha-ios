@@ -23,11 +23,7 @@ import { CategoryChip, DdayChip } from '@/components/events/EventChip';
 import { useAuth } from '@/contexts/AuthProvider';
 import { useUserData } from '@/contexts/UserDataContext';
 import type { Memo } from '@/types/userData';
-
-const formatMemoDate = (date: Date) =>
-  `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, '0')}/${String(
-    date.getDate(),
-  ).padStart(2, '0')}`;
+import { formatDateDotParsed } from '@/util/calendar/dateFormatter';
 
 export default function MemoScreen() {
   const router = useRouter();
@@ -255,7 +251,7 @@ function MemoListCard({
       </View>
 
       <Text style={styles.eventTitle}>{memo.eventTitle}</Text>
-      <Text style={styles.memoDate}>{formatMemoDate(memo.createdAt)}</Text>
+      <Text style={styles.memoDate}>{formatDateDotParsed(memo.createdAt)}</Text>
       <Text numberOfLines={3} style={styles.memoContent}>
         {memo.content}
       </Text>

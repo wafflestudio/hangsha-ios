@@ -30,6 +30,7 @@ import { useUserData } from '@/contexts/UserDataContext';
 import type { ProfileImage } from '@/types/auth';
 import type { Category } from '@/types/category';
 import type { Event } from '@/types/event';
+import { formatDateDotParsed } from '@/util/calendar/dateFormatter';
 
 const MAX_NAME_WEIGHT = 20;
 const MAX_PREFERENCES = 3;
@@ -52,11 +53,6 @@ const truncateToWeight = (value: string, maxWeight: number) => {
 
   return result;
 };
-
-const formatMemoDate = (date: Date) =>
-  `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(
-    date.getDate(),
-  ).padStart(2, '0')}`;
 
 export default function MyPageScreen() {
   const router = useRouter();
@@ -468,7 +464,7 @@ export default function MyPageScreen() {
                       <Text numberOfLines={1} style={styles.memoPreviewEventTitle}>
                         {memo.eventTitle}
                       </Text>
-                      <Text style={styles.memoPreviewDate}>{formatMemoDate(memo.createdAt)}</Text>
+                      <Text style={styles.memoPreviewDate}>{formatDateDotParsed(memo.createdAt)}</Text>
                       {memo.tags.length > 0 && (
                         <View style={styles.memoTagRow}>
                           {memo.tags.slice(0, 3).map((tag) => (
