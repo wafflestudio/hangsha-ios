@@ -1,0 +1,434 @@
+import { SymbolView } from 'expo-symbols';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  KeyboardAvoidingView,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+
+import type {
+  CreateCustomCourseRequest,
+  DayOfWeek,
+  Semester,
+  TimeSlot,
+} from '@/types/timetable';
+import { DAY_LABELS_KO } from '@/types/timetable';
+import { hasOverlap, VISIBLE_DAYS } from '@/util/timetable/layout';
+
+const ALL_DAYS: DayOfWeek[] = ['SUN', ...VISIBLE_DAYS, 'SAT'];
+const WHEEL_ITEM_HEIGHT = 36;
+const VISIBLE_WHEEL_ITEMS = 5;
+const WHEEL_HEIGHT = WHEEL_ITEM_HEIGHT * VISIBLE_WHEEL_ITEMS;
+
+type SlotRow = {
+  rowId: string;
+  dayOfweeks: DayOfWeek[];
+  startAt: number;
+  endAt: number;
+};
+
+type AddClassSheetProps = {
+  year: number;
+  semester: Semester;
+  existingSlots: TimeSlot[];
+  saving?: boolean;
+  onClose: () => void;
+  onSave: (request: CreateCustomCourseRequest) => Promise<void>;
+};
+
+let rowSequence = 0;
+const createSlotRow = (): SlotRow => ({
+  rowId: `slot-${Date.now()}-${rowSequence++}`,
+  dayOfweeks: ['MON'],
+  startAt: 8 * 60 + 10,
+  endAt: 11 * 60,
+});
+
+export function AddClassSheet({
+  year,
+  semester,
+  existingSlots,
+  saving = false,
+  onClose,
+  onSave,
+}: AddClassSheetProps) {
+  const [title, setTitle] = useState('');
+  const [instructor, setInstructor] = useState('');
+  const [credit, setCredit] = useState('');
+  const [rows, setRows] = useState<SlotRow[]>(() => [createSlotRow()]);
+
+  const updateRow = (rowId: string, patch: Partial<SlotRow>) =>
+    setRows((current) => current.map((row) => (row.rowId === rowId ? { ...row, ...patch } : row)));
+
+  const toggleDay = (rowId: string, day: DayOfWeek) =>
+    setRows((current) =>
+      current.map((row) => {
+        if (row.rowId !== rowId) return row;
+        const dayOfweeks = row.dayOfweeks.includes(day)
+          ? row.dayOfweeks.filter((item) => item !== day)
+          : [...row.dayOfweeks, day];
+        return { ...row, dayOfweeks };
+      }),
+    );
+
+  const expandedSlots = useMemo(
+    () =>
+      rows.flatMap((row) =>
+        row.dayOfweeks.map((dayOfweek) => ({
+          dayOfweek,
+          startAt: row.startAt,
+          endAt: row.endAt,
+        })),
+      ),
+    [rows],
+  );
+
+  const timeRangeValid = rows.every((row) => row.endAt > row.startAt);
+  const hasSelectedDay = rows.length > 0 && rows.every((row) => row.dayOfweeks.length > 0);
+  const conflict = expandedSlots.some(
+    (slot, index) =>
+      hasOverlap(existingSlots, slot) || hasOverlap(expandedSlots.slice(0, index), slot),
+  );
+  const canSave = title.trim().length > 0 && timeRangeValid && hasSelectedDay && !conflict;
+
+  const save = async () => {
+    if (!canSave) return;
+    await onSave({
+      year,
+      semester,
+      courseTitle: title.trim(),
+      timeSlots: expandedSlots,
+      instructor: instructor.trim() || undefined,
+      credit: credit.trim() ? Number(credit) : undefined,
+    });
+  };
+
+  return (
+    <>
+      <Pressable style={styles.dim} accessibilityLabel="수업 추가 닫기" onPress={onClose} />
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={70}
+        style={styles.sheet}>
+        <ScrollView
+          bounces={false}
+          keyboardShouldPersistTaps="handled"
+          nestedScrollEnabled
+          contentContainerStyle={styles.content}>
+          <View style={styles.sheetHeader}>
+            <Text style={styles.sheetTitle}>새 수업 추가</Text>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="수업 추가 닫기"
+              hitSlop={10}
+              onPress={onClose}>
+              <SymbolView name="xmark.circle.fill" tintColor="#A8A8A8" size={22} />
+            </Pressable>
+          </View>
+
+          <Field label="과목명 (필수)">
+            <TextInput
+              value={title}
+              placeholder="경제학개론"
+              placeholderTextColor="#A3A3A3"
+              style={styles.input}
+              onChangeText={setTitle}
+            />
+          </Field>
+
+          <Field label="교수명 (선택)">
+            <TextInput
+              value={instructor}
+              placeholder="박이택"
+              placeholderTextColor="#A3A3A3"
+              style={styles.input}
+              onChangeText={setInstructor}
+            />
+          </Field>
+
+          <Field label="학점 (선택)">
+            <TextInput
+              value={credit}
+              keyboardType="number-pad"
+              placeholder="3"
+              placeholderTextColor="#A3A3A3"
+              style={styles.input}
+              onChangeText={(value) => setCredit(value.replace(/[^0-9]/g, ''))}
+            />
+          </Field>
+
+          <Text style={styles.timeSectionTitle}>시간 (필수)</Text>
+
+          {rows.map((row, rowIndex) => (
+            <View key={row.rowId} style={styles.slotSection}>
+              {rows.length > 1 && (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`${rowIndex + 1}번째 시간 삭제`}
+                  hitSlop={8}
+                  style={styles.removeSlot}
+                  onPress={() => setRows((current) => current.filter((item) => item.rowId !== row.rowId))}>
+                  <SymbolView name="xmark.circle.fill" tintColor="#A8A8A8" size={20} />
+                </Pressable>
+              )}
+
+              <View style={styles.dayRow}>
+                {ALL_DAYS.map((day) => {
+                  const selected = row.dayOfweeks.includes(day);
+                  return (
+                    <Pressable
+                      key={day}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected }}
+                      style={[styles.dayButton, selected && styles.dayButtonSelected]}
+                      onPress={() => toggleDay(row.rowId, day)}>
+                      <Text style={[styles.dayText, selected && styles.dayTextSelected]}>
+                        {DAY_LABELS_KO[day]}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+
+              <TimePickerSection
+                label="시작 시간"
+                value={row.startAt}
+                onChange={(startAt) => updateRow(row.rowId, { startAt })}
+              />
+
+              <Text style={styles.rangeArrow}>↓</Text>
+
+              <TimePickerSection
+                label="종료 시간"
+                value={row.endAt}
+                onChange={(endAt) => updateRow(row.rowId, { endAt })}
+              />
+            </View>
+          ))}
+
+          <Pressable style={styles.addTimeButton} onPress={() => setRows((current) => [...current, createSlotRow()])}>
+            <Text style={styles.addTimeText}>+ 시간 추가</Text>
+          </Pressable>
+
+          {!title.trim() && <Text style={styles.error}>과목 이름은 필수입니다.</Text>}
+          {!hasSelectedDay && <Text style={styles.error}>요일을 하나 이상 선택해 주세요.</Text>}
+          {!timeRangeValid && <Text style={styles.error}>종료 시간은 시작 시간보다 늦어야 합니다.</Text>}
+          {conflict && <Text style={styles.error}>시간이 겹치는 수업이 있습니다.</Text>}
+
+          <Pressable
+            disabled={!canSave || saving}
+            style={[styles.saveButton, (!canSave || saving) && styles.disabled]}
+            onPress={() => void save()}>
+            <Text style={styles.saveText}>{saving ? '저장 중…' : '저장'}</Text>
+          </Pressable>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <View style={styles.field}>
+      <Text style={styles.fieldLabel}>{label}</Text>
+      {children}
+    </View>
+  );
+}
+
+type WheelOption<T extends string | number> = { value: T; label: string };
+
+function WheelColumn<T extends string | number>({
+  options,
+  value,
+  onChange,
+}: {
+  options: WheelOption<T>[];
+  value: T;
+  onChange: (next: T) => void;
+}) {
+  const listRef = useRef<ScrollView>(null);
+  const selectedIndex = Math.max(0, options.findIndex((option) => option.value === value));
+
+  useEffect(() => {
+    listRef.current?.scrollTo({ y: selectedIndex * WHEEL_ITEM_HEIGHT, animated: false });
+  }, [selectedIndex]);
+
+  const commit = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const index = Math.max(
+      0,
+      Math.min(options.length - 1, Math.round(event.nativeEvent.contentOffset.y / WHEEL_ITEM_HEIGHT)),
+    );
+    if (options[index].value !== value) onChange(options[index].value);
+  };
+
+  return (
+    <View style={styles.wheelColumnWrap}>
+      <ScrollView
+        ref={listRef}
+        showsVerticalScrollIndicator={false}
+        nestedScrollEnabled
+        snapToInterval={WHEEL_ITEM_HEIGHT}
+        decelerationRate="fast"
+        contentContainerStyle={styles.wheelPadding}
+        onMomentumScrollEnd={commit}
+        onScrollEndDrag={commit}
+        onContentSizeChange={() =>
+          listRef.current?.scrollTo({ y: selectedIndex * WHEEL_ITEM_HEIGHT, animated: false })
+        }>
+        {options.map((item, index) => {
+          const distance = Math.abs(index - selectedIndex);
+          return (
+            <Pressable
+              key={String(item.value)}
+              style={styles.wheelItem}
+              onPress={() => {
+                onChange(item.value);
+                listRef.current?.scrollTo({ y: index * WHEEL_ITEM_HEIGHT, animated: true });
+              }}>
+              <Text
+                style={[
+                  styles.wheelItemText,
+                  distance === 1 && styles.wheelItemNear,
+                  distance >= 2 && styles.wheelItemFar,
+                  distance === 0 && styles.wheelItemSelected,
+                ]}>
+                {item.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+    </View>
+  );
+}
+
+function TimePickerSection({ label, value, onChange }: { label: string; value: number; onChange: (value: number) => void }) {
+  const hour24 = Math.floor(value / 60);
+  const minute = value % 60;
+  const meridiem = hour24 < 12 ? 'AM' : 'PM';
+  const hour12 = hour24 % 12 || 12;
+  const meridiemOptions: WheelOption<'AM' | 'PM'>[] = [
+    { value: 'AM', label: '오전' },
+    { value: 'PM', label: '오후' },
+  ];
+  const hourOptions = Array.from({ length: 12 }, (_, index) => ({ value: index + 1, label: String(index + 1) }));
+  const minuteOptions = Array.from({ length: 12 }, (_, index) => ({ value: index * 5, label: String(index * 5).padStart(2, '0') }));
+
+  const update = (nextMeridiem = meridiem, nextHour = hour12, nextMinute = minute) => {
+    const nextHour24 = nextMeridiem === 'AM' ? nextHour % 12 : (nextHour % 12) + 12;
+    onChange(nextHour24 * 60 + nextMinute);
+  };
+
+  return (
+    <View style={styles.pickerSection}>
+      <View style={styles.pickerHeader}>
+        <Text style={styles.pickerLabel}>{label}</Text>
+        <Text style={styles.timeOutput}>
+          {String(hour24).padStart(2, '0')}:{String(minute).padStart(2, '0')}
+        </Text>
+      </View>
+      <View style={styles.wheel}>
+        <View pointerEvents="none" style={styles.selectionBand} />
+        <WheelColumn options={meridiemOptions} value={meridiem} onChange={(next) => update(next)} />
+        <WheelColumn options={hourOptions} value={hour12} onChange={(next) => update(meridiem, next)} />
+        <WheelColumn options={minuteOptions} value={minute} onChange={(next) => update(meridiem, hour12, next)} />
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  dim: { ...StyleSheet.absoluteFill, zIndex: 80, backgroundColor: 'transparent' },
+  sheet: {
+    position: 'absolute',
+    right: 0,
+    bottom: 0,
+    left: 0,
+    zIndex: 90,
+    maxHeight: '74%',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: '#EFEFF1',
+    borderTopLeftRadius: 20,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: -8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 18,
+    elevation: 16,
+  },
+  content: { paddingHorizontal: 20, paddingTop: 18, paddingBottom: 28 },
+  sheetHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 },
+  sheetTitle: { color: '#111111', fontSize: 20, fontWeight: '700' },
+  field: { gap: 8, marginBottom: 14 },
+  fieldLabel: { color: '#202020', fontSize: 14, fontWeight: '600' },
+  input: {
+    height: 46,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: '#E4E4E4',
+    borderRadius: 9,
+    color: '#111111',
+    fontSize: 16,
+  },
+  timeSectionTitle: { marginTop: 2, marginBottom: 14, color: '#111111', fontSize: 16, fontWeight: '700' },
+  slotSection: { marginBottom: 14 },
+  removeSlot: { alignSelf: 'flex-end', marginBottom: 5 },
+  dayRow: { flexDirection: 'row', gap: 4, marginBottom: 20 },
+  dayButton: {
+    flex: 1,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#E5E5E5',
+    borderRadius: 8,
+    backgroundColor: '#FFFFFF',
+  },
+  dayButtonSelected: { borderWidth: 1.5, borderColor: '#222222' },
+  dayText: { color: '#333333', fontSize: 15, fontWeight: '500' },
+  dayTextSelected: { color: '#111111', fontWeight: '700' },
+  pickerSection: { marginBottom: 3 },
+  pickerHeader: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 8, marginBottom: 8 },
+  pickerLabel: { color: '#7B818A', fontSize: 14, fontWeight: '600' },
+  timeOutput: { color: '#1677FF', fontSize: 14, fontWeight: '700', fontVariant: ['tabular-nums'] },
+  wheel: { height: WHEEL_HEIGHT, flexDirection: 'row', overflow: 'hidden', borderRadius: 18 },
+  selectionBand: {
+    position: 'absolute',
+    top: WHEEL_ITEM_HEIGHT * 2,
+    right: 0,
+    left: 0,
+    height: WHEEL_ITEM_HEIGHT,
+    borderRadius: 15,
+    backgroundColor: '#F3F4F6',
+  },
+  wheelColumnWrap: { flex: 1, height: WHEEL_HEIGHT },
+  wheelPadding: { paddingVertical: WHEEL_ITEM_HEIGHT * 2 },
+  wheelItem: { height: WHEEL_ITEM_HEIGHT, alignItems: 'center', justifyContent: 'center' },
+  wheelItemText: { color: '#1F2329', fontSize: 16, fontWeight: '500', fontVariant: ['tabular-nums'] },
+  wheelItemSelected: { fontSize: 17, fontWeight: '700', opacity: 1 },
+  wheelItemNear: { opacity: 0.45, transform: [{ scale: 0.92 }] },
+  wheelItemFar: { opacity: 0.14, transform: [{ scale: 0.84 }] },
+  rangeArrow: { alignSelf: 'center', marginVertical: 7, color: '#7B818A', fontSize: 23 },
+  addTimeButton: {
+    alignSelf: 'flex-start',
+    marginTop: 4,
+    marginBottom: 10,
+    paddingHorizontal: 13,
+    paddingVertical: 7,
+    borderRadius: 18,
+    backgroundColor: '#AEAEAE',
+  },
+  addTimeText: { color: '#FFFFFF', fontSize: 15, fontWeight: '600' },
+  error: { marginTop: 4, color: '#CC243B', fontSize: 13 },
+  saveButton: { alignItems: 'center', marginTop: 16, paddingVertical: 13, borderRadius: 24, backgroundColor: '#FF365E' },
+  saveText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
+  disabled: { opacity: 0.42 },
+});

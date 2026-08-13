@@ -10,11 +10,11 @@ export function useDayEventsQuery(date: string) {
   });
 }
 
-export function useMonthEventsQuery(from: string, to: string) {
+export function useMonthEventsQuery(from: string, to: string, enabled = true) {
   return useQuery({
     queryKey: eventKeys.month(from, to),
     queryFn: () => getMonthEvents({ from, to }),
-    enabled: Boolean(from && to),
+    enabled: Boolean(from && to && enabled),
   });
 }
 
