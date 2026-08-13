@@ -7,10 +7,17 @@ import type {
   MemoDTO,
   MemoUpdates,
 } from '@/types/userData';
-import { transformEvent } from '@/util/calendar/transformEvent';
+import { normalizeEventTypeId, transformEvent } from '@/util/calendar/transformEvent';
+import { parseDateString } from '@/util/calendar/dateFormatter';
 
 function transformMemo(memo: MemoDTO): Memo {
-  return { ...memo, createdAt: new Date(memo.createdAt) };
+  return {
+    ...memo,
+    categoryId: normalizeEventTypeId(memo.categoryId),
+    createdAt: parseDateString(memo.createdAt),
+    updatedAt: parseDateString(memo.updatedAt),
+    applyEnd: memo.applyEnd ? parseDateString(memo.applyEnd) : null,
+  };
 }
 
 export async function getCategoryGroups() {

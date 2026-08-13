@@ -21,6 +21,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { BookmarkWidget } from '@/components/bookmarks/BookmarkWidget';
 import { MobileBottomNavigation } from '@/components/mobile-bottom-navigation';
 import { useAuth } from '@/contexts/AuthProvider';
 import { useBugReport } from '@/contexts/BugReportContext';
@@ -28,6 +29,7 @@ import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useUserData } from '@/contexts/UserDataContext';
 import type { ProfileImage } from '@/types/auth';
 import type { Category } from '@/types/category';
+import type { Event } from '@/types/event';
 
 const MAX_NAME_WEIGHT = 20;
 const MAX_PREFERENCES = 3;
@@ -73,12 +75,14 @@ export default function MyPageScreen() {
   } = useAuth();
   const {
     bookmarkedEvents,
+    bookmarksLoading,
     eventMemos,
     interestCategories,
     interestCategoriesLoading,
     interestCategoriesSaving,
     refreshUserData,
     saveInterestPreferences,
+    toggleBookmark,
   } = useUserData();
   const { programTypes, organizations, isLoadingMeta, metadataError, refreshMetadata } =
     useOnboarding();
@@ -259,6 +263,14 @@ export default function MyPageScreen() {
     );
   };
 
+  const removeBookmark = async (event: Event) => {
+    try {
+      await toggleBookmark(event);
+    } catch {
+      Alert.alert('찜 해제 실패', '찜 목록을 변경하지 못했습니다. 잠시 후 다시 시도해주세요.');
+    }
+  };
+
   if (isAuthLoading) {
     return (
       <View style={styles.root}>
@@ -419,37 +431,12 @@ export default function MyPageScreen() {
               </Pressable>
             </View>
 
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <View style={styles.cardTitleRow}>
-                  <Text style={styles.sectionTitle}>내 찜 목록</Text>
-                  <ExpoImage
-                    source={require('@/assets/images/Bookmarked.svg')}
-                    style={styles.sectionIcon}
-                    contentFit="contain"
-                  />
-                </View>
-                <Text style={styles.countText}>{bookmarkedEvents.length}개</Text>
-              </View>
-              {bookmarkedEvents.length === 0 ? (
-                <Text style={styles.emptyText}>
-                  아직 찜한 행사가 없습니다.{`\n`}관심 있는 행사를 찜해보세요!
-                </Text>
-              ) : (
-                bookmarkedEvents.slice(0, 3).map((event) => (
-                  <View key={event.id} style={styles.listRow}>
-                    <View style={styles.listText}>
-                      <Text numberOfLines={1} style={styles.listTitle}>
-                        {event.title}
-                      </Text>
-                      <Text numberOfLines={1} style={styles.listSubtitle}>
-                        {event.organization}
-                      </Text>
-                    </View>
-                  </View>
-                ))
-              )}
-            </View>
+            <BookmarkWidget
+              events={bookmarkedEvents}
+              isLoading={bookmarksLoading}
+              onShowAll={() => router.push('/bookmark')}
+              onToggleBookmark={removeBookmark}
+            />
 
             <View style={styles.section}>
               <Pressable
@@ -839,28 +826,9 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: '#DDDDDD',
   },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
   sectionTitle: { color: '#222222', fontSize: 18, fontWeight: '800' },
   sectionIcon: { width: 18, height: 18 },
-  countText: { color: '#888888', fontSize: 13, fontWeight: '600' },
   emptyText: { paddingVertical: 18, color: '#777777', fontSize: 13, lineHeight: 20, textAlign: 'center' },
-  listRow: {
-    minHeight: 58,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    justifyContent: 'center',
-    borderRadius: 12,
-    backgroundColor: '#F7F8FA',
-    marginBottom: 8,
-  },
-  listText: { flex: 1 },
-  listTitle: { color: '#222222', fontSize: 14, fontWeight: '700' },
-  listSubtitle: { marginTop: 5, color: '#777777', fontSize: 12 },
   memoSectionHeader: {
     marginBottom: 28,
     flexDirection: 'row',

@@ -19,11 +19,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { MobileBottomNavigation } from '@/components/mobile-bottom-navigation';
+import { CategoryChip, DdayChip } from '@/components/events/EventChip';
 import { useAuth } from '@/contexts/AuthProvider';
 import { useUserData } from '@/contexts/UserDataContext';
 import type { Memo } from '@/types/userData';
-
-const MEMO_ACCENT_COLORS = ['#65D1E8', '#FFDA60', '#BE8AF4', '#77D9A5', '#FF9A9A'];
 
 const formatMemoDate = (date: Date) =>
   `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, '0')}/${String(
@@ -169,10 +168,9 @@ export default function MemoScreen() {
                 <Text style={styles.emptyDescription}>관심 있는 행사에 메모를 남겨보세요!</Text>
               </View>
             }
-            renderItem={({ item, index }) => (
+            renderItem={({ item }) => (
               <MemoListCard
                 memo={item}
-                accentColor={MEMO_ACCENT_COLORS[index % MEMO_ACCENT_COLORS.length]}
                 onEdit={() => openEditor(item)}
                 onDelete={() => confirmDelete(item)}
               />
@@ -239,22 +237,20 @@ export default function MemoScreen() {
 
 function MemoListCard({
   memo,
-  accentColor,
   onEdit,
   onDelete,
 }: {
   memo: Memo;
-  accentColor: string;
   onEdit: () => void;
   onDelete: () => void;
 }) {
   return (
     <View style={styles.memoCard}>
       <View style={styles.memoTopRow}>
-        <View style={[styles.accentDot, { backgroundColor: accentColor }]} />
-        <Text numberOfLines={1} style={styles.tagSummary}>
-          {memo.tags.length > 0 ? memo.tags.map((tag) => tag.name).join(' · ') : '메모'}
-        </Text>
+        <View style={styles.eventChipRow}>
+          <CategoryChip categoryId={memo.categoryId} />
+          <DdayChip targetDate={memo.applyEnd} variant="outlined" />
+        </View>
         <FontAwesomeFreeSolid name="bookmark" size={23} color="#ABABAB" />
       </View>
 
@@ -264,23 +260,34 @@ function MemoListCard({
         {memo.content}
       </Text>
 
-      <View style={styles.cardActions}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="메모 삭제"
-          hitSlop={10}
-          onPress={onDelete}
-          style={({ pressed }) => pressed && styles.pressed}>
-          <FontAwesomeFreeSolid name="trash" size={22} color="#8E8E8E" />
-        </Pressable>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="메모 수정"
-          hitSlop={10}
-          onPress={onEdit}
-          style={({ pressed }) => pressed && styles.pressed}>
-          <FontAwesomeFreeSolid name="edit" size={23} color="#8E8E8E" />
-        </Pressable>
+      <View style={styles.cardBottomRow}>
+        <View style={styles.memoTagRow}>
+          {memo.tags.map((tag) => (
+            <View key={tag.id} style={styles.memoTag}>
+              <Text numberOfLines={1} style={styles.memoTagText}>
+                {tag.name}
+              </Text>
+            </View>
+          ))}
+        </View>
+        <View style={styles.cardActions}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="메모 삭제"
+            hitSlop={10}
+            onPress={onDelete}
+            style={({ pressed }) => pressed && styles.pressed}>
+            <FontAwesomeFreeSolid name="trash" size={22} color="#8E8E8E" />
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="메모 수정"
+            hitSlop={10}
+            onPress={onEdit}
+            style={({ pressed }) => pressed && styles.pressed}>
+            <FontAwesomeFreeSolid name="edit" size={23} color="#8E8E8E" />
+          </Pressable>
+        </View>
       </View>
     </View>
   );
@@ -325,9 +332,8 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     elevation: 4,
   },
-  memoTopRow: { flexDirection: 'row', alignItems: 'center' },
-  accentDot: { width: 22, height: 22, marginRight: 10, borderRadius: 11 },
-  tagSummary: { flex: 1, color: '#858585', fontSize: 15 },
+  memoTopRow: { minHeight: 27, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  eventChipRow: { minWidth: 0, flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },
   eventTitle: {
     marginTop: 18,
     color: '#111111',
@@ -337,9 +343,25 @@ const styles = StyleSheet.create({
   },
   memoDate: { marginTop: 9, color: '#888888', fontSize: 13 },
   memoContent: { marginTop: 8, color: '#222222', fontSize: 14, lineHeight: 18 },
+  cardBottomRow: {
+    marginTop: 16,
+    minHeight: 27,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  memoTagRow: { minWidth: 0, flex: 1, flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
+  memoTag: {
+    maxWidth: '100%',
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 6,
+    backgroundColor: '#ECECEC',
+  },
+  memoTagText: { color: '#707070', fontSize: 12, fontWeight: '700' },
   cardActions: {
-    marginTop: 'auto',
-    paddingTop: 12,
+    flexShrink: 0,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',

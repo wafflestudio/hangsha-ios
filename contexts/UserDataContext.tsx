@@ -22,12 +22,14 @@ interface UserDataContextValue {
   excludedKeywords: ExcludedKeyword[];
   eventMemos: Memo[];
   isLoading: boolean;
+  bookmarksLoading: boolean;
   interestCategoriesLoading: boolean;
   interestCategoriesSaving: boolean;
   interestCategoriesError: Error | null;
   memoLoading: boolean;
   excludedKeywordLoading: boolean;
   refreshUserData: () => Promise<void>;
+  refreshBookmarks: () => Promise<void>;
   saveInterestPreferences: (categories: Category[]) => Promise<void>;
   addExcludedKeyword: (keyword: string) => Promise<void>;
   deleteExcludedKeyword: (id: number) => Promise<void>;
@@ -121,6 +123,7 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
       bookmarksQuery.isPending ||
       interestsQuery.isPending ||
       memosQuery.isPending,
+    bookmarksLoading: bookmarksQuery.isPending,
     interestCategoriesLoading: interestsQuery.isPending,
     interestCategoriesSaving: saveInterestsMutation.isPending,
     interestCategoriesError: interestsQuery.error,
@@ -135,6 +138,9 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
       deleteExcludedKeywordMutation.isPending,
     refreshUserData: async () => {
       await queryClient.refetchQueries({ queryKey: userDataKeys.all, type: 'active' });
+    },
+    refreshBookmarks: async () => {
+      await bookmarksQuery.refetch();
     },
     saveInterestPreferences: async (categories) => {
       await saveInterestsMutation.mutateAsync(categories);

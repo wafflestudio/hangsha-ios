@@ -30,8 +30,8 @@ export type EventDTO = EventBase<string> & {
 };
 
 export type Event = EventBase<EventImageSource> & {
-  applyStart: Date;
-  applyEnd: Date;
+  applyStart: Date | null;
+  applyEnd: Date | null;
   eventStart: Date | null;
   eventEnd: Date | null;
 };
