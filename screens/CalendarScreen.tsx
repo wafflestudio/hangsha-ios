@@ -1,16 +1,15 @@
-import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { SymbolView } from 'expo-symbols';
 import { useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { eventKeys, getMonthEvents } from '@/api/event';
 import { CalendarHeader } from '@/components/calendar/CalendarHeader';
 import { CalendarWeekRow } from '@/components/calendar/CalendarWeekRow';
 import { MobileBottomNavigation } from '@/components/mobile-bottom-navigation';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { useMonthEventsQuery } from '@/contexts/EventDataContext';
 import { useTheme } from '@/hooks/use-theme';
 import type { Event, MonthViewResponse } from '@/types/event';
 import { buildMonthEventLayout } from '@/util/calendar/buildMonthEventLayout';
@@ -86,10 +85,7 @@ export function CalendarScreen({ onSelectDate }: CalendarScreenProps) {
     data: monthData,
     isPending,
     isError,
-  } = useQuery({
-    queryKey: eventKeys.month(rangeFrom, rangeTo),
-    queryFn: () => getMonthEvents({ from: rangeFrom, to: rangeTo }),
-  });
+  } = useMonthEventsQuery(rangeFrom, rangeTo);
 
   const events = useMemo(() => flattenByDate(monthData?.byDate), [monthData]);
   const weeks = useMemo(

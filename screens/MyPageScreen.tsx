@@ -1,5 +1,6 @@
-import * as ImagePicker from 'expo-image-picker';
+import { FontAwesomeFreeSolid } from '@react-native-vector-icons/fontawesome-free-solid';
 import { Image as ExpoImage } from 'expo-image';
+import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
@@ -20,13 +21,16 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { BookmarkWidget } from '@/components/bookmarks/BookmarkWidget';
 import { MobileBottomNavigation } from '@/components/mobile-bottom-navigation';
 import { useAuth } from '@/contexts/AuthProvider';
 import { useBugReport } from '@/contexts/BugReportContext';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useUserData } from '@/contexts/UserDataContext';
-import type { Category } from '@/types/category';
 import type { ProfileImage } from '@/types/auth';
+import type { Category } from '@/types/category';
+import type { Event } from '@/types/event';
+import { formatDateDotParsed } from '@/util/calendar/dateFormatter';
 
 const MAX_NAME_WEIGHT = 20;
 const MAX_PREFERENCES = 3;
@@ -50,11 +54,6 @@ const truncateToWeight = (value: string, maxWeight: number) => {
   return result;
 };
 
-const formatMemoDate = (date: Date) =>
-  `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(
-    date.getDate(),
-  ).padStart(2, '0')}`;
-
 export default function MyPageScreen() {
   const router = useRouter();
   const {
@@ -72,12 +71,14 @@ export default function MyPageScreen() {
   } = useAuth();
   const {
     bookmarkedEvents,
+    bookmarksLoading,
     eventMemos,
     interestCategories,
     interestCategoriesLoading,
     interestCategoriesSaving,
     refreshUserData,
     saveInterestPreferences,
+    toggleBookmark,
   } = useUserData();
   const { programTypes, organizations, isLoadingMeta, metadataError, refreshMetadata } =
     useOnboarding();
@@ -258,6 +259,14 @@ export default function MyPageScreen() {
     );
   };
 
+  const removeBookmark = async (event: Event) => {
+    try {
+      await toggleBookmark(event);
+    } catch {
+      Alert.alert('찜 해제 실패', '찜 목록을 변경하지 못했습니다. 잠시 후 다시 시도해주세요.');
+    }
+  };
+
   if (isAuthLoading) {
     return (
       <View style={styles.root}>
@@ -274,7 +283,6 @@ export default function MyPageScreen() {
     return (
       <View style={styles.root}>
         <SafeAreaView style={styles.guestPage} edges={['top', 'left', 'right']}>
-          <Text style={styles.pageTitle}>마이페이지</Text>
           <View style={styles.guestCard}>
             <Text style={styles.guestTitle}>로그인이 필요해요</Text>
             <Text style={styles.guestDescription}>
@@ -307,8 +315,6 @@ export default function MyPageScreen() {
             refreshControl={
               <RefreshControl refreshing={isRefreshing} onRefresh={refresh} tintColor="#208AEF" />
             }>
-            <Text style={styles.pageTitle}>마이페이지</Text>
-
             <View style={styles.profileSection}>
               <View style={styles.profileRow}>
                 <Pressable
@@ -421,40 +427,19 @@ export default function MyPageScreen() {
               </Pressable>
             </View>
 
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <View style={styles.cardTitleRow}>
-                  <Text style={styles.sectionTitle}>내 찜 목록</Text>
-                  <ExpoImage
-                    source={require('@/assets/images/Bookmarked.svg')}
-                    style={styles.sectionIcon}
-                    contentFit="contain"
-                  />
-                </View>
-                <Text style={styles.countText}>{bookmarkedEvents.length}개</Text>
-              </View>
-              {bookmarkedEvents.length === 0 ? (
-                <Text style={styles.emptyText}>
-                  아직 찜한 행사가 없습니다.{`\n`}관심 있는 행사를 찜해보세요!
-                </Text>
-              ) : (
-                bookmarkedEvents.slice(0, 3).map((event) => (
-                  <View key={event.id} style={styles.listRow}>
-                    <View style={styles.listText}>
-                      <Text numberOfLines={1} style={styles.listTitle}>
-                        {event.title}
-                      </Text>
-                      <Text numberOfLines={1} style={styles.listSubtitle}>
-                        {event.organization}
-                      </Text>
-                    </View>
-                  </View>
-                ))
-              )}
-            </View>
+            <BookmarkWidget
+              events={bookmarkedEvents}
+              isLoading={bookmarksLoading}
+              onShowAll={() => router.push('/bookmark')}
+              onToggleBookmark={removeBookmark}
+            />
 
             <View style={styles.section}>
-              <View style={styles.sectionHeader}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="내 메모 목록 전체 보기"
+                onPress={() => router.push('/memos')}
+                style={({ pressed }) => [styles.memoSectionHeader, pressed && styles.pressed]}>
                 <View style={styles.cardTitleRow}>
                   <Text style={styles.sectionTitle}>내 메모 목록</Text>
                   <ExpoImage
@@ -463,37 +448,46 @@ export default function MyPageScreen() {
                     contentFit="contain"
                   />
                 </View>
-                <Text style={styles.countText}>{eventMemos.length}개</Text>
-              </View>
+                <Text style={styles.memoChevron}>›</Text>
+              </Pressable>
               {eventMemos.length === 0 ? (
                 <Text style={styles.emptyText}>
                   아직 메모가 없습니다.{`\n`}관심 있는 행사에 메모를 남겨보세요!
                 </Text>
               ) : (
-                eventMemos.slice(0, 3).map((memo) => (
-                  <View key={memo.id} style={styles.memoCard}>
-                    <Text numberOfLines={2} style={styles.memoContent}>
-                      {memo.content}
-                    </Text>
-                    <View style={styles.memoMetaRow}>
-                      <Text numberOfLines={1} style={styles.memoEventTitle}>
+                <View style={styles.memoPreviewGrid}>
+                  {eventMemos.slice(0, 2).map((memo) => (
+                    <View key={memo.id} style={styles.memoPreview}>
+                      <Text numberOfLines={2} style={styles.memoPreviewContent}>
+                        {memo.content}
+                      </Text>
+                      <Text numberOfLines={1} style={styles.memoPreviewEventTitle}>
                         {memo.eventTitle}
                       </Text>
-                      <Text style={styles.memoDate}>{formatMemoDate(memo.createdAt)}</Text>
+                      <Text style={styles.memoPreviewDate}>{formatDateDotParsed(memo.createdAt)}</Text>
+                      {memo.tags.length > 0 && (
+                        <View style={styles.memoTagRow}>
+                          {memo.tags.slice(0, 3).map((tag) => (
+                            <View key={tag.id} style={styles.memoTag}>
+                              <Text numberOfLines={1} style={styles.memoTagText}>
+                                {tag.name}
+                              </Text>
+                            </View>
+                          ))}
+                        </View>
+                      )}
                     </View>
-                  </View>
-                ))
+                  ))}
+                </View>
               )}
             </View>
 
             <View style={styles.section}>
               <View style={styles.bugHeader}>
-                <Text style={styles.bugIcon}>●</Text>
-                <View>
-                  <Text style={styles.sectionTitle}>버그 신고</Text>
-                  <Text style={styles.sectionDescription}>이용 중 발견한 문제를 알려주세요.</Text>
-                </View>
+                <FontAwesomeFreeSolid name="bug" size={20} color="#222222" />
+                <Text style={styles.bugTitle}>버그 신고</Text>
               </View>
+              <Text style={styles.sectionDescription}>이용 중 발견한 문제를 알려주세요.</Text>
               <TextInput
                 value={bugTitle}
                 onChangeText={setBugTitle}
@@ -579,56 +573,86 @@ export default function MyPageScreen() {
         onRequestClose={() => setIsInterestEditorOpen(false)}>
         <SafeAreaView style={styles.editorSafeArea}>
           <View style={styles.editorHeader}>
-            <Pressable onPress={() => setIsInterestEditorOpen(false)} disabled={interestCategoriesSaving}>
+            <Pressable
+              onPress={() => setIsInterestEditorOpen(false)}
+              disabled={interestCategoriesSaving}
+              style={styles.editorHeaderAction}>
               <Text style={styles.cancelText}>취소</Text>
             </Pressable>
-            <Text style={styles.editorTitle}>행사 보기 우선순위</Text>
-            <Pressable onPress={saveInterests} disabled={interestCategoriesSaving}>
-              <Text style={styles.doneText}>{interestCategoriesSaving ? '저장 중' : '완료'}</Text>
-            </Pressable>
+            <Text style={styles.editorTitle}>관심사 설정</Text>
+            <View style={styles.editorHeaderAction} />
           </View>
 
-          <View style={styles.selectedInterests}>
-            {draftInterests.length === 0 ? (
-              <Text style={styles.selectedHint}>최대 3개까지, 선택한 순서대로 저장돼요.</Text>
-            ) : (
-              draftInterests.map((item, index) => (
-                <View key={`${item.groupId}-${item.id}`} style={styles.selectedChip}>
-                  <Text style={styles.selectedChipText}>
-                    {index + 1}순위: {item.name}
-                  </Text>
-                </View>
-              ))
-            )}
-          </View>
-
-          {isLoadingMeta ? (
-            <View style={styles.editorLoading}>
-              <ActivityIndicator color="#208AEF" />
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.editorContent}>
+            <View style={styles.onboardingHeader}>
+              <Text style={styles.onboardingSubtitle}>
+                먼저 보고 싶은 행사의 카테고리 또는 주최기관을 선택해주세요.
+              </Text>
             </View>
-          ) : metadataError ? (
-            <View style={styles.editorLoading}>
-              <Text style={styles.loadingText}>선택 목록을 불러오지 못했습니다.</Text>
-              <Pressable onPress={refreshMetadata} style={styles.retryButton}>
-                <Text style={styles.doneText}>다시 시도</Text>
+
+            <View style={styles.selectedInterests}>
+              {draftInterests.length === 0 ? (
+                <Text style={styles.selectedHint}>최대 3개까지, 선택한 순서대로 저장돼요.</Text>
+              ) : (
+                draftInterests.map((item, index) => (
+                  <View key={`${item.groupId}-${item.id}`} style={styles.selectedChip}>
+                    <Text style={styles.selectedRankLabel}>{index + 1}순위:</Text>
+                    <Text style={styles.selectedChipText}>{item.name}</Text>
+                  </View>
+                ))
+              )}
+            </View>
+
+            {isLoadingMeta ? (
+              <View style={styles.editorLoading}>
+                <ActivityIndicator color="#16B7FF" />
+              </View>
+            ) : metadataError ? (
+              <View style={styles.editorLoading}>
+                <Text style={styles.loadingText}>선택 목록을 불러오지 못했습니다.</Text>
+                <Pressable onPress={refreshMetadata} style={styles.retryButton}>
+                  <Text style={styles.doneText}>다시 시도</Text>
+                </Pressable>
+              </View>
+            ) : (
+              <View style={styles.optionSections}>
+                <InterestOptions
+                  title="카테고리"
+                  tone="category"
+                  items={programTypes}
+                  selected={draftInterests}
+                  onToggle={toggleInterest}
+                />
+                <InterestOptions
+                  title="주최기관"
+                  tone="organization"
+                  items={organizations}
+                  selected={draftInterests}
+                  onToggle={toggleInterest}
+                />
+              </View>
+            )}
+
+            <View style={styles.editorActions}>
+              <Pressable
+                accessibilityRole="button"
+                onPress={saveInterests}
+                disabled={interestCategoriesSaving}
+                style={({ pressed }) => [
+                  styles.editorSubmit,
+                  pressed && styles.editorSubmitPressed,
+                  interestCategoriesSaving && styles.disabled,
+                ]}>
+                {interestCategoriesSaving ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.editorSubmitText}>완료</Text>
+                )}
               </Pressable>
             </View>
-          ) : (
-            <ScrollView contentContainerStyle={styles.optionSections}>
-              <InterestOptions
-                title="카테고리"
-                items={programTypes}
-                selected={draftInterests}
-                onToggle={toggleInterest}
-              />
-              <InterestOptions
-                title="주최기관"
-                items={organizations}
-                selected={draftInterests}
-                onToggle={toggleInterest}
-              />
-            </ScrollView>
-          )}
+          </ScrollView>
         </SafeAreaView>
       </Modal>
     </View>
@@ -637,18 +661,26 @@ export default function MyPageScreen() {
 
 function InterestOptions({
   title,
+  tone,
   items,
   selected,
   onToggle,
 }: {
   title: string;
+  tone: 'category' | 'organization';
   items: Category[];
   selected: Category[];
   onToggle: (category: Category) => void;
 }) {
   return (
     <View style={styles.optionSection}>
-      <Text style={styles.optionTitle}>{title}</Text>
+      <Text
+        style={[
+          styles.optionTitle,
+          tone === 'category' ? styles.optionTitleCategory : styles.optionTitleOrganization,
+        ]}>
+        {title}
+      </Text>
       <View style={styles.optionRow}>
         {items.map((item) => {
           const isSelected = selected.some(
@@ -658,7 +690,12 @@ function InterestOptions({
             <Pressable
               key={`${item.groupId}-${item.id}`}
               onPress={() => onToggle(item)}
-              style={[styles.optionChip, isSelected && styles.optionChipSelected]}>
+              style={({ pressed }) => [
+                styles.optionChip,
+                tone === 'category' ? styles.optionChipCategory : styles.optionChipOrganization,
+                isSelected && styles.optionChipSelected,
+                pressed && styles.optionChipPressed,
+              ]}>
               <Text style={[styles.optionChipText, isSelected && styles.optionChipTextSelected]}>
                 {item.name}
               </Text>
@@ -674,14 +711,12 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#FFFFFF' },
   flex: { flex: 1 },
   safeArea: { flex: 1, backgroundColor: '#FFFFFF' },
-  content: { width: '100%', maxWidth: 800, alignSelf: 'center', paddingBottom: 32 },
-  pageTitle: {
-    paddingHorizontal: 20,
-    paddingTop: 18,
-    paddingBottom: 20,
-    color: '#111111',
-    fontSize: 25,
-    fontWeight: '800',
+  content: {
+    width: '100%',
+    maxWidth: 800,
+    alignSelf: 'center',
+    paddingTop: 10,
+    paddingBottom: 32,
   },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
   loadingText: { color: '#777777', fontSize: 14 },
@@ -787,61 +822,75 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: '#DDDDDD',
   },
-  sectionHeader: {
+  sectionTitle: { color: '#222222', fontSize: 18, fontWeight: '800' },
+  sectionIcon: { width: 18, height: 18 },
+  emptyText: { paddingVertical: 18, color: '#777777', fontSize: 13, lineHeight: 20, textAlign: 'center' },
+  memoSectionHeader: {
+    marginBottom: 28,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 16,
   },
-  sectionTitle: { color: '#222222', fontSize: 18, fontWeight: '800' },
-  sectionIcon: { width: 18, height: 18 },
-  countText: { color: '#888888', fontSize: 13, fontWeight: '600' },
-  emptyText: { paddingVertical: 18, color: '#777777', fontSize: 13, lineHeight: 20, textAlign: 'center' },
-  listRow: {
-    minHeight: 58,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    justifyContent: 'center',
-    borderRadius: 12,
-    backgroundColor: '#F7F8FA',
-    marginBottom: 8,
+  memoChevron: { color: '#ABABAB', fontSize: 36, lineHeight: 36, fontWeight: '300' },
+  memoPreviewGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 28,
   },
-  listText: { flex: 1 },
-  listTitle: { color: '#222222', fontSize: 14, fontWeight: '700' },
-  listSubtitle: { marginTop: 5, color: '#777777', fontSize: 12 },
-  memoCard: {
-    padding: 14,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: '#E7E7E7',
-    borderRadius: 12,
-    backgroundColor: '#FFFFFF',
+  memoPreview: { width: '47%', minWidth: 0 },
+  memoPreviewContent: {
+    minHeight: 126,
+    color: '#222222',
+    fontSize: 16,
+    lineHeight: 23,
+    fontWeight: '700',
   },
-  memoContent: { color: '#333333', fontSize: 14, lineHeight: 20 },
-  memoMetaRow: { flexDirection: 'row', alignItems: 'center', marginTop: 10 },
-  memoEventTitle: { flex: 1, color: '#777777', fontSize: 12, fontWeight: '600' },
-  memoDate: { marginLeft: 8, color: '#999999', fontSize: 11 },
-  bugHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16 },
-  bugIcon: { color: '#D04D4D', fontSize: 16 },
-  sectionDescription: { marginTop: 4, color: '#777777', fontSize: 12 },
+  memoPreviewEventTitle: {
+    marginTop: 22,
+    color: '#999999',
+    fontSize: 15,
+    lineHeight: 21,
+    fontWeight: '800',
+  },
+  memoPreviewDate: { marginTop: 7, color: '#999999', fontSize: 14, lineHeight: 20 },
+  memoTagRow: { marginTop: 14, flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
+  memoTag: {
+    maxWidth: '100%',
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 6,
+    backgroundColor: '#ECECEC',
+  },
+  memoTagText: { color: '#707070', fontSize: 12, fontWeight: '700' },
+  bugHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  bugTitle: { color: '#222222', fontSize: 18, lineHeight: 25, fontWeight: '800' },
+  sectionDescription: {
+    marginTop: 6,
+    marginBottom: 14,
+    color: '#777777',
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '600',
+  },
   reportInput: {
     height: 46,
     paddingHorizontal: 13,
     borderWidth: 1,
-    borderColor: '#DADADA',
+    borderColor: '#DDDDDD',
     borderRadius: 10,
     color: '#222222',
     fontSize: 14,
+    fontWeight: '600',
     backgroundColor: '#FFFFFF',
     marginBottom: 10,
   },
-  reportTextArea: { height: 112, paddingTop: 12 },
+  reportTextArea: { height: 136, paddingTop: 13 },
   reportButton: {
     height: 44,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 10,
-    backgroundColor: '#555555',
+    backgroundColor: '#4D4D4D',
   },
   reportButtonText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
   accountSection: {
@@ -877,34 +926,88 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: '#DDDDDD',
   },
+  editorHeaderAction: { width: 48 },
   editorTitle: { color: '#222222', fontSize: 17, fontWeight: '800' },
+  editorContent: {
+    flexGrow: 1,
+    paddingTop: 30,
+    paddingHorizontal: 24,
+    paddingBottom: 80,
+  },
+  onboardingHeader: { alignItems: 'center' },
+  onboardingSubtitle: {
+    color: '#666666',
+    fontSize: 14,
+    lineHeight: 20,
+    textAlign: 'center',
+  },
   selectedInterests: {
-    minHeight: 78,
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    minHeight: 48,
+    marginTop: 44,
     flexDirection: 'row',
     flexWrap: 'wrap',
-    alignContent: 'flex-start',
-    gap: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
   },
-  selectedHint: { color: '#888888', fontSize: 13 },
-  selectedChip: { paddingHorizontal: 11, paddingVertical: 7, borderRadius: 18, backgroundColor: '#E6F4FE' },
-  selectedChipText: { color: '#176DB9', fontSize: 12, fontWeight: '800' },
-  editorLoading: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 14 },
-  retryButton: { paddingHorizontal: 16, paddingVertical: 10 },
-  optionSections: { padding: 20, paddingBottom: 40, gap: 30 },
-  optionSection: { gap: 14 },
-  optionTitle: { color: '#222222', fontSize: 18, fontWeight: '800' },
-  optionRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 9 },
-  optionChip: {
+  selectedHint: { color: '#888888', fontSize: 13, textAlign: 'center' },
+  selectedChip: {
     paddingHorizontal: 13,
     paddingVertical: 9,
-    borderWidth: 1,
-    borderColor: '#D4D4D4',
-    borderRadius: 22,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    borderRadius: 999,
     backgroundColor: '#FFFFFF',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 9,
+    elevation: 4,
   },
-  optionChipSelected: { borderColor: '#208AEF', backgroundColor: '#208AEF' },
-  optionChipText: { color: '#555555', fontSize: 13, fontWeight: '600' },
+  selectedRankLabel: { color: '#777777', fontSize: 16, fontWeight: '800' },
+  selectedChipText: { color: '#222222', fontSize: 16, fontWeight: '800' },
+  editorLoading: { minHeight: 200, alignItems: 'center', justifyContent: 'center', gap: 14 },
+  retryButton: { paddingHorizontal: 16, paddingVertical: 10 },
+  optionSections: { marginTop: 44, gap: 26 },
+  optionSection: { gap: 14 },
+  optionTitle: { fontSize: 18, fontWeight: '800', letterSpacing: -0.18 },
+  optionTitleCategory: { color: '#16B7FF' },
+  optionTitleOrganization: { color: '#18B56C' },
+  optionRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  optionChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 999,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  optionChipCategory: { backgroundColor: '#6FD2FF' },
+  optionChipOrganization: { backgroundColor: '#36C986' },
+  optionChipSelected: {
+    backgroundColor: '#BDBDBD',
+    shadowOpacity: 0.05,
+  },
+  optionChipPressed: { opacity: 0.8 },
+  optionChipText: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
   optionChipTextSelected: { color: '#FFFFFF' },
+  editorActions: { marginTop: 34, alignItems: 'center' },
+  editorSubmit: {
+    width: 120,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 14,
+    backgroundColor: '#16B7FF',
+    shadowColor: '#16B7FF',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 9,
+    elevation: 5,
+  },
+  editorSubmitPressed: { opacity: 0.9 },
+  editorSubmitText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
 });

@@ -1,25 +1,20 @@
-import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { useLocalSearchParams } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { ActivityIndicator, ScrollView, StyleSheet, View, useColorScheme } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { eventKeys, getEventDetail } from '@/api/event';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { useEventDetailQuery } from '@/contexts/EventDataContext';
 import { useTheme } from '@/hooks/use-theme';
 import { getDDay } from '@/util/calendar/getDday';
 import {
   BottomTabInset,
-  EventTypeColors,
-  EventTypeLabels,
+  getEventTypeColors,
+  getEventTypeLabel,
   Spacing,
-  type EventTypeId,
 } from '@/util/theme';
-
-const isKnownEventTypeId = (eventTypeId: number): eventTypeId is EventTypeId =>
-  eventTypeId in EventTypeColors.light;
 
 export function EventDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -31,11 +26,7 @@ export function EventDetailScreen() {
     data: event,
     isPending,
     isError,
-  } = useQuery({
-    queryKey: eventKeys.detail(eventId),
-    queryFn: () => getEventDetail(eventId),
-    enabled: Number.isFinite(eventId),
-  });
+  } = useEventDetailQuery(eventId);
 
   if (isPending) {
     return (
@@ -53,12 +44,8 @@ export function EventDetailScreen() {
     );
   }
 
-  const categoryColors = isKnownEventTypeId(event.eventTypeId)
-    ? EventTypeColors[scheme][event.eventTypeId]
-    : EventTypeColors[scheme][7];
-  const categoryLabel = isKnownEventTypeId(event.eventTypeId)
-    ? EventTypeLabels[event.eventTypeId]
-    : EventTypeLabels[7];
+  const categoryColors = getEventTypeColors(scheme, event.eventTypeId);
+  const categoryLabel = getEventTypeLabel(event.eventTypeId);
 
   return (
     <ThemedView style={styles.container}>

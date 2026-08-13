@@ -45,6 +45,9 @@ export const formatDateToYYYYMMDD = (date: Date): string => {
 export const formatDateDotParsed = (date: Date): string =>
   formatDateToYYYYMMDD(date).replaceAll("-", ".");
 
+export const formatDateSlashParsed = (date: Date): string =>
+  formatDateToYYYYMMDD(date).replaceAll("-", "/");
+
 export const formatDateToMMDD = (date: Date): string => {
   assertValidDate(date);
 
@@ -52,4 +55,30 @@ export const formatDateToMMDD = (date: Date): string => {
   const day = String(date.getDate()).padStart(2, "0");
 
   return `${month}.${day}`;
+};
+
+const formatRangeEnd = (start: Date, end: Date) => {
+  const isSameYear = start.getFullYear() === end.getFullYear();
+  const isSameMonth = isSameYear && start.getMonth() === end.getMonth();
+
+  if (isSameMonth) return String(end.getDate()).padStart(2, "0");
+  if (isSameYear) return formatDateToMMDD(end);
+  return formatDateDotParsed(end);
+};
+
+export const formatEventDateRange = (
+  start: Date | null,
+  end: Date | null,
+): string => {
+  if (start && end) {
+    return start.toDateString() === end.toDateString()
+      ? formatDateDotParsed(start)
+      : `${formatDateDotParsed(start)}~${formatRangeEnd(start, end)}`;
+  }
+
+  return end
+    ? formatDateDotParsed(end)
+    : start
+      ? formatDateDotParsed(start)
+      : "";
 };

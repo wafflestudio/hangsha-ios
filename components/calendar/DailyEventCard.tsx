@@ -4,11 +4,8 @@ import { SymbolView } from 'expo-symbols';
 import { ThemedText } from '@/components/themed-text';
 import type { Event } from '@/types/event';
 import { getDDay } from '@/util/calendar/getDday';
-import { EventTypeColors, Spacing, type EventTypeId } from '@/util/theme';
+import { getEventTypeColors, Spacing } from '@/util/theme';
 import { useTheme } from '@/hooks/use-theme';
-
-const isKnownEventTypeId = (eventTypeId: number): eventTypeId is EventTypeId =>
-  eventTypeId in EventTypeColors.light;
 
 type DailyEventCardProps = {
   event: Event;
@@ -21,9 +18,7 @@ export function DailyEventCard({ event, onPress }: DailyEventCardProps) {
 
   const ddayTargetDate = event.applyEnd ?? null;
   const displayDate = event.eventStart ?? event.applyStart;
-  const colors = isKnownEventTypeId(event.eventTypeId)
-    ? EventTypeColors[scheme][event.eventTypeId]
-    : EventTypeColors[scheme][7];
+  const colors = getEventTypeColors(scheme, event.eventTypeId);
 
   return (
     <Pressable

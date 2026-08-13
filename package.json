@@ -5,6 +5,7 @@
   "dependencies": {
     "@expo/ui": "~57.0.9",
     "@react-native-google-signin/google-signin": "^16.1.4",
+    "@react-native-vector-icons/fontawesome-free-solid": "^1.1.2",
     "@tanstack/react-query": "^5.101.2",
     "axios": "^1.18.1",
     "date-fns": "^4.4.0",

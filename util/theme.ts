@@ -54,6 +54,11 @@ export const EventTypeColors = {
 
 export type EventTypeId = keyof typeof EventTypeColors.light;
 
+export type EventColorScheme = keyof typeof EventTypeColors;
+
+export const getEventTypeColors = (scheme: EventColorScheme, eventTypeId: number) =>
+  EventTypeColors[scheme][eventTypeId as EventTypeId] ?? EventTypeColors[scheme][7];
+
 /**
  * eventTypeId(1~7) 라벨 — hangsha-web `src/util/constants/index.ts`의
  * CATEGORY_LIST 그대로 이식.
@@ -67,6 +72,9 @@ export const EventTypeLabels: Record<EventTypeId, string> = {
   6: 'OpenLnL',
   7: '기타',
 };
+
+export const getEventTypeLabel = (eventTypeId: number) =>
+  EventTypeLabels[eventTypeId as EventTypeId] ?? EventTypeLabels[7];
 
 export const Fonts = Platform.select({
   ios: {

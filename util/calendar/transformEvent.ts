@@ -1,4 +1,9 @@
-import type { Event, EventDetail, EventDetailDTO, EventDTO } from "@/types/event";
+import type {
+  Event,
+  EventDetail,
+  EventDetailDTO,
+  EventDTO,
+} from "@/types/event";
 
 import { parseDateString } from "./dateFormatter";
 
@@ -7,12 +12,13 @@ const CATEGORY_MAX_INDEX = 10;
 const FALLBACK_EVENT_TYPE_ID = 6;
 const BROKEN_THUMBNAIL_PATH = "extra.snu.ac.kr/comm/cmfile/";
 
-export const DEFAULT_EVENT_THUMBNAIL = require(
-  "@/assets/images/default-event-thumbnail.png",
-) as number;
+export const DEFAULT_EVENT_THUMBNAIL =
+  require("@/assets/images/default-event-thumbnail.png") as number;
 
-const normalizeEventTypeId = (eventTypeId: number): number =>
-  eventTypeId && eventTypeId >= CATEGORY_MIN_INDEX && eventTypeId <= CATEGORY_MAX_INDEX
+export const normalizeEventTypeId = (eventTypeId: number): number =>
+  eventTypeId &&
+  eventTypeId >= CATEGORY_MIN_INDEX &&
+  eventTypeId <= CATEGORY_MAX_INDEX
     ? eventTypeId - 3
     : FALLBACK_EVENT_TYPE_ID;
 
@@ -32,11 +38,7 @@ const inferStatusId = (
   return applyEnd < today ? 2 : 1;
 };
 
-export const transformEvent = (
-  dto: EventDTO,
-  today = new Date(),
-): Event => {
-  const applyStart = dto.applyStart ? parseDateString(dto.applyStart) : null;
+export const transformEvent = (dto: EventDTO, today = new Date()): Event => {
   const applyEnd = dto.applyEnd ? parseDateString(dto.applyEnd) : null;
 
   return {
@@ -46,8 +48,8 @@ export const transformEvent = (
       : dto.imageUrl,
     eventTypeId: normalizeEventTypeId(dto.eventTypeId),
     statusId: inferStatusId(dto.statusId, applyEnd, today),
-    applyStart,
-    applyEnd,
+    applyStart: dto.applyStart ? parseDateString(dto.applyStart) : null,
+    applyEnd: applyEnd,
     eventStart: dto.eventStart ? parseDateString(dto.eventStart) : null,
     eventEnd: dto.eventEnd ? parseDateString(dto.eventEnd) : null,
   };

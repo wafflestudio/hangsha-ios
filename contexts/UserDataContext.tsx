@@ -1,17 +1,22 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createContext, type ReactNode, useContext, useEffect } from 'react';
 
 import * as userApi from '@/api/user';
+import type { BookmarksResponse } from '@/api/user';
+import { eventKeys } from '@/api/event';
 import { useAuth } from '@/contexts/AuthProvider';
 import type { Category } from '@/types/category';
 import type { Event } from '@/types/event';
 import type { ExcludedKeyword, Memo, MemoUpdates } from '@/types/userData';
 
+const BOOKMARK_PREVIEW_SIZE = 5;
+const BOOKMARK_PAGE_SIZE = 20;
+
 export const userDataKeys = {
   all: ['user-data'] as const,
   excludedKeywords: () => [...userDataKeys.all, 'excluded-keywords'] as const,
   bookmarksAll: () => [...userDataKeys.all, 'bookmarks'] as const,
-  bookmarks: (page = 1, size = 20) => [...userDataKeys.bookmarksAll(), page, size] as const,
+  bookmarks: (page: number, size: number) => [...userDataKeys.bookmarksAll(), page, size] as const,
   interests: () => [...userDataKeys.all, 'interest-categories'] as const,
   memos: () => [...userDataKeys.all, 'memos'] as const,
   memosByTag: (tagId: number) => [...userDataKeys.memos(), 'tag', tagId] as const,
@@ -23,16 +28,18 @@ interface UserDataContextValue {
   excludedKeywords: ExcludedKeyword[];
   eventMemos: Memo[];
   isLoading: boolean;
+  bookmarksLoading: boolean;
   interestCategoriesLoading: boolean;
   interestCategoriesSaving: boolean;
   interestCategoriesError: Error | null;
   memoLoading: boolean;
   excludedKeywordLoading: boolean;
   refreshUserData: () => Promise<void>;
+  refreshBookmarks: () => Promise<void>;
   saveInterestPreferences: (categories: Category[]) => Promise<void>;
   addExcludedKeyword: (keyword: string) => Promise<void>;
   deleteExcludedKeyword: (id: number) => Promise<void>;
-  toggleBookmark: (event: Event) => Promise<void>;
+  toggleBookmark: (target: Pick<Event, 'id' | 'isBookmarked'>) => Promise<void>;
   getMemoByTag: (tagId: number) => Promise<Memo[]>;
   addMemo: (eventId: number, content: string, tagNames: string[]) => Promise<void>;
   deleteMemo: (id: number) => Promise<void>;
@@ -40,6 +47,29 @@ interface UserDataContextValue {
 }
 
 const UserDataContext = createContext<UserDataContextValue | null>(null);
+
+export function useBookmarksPreview() {
+  const { isAuthenticated } = useAuth();
+
+  return useQuery({
+    queryKey: userDataKeys.bookmarks(1, BOOKMARK_PREVIEW_SIZE),
+    queryFn: () => userApi.getBookmarks(1, BOOKMARK_PREVIEW_SIZE),
+    enabled: isAuthenticated,
+  });
+}
+
+export function useBookmarksInfinite() {
+  const { isAuthenticated } = useAuth();
+
+  return useInfiniteQuery({
+    queryKey: [...userDataKeys.bookmarksAll(), 'infinite', BOOKMARK_PAGE_SIZE] as const,
+    queryFn: ({ pageParam }) => userApi.getBookmarks(pageParam, BOOKMARK_PAGE_SIZE),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) =>
+      lastPage.page * lastPage.size < lastPage.total ? lastPage.page + 1 : undefined,
+    enabled: isAuthenticated,
+  });
+}
 
 export function UserDataProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
@@ -50,11 +80,7 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
     queryFn: userApi.getExcludedKeywords,
     enabled: isAuthenticated,
   });
-  const bookmarksQuery = useQuery({
-    queryKey: userDataKeys.bookmarks(),
-    queryFn: () => userApi.getBookmarks(),
-    enabled: isAuthenticated,
-  });
+  const bookmarksPreviewQuery = useBookmarksPreview();
   const interestsQuery = useQuery({
     queryKey: userDataKeys.interests(),
     queryFn: userApi.getInterestCategories,
@@ -85,12 +111,26 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: userDataKeys.excludedKeywords() }),
   });
   const toggleBookmarkMutation = useMutation({
-    mutationFn: async (event: Event) => {
-      const cachedBookmarks = queryClient.getQueryData<Event[]>(userDataKeys.bookmarks());
-      const isBookmarked = cachedBookmarks?.some(({ id }) => id === event.id) ?? event.isBookmarked ?? false;
-      await (isBookmarked ? userApi.removeBookmark(event.id) : userApi.addBookmark(event.id));
+    mutationFn: async (target: Pick<Event, 'id' | 'isBookmarked'>) => {
+      const cachedBookmarkPages = queryClient.getQueriesData<BookmarksResponse>({
+        queryKey: userDataKeys.bookmarksAll(),
+      });
+      const isBookmarked =
+        cachedBookmarkPages.some(([, page]) => page?.items.some(({ id }) => id === target.id)) ||
+        target.isBookmarked === true;
+      await (isBookmarked ? userApi.removeBookmark(target.id) : userApi.addBookmark(target.id));
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: userDataKeys.bookmarksAll() }),
+    onSuccess: async (_, target) => {
+      queryClient.setQueryData<Memo[]>(userDataKeys.memos(), (memos = []) =>
+        memos.map((memo) =>
+          memo.eventId === target.id ? { ...memo, isBookmarked: !memo.isBookmarked } : memo,
+        ),
+      );
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: userDataKeys.bookmarksAll() }),
+        queryClient.invalidateQueries({ queryKey: eventKeys.all }),
+      ]);
+    },
   });
   const addMemoMutation = useMutation({
     mutationFn: ({ eventId, content, tagNames }: { eventId: number; content: string; tagNames: string[] }) =>
@@ -113,15 +153,16 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
   });
 
   const value: UserDataContextValue = {
-    bookmarkedEvents: bookmarksQuery.data ?? [],
+    bookmarkedEvents: bookmarksPreviewQuery.data?.items ?? [],
     interestCategories: interestsQuery.data ?? [],
     excludedKeywords: excludedKeywordsQuery.data ?? [],
     eventMemos: memosQuery.data ?? [],
     isLoading:
       excludedKeywordsQuery.isPending ||
-      bookmarksQuery.isPending ||
+      bookmarksPreviewQuery.isPending ||
       interestsQuery.isPending ||
       memosQuery.isPending,
+    bookmarksLoading: bookmarksPreviewQuery.isPending,
     interestCategoriesLoading: interestsQuery.isPending,
     interestCategoriesSaving: saveInterestsMutation.isPending,
     interestCategoriesError: interestsQuery.error,
@@ -136,6 +177,9 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
       deleteExcludedKeywordMutation.isPending,
     refreshUserData: async () => {
       await queryClient.refetchQueries({ queryKey: userDataKeys.all, type: 'active' });
+    },
+    refreshBookmarks: async () => {
+      await bookmarksPreviewQuery.refetch();
     },
     saveInterestPreferences: async (categories) => {
       await saveInterestsMutation.mutateAsync(categories);

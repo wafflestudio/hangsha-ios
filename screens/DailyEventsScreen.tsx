@@ -1,4 +1,3 @@
-import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
@@ -10,8 +9,8 @@ import { CalendarHeader } from '@/components/calendar/CalendarHeader';
 import { DailyEventCard } from '@/components/calendar/DailyEventCard';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { useDayEventsQuery } from '@/contexts/EventDataContext';
 import type { Event } from '@/types/event';
-import { eventKeys, getDayEvents } from '@/api/event';
 import { formatDateToYYYYMMDD, parseDateString } from '@/util/calendar/dateFormatter';
 import { filterDayEvents } from '@/util/calendar/filterDayEvents';
 import { BottomTabInset, Spacing } from '@/util/theme';
@@ -35,11 +34,7 @@ export function DailyEventsScreen({ date }: DailyEventsScreenProps) {
     data,
     isPending,
     isError,
-  } = useQuery({
-    queryKey: eventKeys.day(date),
-    queryFn: () => getDayEvents({ date }),
-    enabled: Boolean(date),
-  });
+  } = useDayEventsQuery(date);
 
   const selectedDate = date ? parseDateString(date) : null;
 
