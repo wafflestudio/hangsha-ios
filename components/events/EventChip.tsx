@@ -1,19 +1,7 @@
 import { StyleSheet, Text, type StyleProp, type TextStyle, View } from 'react-native';
 
-import { EventTypeColors, type EventTypeId } from '@/util/theme';
+import { getEventTypeColors, getEventTypeLabel } from '@/util/theme';
 import { getDDay } from '@/util/calendar/getDday';
-
-const EVENT_TYPE_LABELS: Record<number, string> = {
-  1: '교육(특강/세미나)',
-  2: '공모전/경진대회',
-  3: '현장학습/인턴',
-  4: '사회공헌(봉사)',
-  5: '학습/진로상담',
-  6: 'OpenLnL',
-  7: '기타',
-};
-
-const FALLBACK_CHIP_COLORS = { background: '#E0E0E0', text: '#616161' };
 
 type EventChipProps = {
   compact?: boolean;
@@ -30,9 +18,6 @@ type DdayChipProps = EventChipProps & {
   targetDate: Date | string | null | undefined;
   variant?: 'outlined' | 'plain';
 };
-
-const getCategoryColors = (categoryId: number) =>
-  EventTypeColors.light[categoryId as EventTypeId] ?? FALLBACK_CHIP_COLORS;
 
 export function DdayChip({
   compact = false,
@@ -64,12 +49,13 @@ export function CategoryChip({
   style,
   variant = 'chip',
 }: CategoryChipProps) {
-  const colors = getCategoryColors(categoryId);
+  const colors = getEventTypeColors('light', categoryId);
+  const label = getEventTypeLabel(categoryId);
 
   if (variant === 'circle') {
     return (
       <View
-        accessibilityLabel={`행사 카테고리: ${EVENT_TYPE_LABELS[categoryId] ?? '기타'}`}
+        accessibilityLabel={`행사 카테고리: ${label}`}
         style={[styles.circle, { backgroundColor: colors.background }]}
       />
     );
@@ -80,7 +66,7 @@ export function CategoryChip({
       <Text
         numberOfLines={1}
         style={[styles.text, { color: colors.text }, compact && styles.compactText, style]}>
-        {EVENT_TYPE_LABELS[categoryId] ?? '기타'}
+        {label}
       </Text>
     </View>
   );

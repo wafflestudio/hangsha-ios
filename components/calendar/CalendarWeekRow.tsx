@@ -4,7 +4,7 @@ import { CalendarDayCell } from '@/components/calendar/CalendarDayCell';
 import { ThemedText } from '@/components/themed-text';
 import { formatDateToYYYYMMDD } from '@/util/calendar/dateFormatter';
 import type { WeekEventBar } from '@/util/calendar/buildMonthEventLayout';
-import { EventTypeColors, Spacing, type EventTypeId } from '@/util/theme';
+import { getEventTypeColors, Spacing } from '@/util/theme';
 
 const ROW_HEIGHT = 18;
 const DATE_BADGE_HEIGHT = 34;
@@ -13,9 +13,6 @@ const GRID_HORIZONTAL_MARGIN = Spacing.three * 2;
 const CELL_WIDTH = Math.floor(
   (Dimensions.get('window').width - GRID_HORIZONTAL_MARGIN) / DAYS_PER_WEEK,
 );
-
-const isKnownEventTypeId = (eventTypeId: number): eventTypeId is EventTypeId =>
-  eventTypeId in EventTypeColors.light;
 
 type CalendarWeekRowProps = {
   weekDates: readonly Date[];
@@ -35,8 +32,6 @@ export function CalendarWeekRow({
   onSelectDate,
 }: CalendarWeekRowProps) {
   const scheme = useColorScheme() === 'dark' ? 'dark' : 'light';
-  const eventTypeColors = EventTypeColors[scheme];
-
   const visibleBars = bars.filter((bar) => bar.rowIndex < maxVisibleRows);
   const overflowCountByDay = new Array(DAYS_PER_WEEK).fill(0) as number[];
   for (const bar of bars) {
@@ -70,9 +65,7 @@ export function CalendarWeekRow({
 
       <View style={styles.barLayer} pointerEvents="none">
         {visibleBars.map((bar) => {
-          const colors = isKnownEventTypeId(bar.eventTypeId)
-            ? eventTypeColors[bar.eventTypeId]
-            : eventTypeColors[7];
+          const colors = getEventTypeColors(scheme, bar.eventTypeId);
           const left = bar.dayIndex * CELL_WIDTH;
           const width = bar.spanDays * CELL_WIDTH;
           const top = DATE_BADGE_HEIGHT + bar.rowIndex * ROW_HEIGHT;
