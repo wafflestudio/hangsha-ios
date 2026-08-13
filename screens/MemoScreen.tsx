@@ -28,7 +28,7 @@ import { formatDateDotParsed } from '@/util/calendar/dateFormatter';
 export default function MemoScreen() {
   const router = useRouter();
   const { user, isLoading: isAuthLoading } = useAuth();
-  const { eventMemos, memoLoading, refreshUserData, deleteMemo, updateMemo } = useUserData();
+  const { eventMemos, memoLoading, refreshUserData, deleteMemo, toggleBookmark, updateMemo } = useUserData();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [editingMemo, setEditingMemo] = useState<Memo | null>(null);
   const [draftContent, setDraftContent] = useState('');
@@ -91,6 +91,14 @@ export default function MemoScreen() {
         },
       },
     ]);
+  };
+
+  const handleToggleBookmark = async (memo: Memo) => {
+    try {
+      await toggleBookmark({ id: memo.eventId, isBookmarked: memo.isBookmarked });
+    } catch {
+      Alert.alert('찜 변경 실패', '찜 상태를 변경하지 못했습니다. 잠시 후 다시 시도해주세요.');
+    }
   };
 
   if (isAuthLoading) {
@@ -169,6 +177,7 @@ export default function MemoScreen() {
                 memo={item}
                 onEdit={() => openEditor(item)}
                 onDelete={() => confirmDelete(item)}
+                onToggleBookmark={() => handleToggleBookmark(item)}
               />
             )}
           />
@@ -235,23 +244,44 @@ function MemoListCard({
   memo,
   onEdit,
   onDelete,
+  onToggleBookmark,
 }: {
   memo: Memo;
   onEdit: () => void;
   onDelete: () => void;
+  onToggleBookmark: () => Promise<void>;
 }) {
   return (
     <View style={styles.memoCard}>
       <View style={styles.memoTopRow}>
         <View style={styles.eventChipRow}>
-          <CategoryChip categoryId={memo.categoryId} />
-          <DdayChip targetDate={memo.applyEnd} variant="outlined" />
+          <CategoryChip categoryId={memo.categoryId} variant="circle" />
+          <DdayChip prefix="" targetDate={memo.applyEnd} variant="plain" />
         </View>
-        <FontAwesomeFreeSolid name="bookmark" size={23} color="#ABABAB" />
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={memo.isBookmarked ? '찜 해제' : '찜하기'}
+          accessibilityState={{ selected: memo.isBookmarked }}
+          hitSlop={8}
+          onPress={onToggleBookmark}
+          style={({ pressed }) => [styles.bookmarkButton, pressed && styles.pressed]}>
+          <Image
+            source={
+              memo.isBookmarked
+                ? require('@/assets/images/Bookmarked.svg')
+                : require('@/assets/images/notBookmarked.svg')
+            }
+            style={styles.bookmarkIcon}
+            contentFit="contain"
+          />
+        </Pressable>
       </View>
 
       <Text style={styles.eventTitle}>{memo.eventTitle}</Text>
-      <Text style={styles.memoDate}>{formatDateDotParsed(memo.createdAt)}</Text>
+      <View style={styles.eventMetadata}>
+        {memo.applyEnd && <Text style={styles.memoDate}>{formatDateDotParsed(memo.applyEnd)}</Text>}
+        {memo.organization && <Text style={styles.organizationName}>{memo.organization.name}</Text>}
+      </View>
       <Text numberOfLines={3} style={styles.memoContent}>
         {memo.content}
       </Text>
@@ -295,10 +325,11 @@ const styles = StyleSheet.create({
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 },
   loadingText: { color: '#777777', fontSize: 13 },
   header: {
-    height: 74,
+    height: 92,
     paddingHorizontal: 20,
     flexDirection: 'row',
     alignItems: 'center',
+    paddingTop: 35,
     gap: 10,
   },
   headerTitle: { color: '#171717', fontSize: 18, lineHeight: 25, fontWeight: '800' },
@@ -316,8 +347,7 @@ const styles = StyleSheet.create({
   emptyTitle: { marginTop: 18, color: '#333333', fontSize: 17, fontWeight: '800' },
   emptyDescription: { marginTop: 7, color: '#888888', fontSize: 13 },
   memoCard: {
-    minHeight: 220,
-    marginBottom: 18,
+    marginBottom: 38,
     paddingHorizontal: 11,
     paddingTop: 17,
     paddingBottom: 14,
@@ -329,7 +359,9 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   memoTopRow: { minHeight: 27, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  eventChipRow: { minWidth: 0, flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  eventChipRow: { minWidth: 0, flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  bookmarkButton: { width: 27, height: 27, alignItems: 'center', justifyContent: 'center' },
+  bookmarkIcon: { width: 23, height: 23 },
   eventTitle: {
     marginTop: 18,
     color: '#111111',
@@ -337,8 +369,10 @@ const styles = StyleSheet.create({
     lineHeight: 23,
     fontWeight: '800',
   },
-  memoDate: { marginTop: 9, color: '#888888', fontSize: 13 },
-  memoContent: { marginTop: 8, color: '#222222', fontSize: 14, lineHeight: 18 },
+  eventMetadata: { marginTop: 9, flexDirection: 'row', alignItems: 'center', gap: 15 },
+  memoDate: { color: '#888888', fontSize: 13, lineHeight: 18 },
+  organizationName: { color: '#888888', fontSize: 13, lineHeight: 18 },
+  memoContent: { marginTop: 7, color: '#222222', fontSize: 14, lineHeight: 18 },
   cardBottomRow: {
     marginTop: 16,
     minHeight: 27,

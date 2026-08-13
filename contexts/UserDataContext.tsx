@@ -39,7 +39,7 @@ interface UserDataContextValue {
   saveInterestPreferences: (categories: Category[]) => Promise<void>;
   addExcludedKeyword: (keyword: string) => Promise<void>;
   deleteExcludedKeyword: (id: number) => Promise<void>;
-  toggleBookmark: (event: Event) => Promise<void>;
+  toggleBookmark: (target: Pick<Event, 'id' | 'isBookmarked'>) => Promise<void>;
   getMemoByTag: (tagId: number) => Promise<Memo[]>;
   addMemo: (eventId: number, content: string, tagNames: string[]) => Promise<void>;
   deleteMemo: (id: number) => Promise<void>;
@@ -111,16 +111,21 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: userDataKeys.excludedKeywords() }),
   });
   const toggleBookmarkMutation = useMutation({
-    mutationFn: async (event: Event) => {
+    mutationFn: async (target: Pick<Event, 'id' | 'isBookmarked'>) => {
       const cachedBookmarkPages = queryClient.getQueriesData<BookmarksResponse>({
         queryKey: userDataKeys.bookmarksAll(),
       });
       const isBookmarked =
-        cachedBookmarkPages.some(([, page]) => page?.items.some(({ id }) => id === event.id)) ||
-        event.isBookmarked === true;
-      await (isBookmarked ? userApi.removeBookmark(event.id) : userApi.addBookmark(event.id));
+        cachedBookmarkPages.some(([, page]) => page?.items.some(({ id }) => id === target.id)) ||
+        target.isBookmarked === true;
+      await (isBookmarked ? userApi.removeBookmark(target.id) : userApi.addBookmark(target.id));
     },
-    onSuccess: async () => {
+    onSuccess: async (_, target) => {
+      queryClient.setQueryData<Memo[]>(userDataKeys.memos(), (memos = []) =>
+        memos.map((memo) =>
+          memo.eventId === target.id ? { ...memo, isBookmarked: !memo.isBookmarked } : memo,
+        ),
+      );
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: userDataKeys.bookmarksAll() }),
         queryClient.invalidateQueries({ queryKey: eventKeys.all }),

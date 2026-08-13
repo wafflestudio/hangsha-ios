@@ -45,6 +45,9 @@ export const formatDateToYYYYMMDD = (date: Date): string => {
 export const formatDateDotParsed = (date: Date): string =>
   formatDateToYYYYMMDD(date).replaceAll("-", ".");
 
+export const formatDateSlashParsed = (date: Date): string =>
+  formatDateToYYYYMMDD(date).replaceAll("-", "/");
+
 export const formatDateToMMDD = (date: Date): string => {
   assertValidDate(date);
 
