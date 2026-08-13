@@ -1,5 +1,5 @@
 import { SymbolView } from 'expo-symbols';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import {
   KeyboardAvoidingView,
   NativeScrollEvent,
@@ -14,81 +14,65 @@ import {
 } from 'react-native';
 
 import type {
-  CreateCustomCourseRequest,
+  Course,
+  CourseFormDraft,
   DayOfWeek,
-  Semester,
   TimeSlot,
 } from '@/types/timetable';
 import { DAY_LABELS_KO } from '@/types/timetable';
 import { hasOverlap, VISIBLE_DAYS } from '@/util/timetable/layout';
+import {
+  buildCoursePatch,
+  createCourseFormRow,
+  expandCourseFormSlots,
+} from '@/util/timetable/courseForm';
 
 const ALL_DAYS: DayOfWeek[] = ['SUN', ...VISIBLE_DAYS, 'SAT'];
 const WHEEL_ITEM_HEIGHT = 36;
 const VISIBLE_WHEEL_ITEMS = 5;
 const WHEEL_HEIGHT = WHEEL_ITEM_HEIGHT * VISIBLE_WHEEL_ITEMS;
 
-type SlotRow = {
-  rowId: string;
-  dayOfweeks: DayOfWeek[];
-  startAt: number;
-  endAt: number;
-};
-
 type AddClassSheetProps = {
-  year: number;
-  semester: Semester;
+  mode: 'create' | 'edit';
+  draft: CourseFormDraft;
+  originalCourse?: Course;
   existingSlots: TimeSlot[];
   saving?: boolean;
   onClose: () => void;
-  onSave: (request: CreateCustomCourseRequest) => Promise<void>;
+  onDraftChange: (draft: CourseFormDraft) => void;
+  onSave: () => Promise<void>;
 };
 
-let rowSequence = 0;
-const createSlotRow = (): SlotRow => ({
-  rowId: `slot-${Date.now()}-${rowSequence++}`,
-  dayOfweeks: ['MON'],
-  startAt: 8 * 60 + 10,
-  endAt: 11 * 60,
-});
-
 export function AddClassSheet({
-  year,
-  semester,
+  mode,
+  draft,
+  originalCourse,
   existingSlots,
   saving = false,
   onClose,
+  onDraftChange,
   onSave,
 }: AddClassSheetProps) {
-  const [title, setTitle] = useState('');
-  const [instructor, setInstructor] = useState('');
-  const [credit, setCredit] = useState('');
-  const [rows, setRows] = useState<SlotRow[]>(() => [createSlotRow()]);
-
-  const updateRow = (rowId: string, patch: Partial<SlotRow>) =>
-    setRows((current) => current.map((row) => (row.rowId === rowId ? { ...row, ...patch } : row)));
+  const { title, instructor, credit, rows } = draft;
+  const updateDraft = (patch: Partial<CourseFormDraft>) =>
+    onDraftChange({ ...draft, ...patch });
+  const updateRow = (rowId: string, patch: Partial<(typeof rows)[number]>) =>
+    updateDraft({
+      rows: rows.map((row) => (row.rowId === rowId ? { ...row, ...patch } : row)),
+    });
 
   const toggleDay = (rowId: string, day: DayOfWeek) =>
-    setRows((current) =>
-      current.map((row) => {
+    updateDraft({
+      rows: rows.map((row) => {
         if (row.rowId !== rowId) return row;
         const dayOfweeks = row.dayOfweeks.includes(day)
           ? row.dayOfweeks.filter((item) => item !== day)
           : [...row.dayOfweeks, day];
         return { ...row, dayOfweeks };
       }),
-    );
+    });
 
-  const expandedSlots = useMemo(
-    () =>
-      rows.flatMap((row) =>
-        row.dayOfweeks.map((dayOfweek) => ({
-          dayOfweek,
-          startAt: row.startAt,
-          endAt: row.endAt,
-        })),
-      ),
-    [rows],
-  );
+  const expandedSlots = useMemo(() => expandCourseFormSlots(rows), [rows]);
 
   const timeRangeValid = rows.every((row) => row.endAt > row.startAt);
   const hasSelectedDay = rows.length > 0 && rows.every((row) => row.dayOfweeks.length > 0);
@@ -96,18 +80,19 @@ export function AddClassSheet({
     (slot, index) =>
       hasOverlap(existingSlots, slot) || hasOverlap(expandedSlots.slice(0, index), slot),
   );
-  const canSave = title.trim().length > 0 && timeRangeValid && hasSelectedDay && !conflict;
+  const hasChanges =
+    mode === 'create' ||
+    Boolean(originalCourse && Object.keys(buildCoursePatch(originalCourse, draft)).length > 0);
+  const canSave =
+    title.trim().length > 0 &&
+    timeRangeValid &&
+    hasSelectedDay &&
+    !conflict &&
+    hasChanges;
 
   const save = async () => {
     if (!canSave) return;
-    await onSave({
-      year,
-      semester,
-      courseTitle: title.trim(),
-      timeSlots: expandedSlots,
-      instructor: instructor.trim() || undefined,
-      credit: credit.trim() ? Number(credit) : undefined,
-    });
+    await onSave();
   };
 
   return (
@@ -123,7 +108,9 @@ export function AddClassSheet({
           nestedScrollEnabled
           contentContainerStyle={styles.content}>
           <View style={styles.sheetHeader}>
-            <Text style={styles.sheetTitle}>새 수업 추가</Text>
+            <Text style={styles.sheetTitle}>
+              {mode === 'edit' ? '수업 정보 수정' : '새 수업 추가'}
+            </Text>
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="수업 추가 닫기"
@@ -139,7 +126,7 @@ export function AddClassSheet({
               placeholder="경제학개론"
               placeholderTextColor="#A3A3A3"
               style={styles.input}
-              onChangeText={setTitle}
+              onChangeText={(value) => updateDraft({ title: value })}
             />
           </Field>
 
@@ -149,7 +136,7 @@ export function AddClassSheet({
               placeholder="박이택"
               placeholderTextColor="#A3A3A3"
               style={styles.input}
-              onChangeText={setInstructor}
+              onChangeText={(value) => updateDraft({ instructor: value })}
             />
           </Field>
 
@@ -160,7 +147,7 @@ export function AddClassSheet({
               placeholder="3"
               placeholderTextColor="#A3A3A3"
               style={styles.input}
-              onChangeText={(value) => setCredit(value.replace(/[^0-9]/g, ''))}
+              onChangeText={(value) => updateDraft({ credit: value.replace(/[^0-9]/g, '') })}
             />
           </Field>
 
@@ -174,7 +161,7 @@ export function AddClassSheet({
                   accessibilityLabel={`${rowIndex + 1}번째 시간 삭제`}
                   hitSlop={8}
                   style={styles.removeSlot}
-                  onPress={() => setRows((current) => current.filter((item) => item.rowId !== row.rowId))}>
+                  onPress={() => updateDraft({ rows: rows.filter((item) => item.rowId !== row.rowId) })}>
                   <SymbolView name="xmark.circle.fill" tintColor="#A8A8A8" size={20} />
                 </Pressable>
               )}
@@ -213,7 +200,9 @@ export function AddClassSheet({
             </View>
           ))}
 
-          <Pressable style={styles.addTimeButton} onPress={() => setRows((current) => [...current, createSlotRow()])}>
+          <Pressable
+            style={styles.addTimeButton}
+            onPress={() => updateDraft({ rows: [...rows, createCourseFormRow()] })}>
             <Text style={styles.addTimeText}>+ 시간 추가</Text>
           </Pressable>
 

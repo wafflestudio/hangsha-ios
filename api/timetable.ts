@@ -6,6 +6,7 @@ import type {
   CreateCustomCourseRequest,
   CreateTimetableRequest,
   DayOfWeek,
+  PatchCustomCourseRequest,
   PatchTimetableRequest,
   Semester,
   Timetable,
@@ -33,10 +34,10 @@ type CourseDTO = {
   courseTitle: string;
   source: 'CUSTOM' | 'CRAWLED';
   timeSlots: CourseTimeSlotDTO[];
-  courseNumber?: string;
-  lectureNumber?: string;
-  credit?: number;
-  instructor?: string;
+  courseNumber?: string | null;
+  lectureNumber?: string | null;
+  credit?: number | null;
+  instructor?: string | null;
 };
 
 type EnrollDTO = { enrollId: number; course: CourseDTO };
@@ -47,10 +48,19 @@ type CreateCustomCourseRequestDTO = {
   semester: Semester;
   courseTitle: string;
   timeSlots: CourseTimeSlotDTO[];
-  courseNumber?: string;
-  lectureNumber?: string;
-  credit?: number;
-  instructor?: string;
+  courseNumber?: string | null;
+  lectureNumber?: string | null;
+  credit?: number | null;
+  instructor?: string | null;
+};
+
+type PatchCustomCourseRequestDTO = {
+  courseTitle?: string;
+  timeSlots?: CourseTimeSlotDTO[];
+  courseNumber?: string | null;
+  lectureNumber?: string | null;
+  credit?: number | null;
+  instructor?: string | null;
 };
 
 const toTimetable = (dto: TimetableDTO): Timetable => ({ ...dto });
@@ -80,6 +90,23 @@ const toCourseRequest = (request: CreateCustomCourseRequest): CreateCustomCourse
   credit: request.credit,
   instructor: request.instructor,
 });
+
+const toCoursePatch = (request: PatchCustomCourseRequest): PatchCustomCourseRequestDTO => {
+  const body: PatchCustomCourseRequestDTO = {};
+  if ('courseTitle' in request) body.courseTitle = request.courseTitle;
+  if ('timeSlots' in request) {
+    body.timeSlots = request.timeSlots?.map(({ dayOfweek, startAt, endAt }) => ({
+      dayOfWeek: dayOfweek,
+      startAt,
+      endAt,
+    }));
+  }
+  if ('courseNumber' in request) body.courseNumber = request.courseNumber;
+  if ('lectureNumber' in request) body.lectureNumber = request.lectureNumber;
+  if ('credit' in request) body.credit = request.credit;
+  if ('instructor' in request) body.instructor = request.instructor;
+  return body;
+};
 
 function toTimetableApiError(error: unknown, fallback: string): Error {
   if (axios.isAxiosError<ApiErrorDTO>(error)) {
@@ -137,6 +164,22 @@ export async function addCustomCourse(
     return { enrollId: response.data.enrollId, course: toCourse(response.data.course) };
   } catch (error) {
     throw toTimetableApiError(error, '수업을 추가하지 못했어요.');
+  }
+}
+
+export async function patchCustomCourse(
+  timetableId: number,
+  enrollId: number,
+  request: PatchCustomCourseRequest,
+): Promise<TimetableCourse> {
+  try {
+    const response = await apiClient.patch<EnrollDTO>(
+      `timetables/${timetableId}/enrolls/${enrollId}`,
+      toCoursePatch(request),
+    );
+    return { enrollId: response.data.enrollId, course: toCourse(response.data.course) };
+  } catch (error) {
+    throw toTimetableApiError(error, '수업 정보를 수정하지 못했어요.');
   }
 }
 

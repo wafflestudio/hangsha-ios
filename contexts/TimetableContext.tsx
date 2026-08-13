@@ -8,11 +8,13 @@ import {
   getTimetableCourses,
   getTimetables,
   patchTimetableName,
+  patchCustomCourse,
 } from '@/api/timetable';
 import type {
   CreateCustomCourseRequest,
   CreateTimetableRequest,
   PatchTimetableRequest,
+  PatchCustomCourseRequest,
   Semester,
 } from '@/types/timetable';
 
@@ -70,6 +72,21 @@ export function useAddCustomCourseMutation(timetableId: number | null) {
   return useMutation({
     mutationFn: (request: CreateCustomCourseRequest) =>
       addCustomCourse(timetableId as number, request),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: timetableKeys.courses(timetableId ?? -1) }),
+  });
+}
+
+export function usePatchCustomCourseMutation(timetableId: number | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      enrollId,
+      request,
+    }: {
+      enrollId: number;
+      request: PatchCustomCourseRequest;
+    }) => patchCustomCourse(timetableId as number, enrollId, request),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: timetableKeys.courses(timetableId ?? -1) }),
   });

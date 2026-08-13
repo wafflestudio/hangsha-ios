@@ -34,6 +34,7 @@ type TimetableGridProps = {
   events: Event[];
   isLoading?: boolean;
   onDeleteCourse: (enrollId: number) => void;
+  onSelectCourse: (item: TimetableCourse) => void;
   onSelectEvent?: (event: Event) => void;
 };
 
@@ -42,6 +43,7 @@ export function TimetableGrid({
   events,
   isLoading = false,
   onDeleteCourse,
+  onSelectCourse,
   onSelectEvent,
 }: TimetableGridProps) {
   const { width } = useWindowDimensions();
@@ -91,8 +93,11 @@ export function TimetableGrid({
           })}
 
           {courseBlocks.map((block) => (
-            <View
+            <Pressable
               key={block.key}
+              accessibilityRole="button"
+              accessibilityLabel={`${block.title} 수업 수정`}
+              onPress={() => onSelectCourse(block.item)}
               style={[
                 styles.courseBlock,
                 {
@@ -107,19 +112,20 @@ export function TimetableGrid({
                 accessibilityLabel={`${block.title} 수업 삭제`}
                 hitSlop={7}
                 style={styles.deleteCourseButton}
-                onPress={() =>
+                onPress={(event) => {
+                  event.stopPropagation();
                   Alert.alert('수업 삭제', `'${block.title}' 수업을 삭제할까요?`, [
                     { text: '취소', style: 'cancel' },
                     { text: '삭제', style: 'destructive', onPress: () => onDeleteCourse(block.enrollId) },
-                  ])
-                }>
+                  ]);
+                }}>
                 <SymbolView name="xmark.circle.fill" tintColor="#7C7C7C" size={13} />
               </Pressable>
               <Text numberOfLines={2} style={styles.courseTitle}>{block.title}</Text>
               <Text numberOfLines={2} style={styles.courseTime}>
                 {formatAmPmFromMinutes(block.startMin)} - {formatAmPmFromMinutes(block.endMin)}
               </Text>
-            </View>
+            </Pressable>
           ))}
 
           {eventBlocks.map((block) => {

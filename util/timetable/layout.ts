@@ -17,6 +17,7 @@ export type CourseGridBlock = {
   title: string;
   startMin: number;
   endMin: number;
+  item: TimetableCourse;
 };
 
 export type EventGridBlock = {
@@ -68,6 +69,7 @@ export function flattenCourses(courses: TimetableCourse[]): CourseGridBlock[] {
         title: course.courseTitle,
         startMin: slot.startAt,
         endMin: slot.endAt,
+        item: { enrollId, course },
       }];
     }),
   );

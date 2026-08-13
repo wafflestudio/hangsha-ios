@@ -3,24 +3,29 @@ import { useEffect, useMemo } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { MobileBottomNavigation } from '@/components/mobile-bottom-navigation';
 import { AddClassSheet } from '@/components/timetable/AddClassSheet';
 import { TimetableGrid } from '@/components/timetable/TimetableGrid';
 import { TimetableHeader } from '@/components/timetable/TimetableHeader';
 import { TimetableManagerSheet } from '@/components/timetable/TimetableManagerSheet';
-import { MobileBottomNavigation } from '@/components/mobile-bottom-navigation';
+import { useMonthEventsQuery } from '@/contexts/EventDataContext';
 import {
   useAddCustomCourseMutation,
   useCreateTimetableMutation,
   useDeleteTimetableCourseMutation,
   useDeleteTimetableMutation,
+  usePatchCustomCourseMutation,
   useRenameTimetableMutation,
   useTimetableCoursesQuery,
   useTimetablesQuery,
 } from '@/contexts/TimetableContext';
-import { useMonthEventsQuery } from '@/contexts/EventDataContext';
 import { useTimetableUiStore } from '@/stores/timetableUiStore';
 import type { Event } from '@/types/event';
 import type { Timetable } from '@/types/timetable';
+import {
+  buildCoursePatch,
+  expandCourseFormSlots,
+} from '@/util/timetable/courseForm';
 import {
   formatLocalDate,
   formatMonthDay,
@@ -36,12 +41,20 @@ export function TimetableScreen() {
     eventOverlayOn,
     weekAnchor,
     openSheet,
+    createCourseDraft,
+    editingEnrollId,
+    editCourseDrafts,
     setYear,
     setSemester,
     selectTimetable,
     toggleEventOverlay,
     moveWeek,
     setOpenSheet,
+    openCreateCourseSheet,
+    openEditCourseSheet,
+    updateActiveCourseDraft,
+    resetCreateCourseDraft,
+    clearEditCourseDraft,
   } = useTimetableUiStore();
 
   const timetableQuery = useTimetablesQuery(year, semester);
@@ -68,7 +81,19 @@ export function TimetableScreen() {
   const renameMutation = useRenameTimetableMutation(year, semester);
   const deleteMutation = useDeleteTimetableMutation(year, semester);
   const addCourseMutation = useAddCustomCourseMutation(selectedTimetable?.id ?? null);
+  const patchCourseMutation = usePatchCustomCourseMutation(selectedTimetable?.id ?? null);
   const deleteCourseMutation = useDeleteTimetableCourseMutation(selectedTimetable?.id ?? null);
+  const editingItem = 
+    editingEnrollId === null
+      ? null
+      : courses.find((item) => item.enrollId === editingEnrollId) ?? null;
+  const activeCourseDraft =
+    editingEnrollId === null
+      ? createCourseDraft
+      : editCourseDrafts[editingEnrollId];
+  const canRenderCourseEditor =
+    activeCourseDraft !== undefined &&
+    (editingEnrollId === null || editingItem !== null);
 
   useEffect(() => {
     if (timetableQuery.isPending) return;
@@ -85,9 +110,12 @@ export function TimetableScreen() {
     () => Array.from({ length: 10 }, (_, index) => new Date().getFullYear() - index),
     [],
   );
-  const existingSlots = useMemo(
-    () => courses.flatMap(({ course }) => course.timeSlots),
-    [courses],
+  const existingSlotsForEditor = useMemo(
+    () =>
+      courses
+        .filter((item) => item.enrollId !== editingEnrollId)
+        .flatMap(({ course }) => course.timeSlots),
+    [courses, editingEnrollId],
   );
   const isManaging =
     createMutation.isPending || renameMutation.isPending || deleteMutation.isPending;
@@ -163,8 +191,16 @@ export function TimetableScreen() {
             }
             onDeleteCourse={(enrollId) => {
               deleteCourseMutation.mutate(enrollId, {
+                onSuccess: () => clearEditCourseDraft(enrollId),
                 onError: (error) => showError(error, '수업을 삭제하지 못했어요.'),
               });
+            }}
+            onSelectCourse={(item) => {
+              if (item.course.source !== 'CUSTOM') {
+                Alert.alert('수정할 수 없는 수업', '직접 추가한 수업만 수정할 수 있어요.');
+                return;
+              }
+              openEditCourseSheet(item);
             }}
             onSelectEvent={(event) =>
               router.push({ pathname: '/event/[id]', params: { id: String(event.id) } })
@@ -182,7 +218,7 @@ export function TimetableScreen() {
           {selectedTimetable && (
             <Pressable
               style={({ pressed }) => [styles.addButton, pressed && styles.pressed]}
-              onPress={() => setOpenSheet('addClass')}>
+              onPress={openCreateCourseSheet}>
               <Text style={styles.backGlyph}>‹</Text>
               <Text style={styles.floatingText}>수업 추가</Text>
             </Pressable>
@@ -205,16 +241,42 @@ export function TimetableScreen() {
           />
         )}
 
-        {openSheet === 'addClass' && selectedTimetable && (
+        {openSheet === 'addClass' && selectedTimetable && canRenderCourseEditor && (
           <AddClassSheet
-            year={selectedTimetable.year}
-            semester={selectedTimetable.semester}
-            existingSlots={existingSlots}
-            saving={addCourseMutation.isPending}
+            mode={editingEnrollId === null ? 'create' : 'edit'}
+            draft={activeCourseDraft}
+            originalCourse={editingItem?.course}
+            existingSlots={existingSlotsForEditor}
+            saving={addCourseMutation.isPending || patchCourseMutation.isPending}
             onClose={() => setOpenSheet('none')}
-            onSave={async (request) => {
+            onDraftChange={updateActiveCourseDraft}
+            onSave={async () => {
+              if (editingItem) {
+                try {
+                  await patchCourseMutation.mutateAsync({
+                    enrollId: editingItem.enrollId,
+                    request: buildCoursePatch(editingItem.course, activeCourseDraft),
+                  });
+                  clearEditCourseDraft(editingItem.enrollId);
+                  setOpenSheet('none');
+                } catch (error) {
+                  showError(error, '수업 정보를 수정하지 못했어요.');
+                }
+                return;
+              }
+
               try {
-                await addCourseMutation.mutateAsync(request);
+                await addCourseMutation.mutateAsync({
+                  year: selectedTimetable.year,
+                  semester: selectedTimetable.semester,
+                  courseTitle: activeCourseDraft.title.trim(),
+                  timeSlots: expandCourseFormSlots(activeCourseDraft.rows),
+                  instructor: activeCourseDraft.instructor.trim() || undefined,
+                  credit: activeCourseDraft.credit.trim()
+                    ? Number(activeCourseDraft.credit)
+                    : undefined,
+                });
+                resetCreateCourseDraft();
                 setOpenSheet('none');
               } catch (error) {
                 showError(error, '수업을 추가하지 못했어요.');

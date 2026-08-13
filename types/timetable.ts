@@ -14,14 +14,37 @@ type CourseBase = {
   courseTitle: string;
   source: 'CUSTOM' | 'CRAWLED';
   timeSlots: TimeSlot[];
-  courseNumber?: string;
-  lectureNumber?: string;
-  credit?: number;
-  instructor?: string;
+  courseNumber?: string | null;
+  lectureNumber?: string | null;
+  credit?: number | null;
+  instructor?: string | null;
 };
 
 export type Course = CourseBase & { id: number };
 export type CreateCustomCourseRequest = Omit<CourseBase, 'source'>;
+
+export type PatchCustomCourseRequest = {
+  courseTitle?: string;
+  timeSlots?: TimeSlot[];
+  courseNumber?: string | null;
+  lectureNumber?: string | null;
+  credit?: number | null;
+  instructor?: string | null;
+};
+
+export type CourseFormSlotRow = {
+  rowId: string;
+  dayOfweeks: DayOfWeek[];
+  startAt: number;
+  endAt: number;
+};
+
+export type CourseFormDraft = {
+  title: string;
+  instructor: string;
+  credit: string;
+  rows: CourseFormSlotRow[];
+};
 
 export type Timetable = {
   id: number;
