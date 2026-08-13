@@ -10,6 +10,13 @@ import type {
 import { normalizeEventTypeId, transformEvent } from '@/util/calendar/transformEvent';
 import { parseDateString } from '@/util/calendar/dateFormatter';
 
+export type BookmarksResponse = {
+  page: number;
+  size: number;
+  total: number;
+  items: ReturnType<typeof transformEvent>[];
+};
+
 function transformMemo(memo: MemoDTO): Memo {
   return {
     ...memo,
@@ -68,10 +75,11 @@ export async function deleteExcludedKeyword(id: number) {
 }
 
 export async function getBookmarks(page = 1, size = 20) {
-  const response = await apiClient.get<{ items: EventDTO[] }>('users/me/bookmarks', {
-    params: { page, size },
-  });
-  return response.data.items.map((event) => transformEvent(event));
+  const response = await apiClient.get<Omit<BookmarksResponse, 'items'> & { items: EventDTO[] }>(
+    'users/me/bookmarks',
+    { params: { page, size } },
+  );
+  return { ...response.data, items: response.data.items.map((item) => transformEvent(item)) };
 }
 
 export async function addBookmark(eventId: number) {

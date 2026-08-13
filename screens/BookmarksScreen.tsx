@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -16,7 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BookmarksHeader } from '@/components/bookmarks/BookmarksHeader';
 import { GalleryEventCard } from '@/components/events/GalleryEventCard';
 import { useAuth } from '@/contexts/AuthProvider';
-import { useUserData } from '@/contexts/UserDataContext';
+import { useBookmarksInfinite, useUserData } from '@/contexts/UserDataContext';
 import type { Event } from '@/types/event';
 
 const TWO_COLUMN_BREAKPOINT = 455;
@@ -27,13 +27,20 @@ export default function BookmarksScreen() {
   const router = useRouter();
   const { width: windowWidth } = useWindowDimensions();
   const { user, isLoading: isAuthLoading } = useAuth();
+  const { toggleBookmark } = useUserData();
   const {
-    bookmarkedEvents,
-    bookmarksLoading,
-    refreshBookmarks,
-    toggleBookmark,
-  } = useUserData();
-  const [isRefreshing, setIsRefreshing] = useState(false);
+    data: bookmarksData,
+    isPending: bookmarksLoading,
+    isRefetching,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+    refetch: refreshBookmarks,
+  } = useBookmarksInfinite();
+  const bookmarkedEvents = useMemo(
+    () => bookmarksData?.pages.flatMap((page) => page.items) ?? [],
+    [bookmarksData],
+  );
 
   const numColumns = windowWidth > TWO_COLUMN_BREAKPOINT ? 2 : 1;
   const cardWidth = useMemo(
@@ -52,14 +59,10 @@ export default function BookmarksScreen() {
     router.replace('/mypage');
   };
 
-  const refresh = async () => {
-    if (isRefreshing) return;
-    setIsRefreshing(true);
-    try {
-      await refreshBookmarks();
-    } finally {
-      setIsRefreshing(false);
-    }
+  const refresh = () => refreshBookmarks();
+
+  const loadNextPage = () => {
+    if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
   };
 
   const removeBookmark = async (event: Event) => {
@@ -131,7 +134,11 @@ export default function BookmarksScreen() {
               bookmarkedEvents.length === 0 && styles.emptyListContent,
             ]}
             refreshControl={
-              <RefreshControl refreshing={isRefreshing} onRefresh={refresh} tintColor="#828282" />
+              <RefreshControl
+                refreshing={isRefetching && !isFetchingNextPage}
+                onRefresh={refresh}
+                tintColor="#828282"
+              />
             }
             ListEmptyComponent={
               <View style={styles.emptyState}>
@@ -140,6 +147,13 @@ export default function BookmarksScreen() {
                 </Text>
               </View>
             }
+            ListFooterComponent={
+              isFetchingNextPage ? (
+                <ActivityIndicator style={styles.nextPageLoading} color="#828282" />
+              ) : null
+            }
+            onEndReached={loadNextPage}
+            onEndReachedThreshold={0.4}
             showsVerticalScrollIndicator={false}
           />
         )}
@@ -164,6 +178,7 @@ const styles = StyleSheet.create({
   emptyListContent: { flexGrow: 1, paddingTop: 0 },
   emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   emptyText: { color: '#888888', fontSize: 14, lineHeight: 21, textAlign: 'center' },
+  nextPageLoading: { marginVertical: 20 },
   guestTitle: { color: '#222222', fontSize: 21, fontWeight: '800' },
   guestDescription: { color: '#777777', fontSize: 14 },
   loginButton: {
