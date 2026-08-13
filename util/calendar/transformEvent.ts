@@ -1,4 +1,9 @@
-import type { Event, EventDTO } from "@/types/event";
+import type {
+  Event,
+  EventDetail,
+  EventDetailDTO,
+  EventDTO,
+} from "@/types/event";
 
 import { parseDateString } from "./dateFormatter";
 
@@ -11,23 +16,26 @@ export const DEFAULT_EVENT_THUMBNAIL =
   require("@/assets/images/default-event-thumbnail.png") as number;
 
 export const normalizeEventTypeId = (eventTypeId: number): number =>
-  eventTypeId >= CATEGORY_MIN_INDEX && eventTypeId <= CATEGORY_MAX_INDEX
+  eventTypeId &&
+  eventTypeId >= CATEGORY_MIN_INDEX &&
+  eventTypeId <= CATEGORY_MAX_INDEX
     ? eventTypeId - 3
     : FALLBACK_EVENT_TYPE_ID;
 
 const inferStatusId = (
   statusId: number,
-  applyEnd: Date | null,
+  applyEnd: Date | null | null,
   today: Date,
 ): number => {
   if (statusId) {
     return statusId;
   }
-  if (applyEnd) {
-    return applyEnd < today ? 2 : 1;
+
+  if (!applyEnd) {
+    return 2;
   }
 
-  return 2;
+  return applyEnd < today ? 2 : 1;
 };
 
 export const transformEvent = (dto: EventDTO, today = new Date()): Event => {
@@ -46,3 +54,12 @@ export const transformEvent = (dto: EventDTO, today = new Date()): Event => {
     eventEnd: dto.eventEnd ? parseDateString(dto.eventEnd) : null,
   };
 };
+
+export const transformEventDetail = (
+  dto: EventDetailDTO,
+  today = new Date(),
+): EventDetail => ({
+  ...transformEvent(dto, today),
+  bookmarkCount: dto.bookmarkCount,
+  detail: dto.detail,
+});
