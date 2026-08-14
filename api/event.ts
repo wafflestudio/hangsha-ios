@@ -5,6 +5,9 @@ import type {
   DayViewResponseDTO,
   EventDetail,
   EventDetailDTO,
+  EventSearchParams,
+  EventSearchResponse,
+  EventSearchResponseDTO,
   MonthViewParams,
   MonthViewResponse,
   MonthViewResponseDTO,
@@ -16,6 +19,7 @@ export const eventKeys = {
   detail: (id: number) => [...eventKeys.all, "detail", id] as const,
   day: (date: string) => [...eventKeys.all, "day", date] as const,
   month: (from: string, to: string) => [...eventKeys.all, "month", from, to] as const,
+  search: (query: string) => [...eventKeys.all, "search", query] as const,
 };
 
 export async function getEventDetail(id: number): Promise<EventDetail> {
@@ -54,5 +58,17 @@ export async function getMonthEvents(params: MonthViewParams): Promise<MonthView
       to: new Date(data.range.to),
     },
     byDate,
+  };
+}
+
+export async function searchEvents(params: EventSearchParams): Promise<EventSearchResponse> {
+  const response = await apiClient.get<EventSearchResponseDTO>('events/search', { params });
+
+  return {
+    ...response.data,
+    items: (response.data.items ?? []).map((item) => ({
+      event: transformEvent(item.event),
+      highlight: item.highlight,
+    })),
   };
 }
