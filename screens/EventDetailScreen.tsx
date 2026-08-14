@@ -3,7 +3,7 @@ import { Image } from 'expo-image';
 import * as Linking from 'expo-linking';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View, useColorScheme, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View, useColorScheme, useWindowDimensions } from 'react-native';
 import RenderHtml from 'react-native-render-html';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -59,79 +59,87 @@ export function EventDetailScreen() {
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="상세 보기 닫기"
-            onPress={closeDetail}
-            style={({ pressed }) => [styles.closeButton, pressed && styles.pressed]}>
-            <FontAwesomeFreeSolid name="angles-right" size={20} color="#ABABAB" />
-          </Pressable>
-          <View style={styles.thumbnailWrapper}>
-            <Image source={event.imageUrl} style={styles.thumbnail} contentFit="cover" transition={150} />
-          </View>
-          <View style={styles.content}>
+        <KeyboardAvoidingView
+          style={styles.keyboardAvoidingView}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+            keyboardShouldPersistTaps="handled">
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel={event.isBookmarked ? '찜 해제' : '찜하기'}
-              onPress={toggle}
-              disabled={isBookmarkPending}
-              style={({ pressed }) => [styles.bookmarkButton, pressed && styles.pressed]}>
-              <Image
-                source={
-                  event.isBookmarked
-                    ? require('@/assets/images/Bookmarked.svg')
-                    : require('@/assets/images/notBookmarked.svg')
-                }
-                style={styles.bookmarkIcon}
-                contentFit="contain"
-              />
+              accessibilityLabel="상세 보기 닫기"
+              onPress={closeDetail}
+              style={({ pressed }) => [styles.closeButton, pressed && styles.pressed]}>
+              <FontAwesomeFreeSolid name="angles-right" size={20} color="#ABABAB" />
             </Pressable>
-            <Text style={[styles.title, { color: theme.text }]}>{event.title}</Text>
-            <EventDate
-              applyStart={event.applyStart}
-              applyEnd={event.applyEnd}
-              eventStart={event.eventStart}
-              eventEnd={event.eventEnd}
-            />
-            {event.location ? <View style={styles.location}><FontAwesomeFreeSolid name="location-dot" size={14} color="#777777" /><Text style={[styles.locationText, { color: theme.textSecondary }]}>{event.location}</Text></View> : null}
-            <View style={styles.badgeRow}>
-              {event.applyEnd ? <View style={[styles.badge, styles.ddayBadge]}><Text style={styles.ddayText}>{`지원 ${getDDay(event.applyEnd)}`}</Text></View> : null}
-              <View style={[styles.badge, styles.categoryBadge, { backgroundColor: categoryColors.background }]}><Text style={styles.categoryText}>{getEventTypeLabel(event.eventTypeId)}</Text></View>
+            <View style={styles.thumbnailWrapper}>
+              <Image source={event.imageUrl} style={styles.thumbnail} contentFit="cover" transition={150} />
             </View>
-            <Text style={[styles.organization, { color: theme.text }]}>{event.organization}</Text>
-            {event.applyLink ? <Pressable accessibilityRole="link" onPress={openApplyLink} style={styles.applyLink}><Text style={styles.applyLinkText}>지원 링크로 이동하기</Text><FontAwesomeFreeSolid name="arrow-up-right-from-square" size={13} color="#999999" /></Pressable> : null}
-            <View style={[styles.divider, { backgroundColor: theme.textSecondary }]} />
-            <RenderHtml
-              contentWidth={contentWidth}
-              source={{ html: event.detail || '' }}
-              enableCSSInlineProcessing
-              enableUserAgentStyles
-              emSize={16}
-              computeEmbeddedMaxWidth={(availableWidth, tagName) =>
-                tagName === 'img' ? Math.min(availableWidth, contentWidth) : availableWidth
-              }
-              renderersProps={{
-                img: { enableExperimentalPercentWidth: true },
-              }}
-              // 크롤링 HTML의 웹 폰트는 네이티브에 설치되어 있지 않을 수 있다.
-              // fontFamily만 제외하면 fontSize/fontWeight 등 나머지 인라인 CSS는 유지된다.
-              ignoredStyles={['fontFamily']}
-              baseStyle={{ color: theme.text, fontSize: 16, lineHeight: 26 }}
-              tagsStyles={{
-                p: { marginTop: 0, marginBottom: 14 },
-                a: { color: '#2876D8' },
-                strong: { fontWeight: '700' },
-                b: { fontWeight: '700' },
-              }}
-            />
-            <DetailMemo eventId={eventId} />
-            <Pressable accessibilityRole="button" onPress={() => setIsBugReportOpen(true)} style={({ pressed }) => [styles.reportButton, pressed && styles.pressed]}>
-              <FontAwesomeFreeSolid name="triangle-exclamation" size={17} color="#777777" />
-              <Text style={styles.reportText}>행사 정보 오류 제보하기</Text>
-            </Pressable>
-          </View>
-        </ScrollView>
+            <View style={styles.content}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={event.isBookmarked ? '찜 해제' : '찜하기'}
+                onPress={toggle}
+                disabled={isBookmarkPending}
+                style={({ pressed }) => [styles.bookmarkButton, pressed && styles.pressed]}>
+                <Image
+                  source={
+                    event.isBookmarked
+                      ? require('@/assets/images/Bookmarked.svg')
+                      : require('@/assets/images/notBookmarked.svg')
+                  }
+                  style={styles.bookmarkIcon}
+                  contentFit="contain"
+                />
+              </Pressable>
+              <Text style={[styles.title, { color: theme.text }]}>{event.title}</Text>
+              <EventDate
+                applyStart={event.applyStart}
+                applyEnd={event.applyEnd}
+                eventStart={event.eventStart}
+                eventEnd={event.eventEnd}
+              />
+              {event.location ? <View style={styles.location}><FontAwesomeFreeSolid name="location-dot" size={14} color="#777777" /><Text style={[styles.locationText, { color: theme.textSecondary }]}>{event.location}</Text></View> : null}
+              <View style={styles.badgeRow}>
+                {event.applyEnd ? <View style={[styles.badge, styles.ddayBadge]}><Text style={styles.ddayText}>{`지원 ${getDDay(event.applyEnd)}`}</Text></View> : null}
+                <View style={[styles.badge, styles.categoryBadge, { backgroundColor: categoryColors.background }]}><Text style={styles.categoryText}>{getEventTypeLabel(event.eventTypeId)}</Text></View>
+              </View>
+              <Text style={[styles.organization, { color: theme.text }]}>{event.organization}</Text>
+              {event.applyLink ? <Pressable accessibilityRole="link" onPress={openApplyLink} style={styles.applyLink}><Text style={styles.applyLinkText}>지원 링크로 이동하기</Text><FontAwesomeFreeSolid name="arrow-up-right-from-square" size={13} color="#999999" /></Pressable> : null}
+              <View style={[styles.divider, { backgroundColor: theme.textSecondary }]} />
+              <RenderHtml
+                contentWidth={contentWidth}
+                source={{ html: event.detail || '' }}
+                enableCSSInlineProcessing
+                enableUserAgentStyles
+                emSize={16}
+                computeEmbeddedMaxWidth={(availableWidth, tagName) =>
+                  tagName === 'img' ? Math.min(availableWidth, contentWidth) : availableWidth
+                }
+                renderersProps={{
+                  img: { enableExperimentalPercentWidth: true },
+                }}
+                // 크롤링 HTML의 웹 폰트는 네이티브에 설치되어 있지 않을 수 있다.
+                // fontFamily만 제외하면 fontSize/fontWeight 등 나머지 인라인 CSS는 유지된다.
+                ignoredStyles={['fontFamily']}
+                baseStyle={{ color: theme.text, fontSize: 16, lineHeight: 26 }}
+                tagsStyles={{
+                  p: { marginTop: 0, marginBottom: 14 },
+                  a: { color: '#2876D8' },
+                  strong: { fontWeight: '700' },
+                  b: { fontWeight: '700' },
+                }}
+              />
+              <DetailMemo eventId={eventId} />
+              <Pressable accessibilityRole="button" onPress={() => setIsBugReportOpen(true)} style={({ pressed }) => [styles.reportButton, pressed && styles.pressed]}>
+                <FontAwesomeFreeSolid name="triangle-exclamation" size={17} color="#777777" />
+                <Text style={styles.reportText}>행사 정보 오류 제보하기</Text>
+              </Pressable>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </SafeAreaView>
       <BugReportModal visible={isBugReportOpen} onClose={() => setIsBugReportOpen(false)} />
     </View>
@@ -139,7 +147,7 @@ export function EventDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 }, safeArea: { flex: 1, paddingBottom: BottomTabInset }, centered: { flex: 1, alignItems: 'center', justifyContent: 'center' }, scrollContent: { paddingBottom: Spacing.six },
+  container: { flex: 1 }, safeArea: { flex: 1, paddingBottom: BottomTabInset }, keyboardAvoidingView: { flex: 1 }, centered: { flex: 1, alignItems: 'center', justifyContent: 'center' }, scrollContent: { paddingBottom: Spacing.six },
   closeButton: { alignSelf: 'flex-start', marginLeft: Spacing.three, marginTop: Spacing.three, padding: 4 },
   thumbnailWrapper: { marginHorizontal: Spacing.three, marginTop: Spacing.four }, thumbnail: { width: '100%', aspectRatio: 16 / 9, borderRadius: 18, backgroundColor: '#EEEEEE' },
   content: { paddingHorizontal: Spacing.three, paddingTop: 28 }, bookmarkButton: { alignSelf: 'flex-start', paddingBottom: 24 }, bookmarkIcon: { width: 19, height: 19 }, title: { marginBottom: 8, fontSize: 23, fontWeight: '800', lineHeight: 31, letterSpacing: -0.5 },
