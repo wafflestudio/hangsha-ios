@@ -1,5 +1,5 @@
 import { FontAwesomeFreeSolid } from '@react-native-vector-icons/fontawesome-free-solid';
-import { useRef, useState } from 'react';
+import { forwardRef, useImperativeHandle, useRef, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { useAuth } from '@/contexts/AuthProvider';
@@ -8,13 +8,18 @@ import type { Memo } from '@/types/userData';
 
 const normalizeTag = (value: string) => value.trim().replace(/^#+/, '');
 
-export function DetailMemo({ eventId }: { eventId: number }) {
+export type DetailMemoHandle = {
+  blur: () => void;
+};
+
+export const DetailMemo = forwardRef<DetailMemoHandle, { eventId: number }>(function DetailMemo({ eventId }, ref) {
   const { isAuthenticated } = useAuth();
   const { eventMemos, memoLoading, addMemo, updateMemo } = useUserData();
   const currentMemo = eventMemos.find((memo) => memo.eventId === eventId);
 
   return (
     <DetailMemoEditor
+      ref={ref}
       key={`${eventId}:${currentMemo?.id ?? 'new'}:${currentMemo?.updatedAt.getTime() ?? ''}`}
       eventId={eventId}
       isAuthenticated={isAuthenticated}
@@ -24,7 +29,7 @@ export function DetailMemo({ eventId }: { eventId: number }) {
       updateMemo={updateMemo}
     />
   );
-}
+});
 
 type DetailMemoEditorProps = {
   eventId: number;
@@ -35,19 +40,28 @@ type DetailMemoEditorProps = {
   updateMemo: (id: number, updates: { content?: string; tagNames?: string[] }) => Promise<Memo>;
 };
 
-function DetailMemoEditor({
+const DetailMemoEditor = forwardRef<DetailMemoHandle, DetailMemoEditorProps>(function DetailMemoEditor({
   eventId,
   isAuthenticated,
   currentMemo,
   memoLoading,
   addMemo,
   updateMemo,
-}: DetailMemoEditorProps) {
+}, ref) {
   const [expanded, setExpanded] = useState(false);
   const [content, setContent] = useState(currentMemo?.content ?? '');
   const [tags, setTags] = useState<string[]>(currentMemo?.tags.map((tag) => tag.name) ?? []);
   const [tagInput, setTagInput] = useState('');
   const inputRef = useRef<TextInput>(null);
+  const tagInputRef = useRef<TextInput>(null);
+
+  useImperativeHandle(ref, () => ({
+    blur: () => {
+      inputRef.current?.blur();
+      tagInputRef.current?.blur();
+      setExpanded(false);
+    },
+  }), []);
 
   const savedTags = currentMemo?.tags.map((tag) => tag.name) ?? [];
   const tagsChanged = JSON.stringify([...tags].sort()) !== JSON.stringify([...savedTags].sort());
@@ -111,13 +125,13 @@ function DetailMemoEditor({
         style={[styles.memoInput, expanded && styles.memoTextArea]}
       />
       {expanded && <View style={styles.tagEditor}>
-        <TextInput value={tagInput} onChangeText={setTagInput} onSubmitEditing={addTag} returnKeyType="done" placeholder="태그 추가..." placeholderTextColor="#888888" style={styles.tagInput} />
+        <TextInput ref={tagInputRef} value={tagInput} onChangeText={setTagInput} onSubmitEditing={addTag} returnKeyType="done" placeholder="태그 추가..." placeholderTextColor="#888888" style={styles.tagInput} />
         <Pressable accessibilityRole="button" onPress={addTag} disabled={!normalizeTag(tagInput)} style={[styles.addButton, !normalizeTag(tagInput) && styles.addDisabled]}><Text style={styles.addText}>추가</Text></Pressable>
       </View>}
       {tags.length > 0 && <View style={styles.tagList}>{tags.map((tag) => <View key={tag} style={styles.tag}><Text style={styles.tagText}># {tag}</Text>{expanded && <Pressable accessibilityRole="button" onPress={() => setTags((previous) => previous.filter((item) => item !== tag))}><Text style={styles.removeText}>×</Text></Pressable>}</View>)}</View>}
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: { marginTop: 28, gap: 12 },

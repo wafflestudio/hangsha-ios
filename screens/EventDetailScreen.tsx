@@ -2,13 +2,13 @@ import { FontAwesomeFreeSolid } from '@react-native-vector-icons/fontawesome-fre
 import { Image } from 'expo-image';
 import * as Linking from 'expo-linking';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View, useColorScheme, useWindowDimensions } from 'react-native';
 import RenderHtml from 'react-native-render-html';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BugReportModal } from '@/components/bug-report/BugReportModal';
-import { DetailMemo } from '@/components/events/DetailMemo';
+import { DetailMemo, type DetailMemoHandle } from '@/components/events/DetailMemo';
 import { EventDate } from '@/components/events/EventDate';
 import { useAuth } from '@/contexts/AuthProvider';
 import { useEventDetailQuery } from '@/contexts/EventDataContext';
@@ -29,6 +29,7 @@ export function EventDetailScreen() {
   const { data: event, isPending, isError } = useEventDetailQuery(eventId);
   const [isBookmarkPending, setIsBookmarkPending] = useState(false);
   const [isBugReportOpen, setIsBugReportOpen] = useState(false);
+  const memoRef = useRef<DetailMemoHandle>(null);
 
   if (isPending) return <View style={styles.centered}><ActivityIndicator color={theme.text} /></View>;
   if (isError || !event) return <View style={styles.centered}><Text style={{ color: theme.text }}>행사 정보를 불러오지 못했어요.</Text></View>;
@@ -57,7 +58,9 @@ export function EventDetailScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
+    <View
+      style={[styles.container, { backgroundColor: theme.background }]}
+      onTouchStart={() => memoRef.current?.blur()}>
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
         <KeyboardAvoidingView
           style={styles.keyboardAvoidingView}
@@ -132,7 +135,9 @@ export function EventDetailScreen() {
                   b: { fontWeight: '700' },
                 }}
               />
-              <DetailMemo eventId={eventId} />
+              <View onTouchStart={(event) => event.stopPropagation()}>
+                <DetailMemo ref={memoRef} eventId={eventId} />
+              </View>
               <Pressable accessibilityRole="button" onPress={() => setIsBugReportOpen(true)} style={({ pressed }) => [styles.reportButton, pressed && styles.pressed]}>
                 <FontAwesomeFreeSolid name="triangle-exclamation" size={17} color="#777777" />
                 <Text style={styles.reportText}>행사 정보 오류 제보하기</Text>
