@@ -103,3 +103,41 @@ export type MonthViewResponse = {
   };
   byDate: Record<string, { events: Event[] }>;
 };
+
+export type EventSearchParams = {
+  query: string;
+  page?: number;
+  size?: number;
+  statusId?: number[];
+  eventTypeId?: number[];
+  orgId?: number[];
+};
+
+export type EventSearchHighlight = {
+  title: string;
+  contentSnippet: string | null;
+};
+
+export type EventSearchItemDTO = {
+  event: EventDTO;
+  highlight: EventSearchHighlight;
+};
+
+export type EventSearchItem = {
+  event: Event;
+  highlight: EventSearchHighlight;
+};
+
+export type EventSearchResponseDTO = {
+  page: number;
+  size: number;
+  total: number;
+  items: EventSearchItemDTO[];
+};
+
+export type EventSearchResponse = {
+  page: number;
+  size: number;
+  total: number;
+  items: EventSearchItem[];
+};

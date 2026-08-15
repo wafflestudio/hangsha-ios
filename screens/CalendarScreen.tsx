@@ -62,9 +62,10 @@ const flattenByDate = (byDate: MonthViewResponse['byDate'] | undefined): Event[]
 
 type CalendarScreenProps = {
   onSelectDate?: (dateKey: string) => void;
+  onSearch?: () => void;
 };
 
-export function CalendarScreen({ onSelectDate }: CalendarScreenProps) {
+export function CalendarScreen({ onSelectDate, onSearch }: CalendarScreenProps) {
   const theme = useTheme();
   const today = useMemo(() => new Date(), []);
   const [visibleMonth, setVisibleMonth] = useState(
@@ -151,7 +152,11 @@ export function CalendarScreen({ onSelectDate }: CalendarScreenProps) {
             </>
           }
           right={
-            <Pressable hitSlop={Spacing.two} accessibilityRole="button" accessibilityLabel="검색">
+            <Pressable
+              hitSlop={Spacing.two}
+              accessibilityRole="button"
+              accessibilityLabel="검색"
+              onPress={onSearch}>
               <SymbolView name="magnifyingglass" tintColor={theme.text} size={20} />
             </Pressable>
           }

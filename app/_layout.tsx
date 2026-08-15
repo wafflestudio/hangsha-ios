@@ -29,6 +29,8 @@ export default function RootLayout() {
                   <Stack.Screen name="onboarding/interests" />
                   <Stack.Screen name="onboarding/complete" />
                   <Stack.Screen name="calendar" />
+                  <Stack.Screen name="search" />
+                  <Stack.Screen name="timetable" />
                   <Stack.Screen name="memos" />
                   <Stack.Screen name="bookmark" />
                   <Stack.Screen name="mypage" />

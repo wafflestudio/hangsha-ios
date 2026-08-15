@@ -16,7 +16,7 @@ const NAV_ITEMS = [
   {
     id: 'timetable',
     label: '시간표',
-    href: null,
+    href: '/timetable' as const,
     inactiveIcon: require('@/assets/images/timetable.svg'),
     activeIcon: require('@/assets/images/timetableActive.png'),
     width: 30,

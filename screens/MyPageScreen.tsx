@@ -1,4 +1,3 @@
-import { FontAwesomeFreeSolid } from '@react-native-vector-icons/fontawesome-free-solid';
 import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
@@ -22,11 +21,12 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BookmarkWidget } from '@/components/bookmarks/BookmarkWidget';
+import { BugReportForm } from '@/components/bug-report/BugReportForm';
 import { MobileBottomNavigation } from '@/components/mobile-bottom-navigation';
 import { useAuth } from '@/contexts/AuthProvider';
-import { useBugReport } from '@/contexts/BugReportContext';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useUserData } from '@/contexts/UserDataContext';
+import { useScrollToFocusedInput } from '@/hooks/use-scroll-to-focused-input';
 import type { ProfileImage } from '@/types/auth';
 import type { Category } from '@/types/category';
 import type { Event } from '@/types/event';
@@ -56,6 +56,7 @@ const truncateToWeight = (value: string, maxWeight: number) => {
 
 export default function MyPageScreen() {
   const router = useRouter();
+  const { scrollViewRef, handleInputFocus, handleInputBlur } = useScrollToFocusedInput();
   const {
     user,
     isLoading: isAuthLoading,
@@ -82,7 +83,6 @@ export default function MyPageScreen() {
   } = useUserData();
   const { programTypes, organizations, isLoadingMeta, metadataError, refreshMetadata } =
     useOnboarding();
-  const { isSubmitting: isSubmittingBugReport, submitBugReport } = useBugReport();
 
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [username, setUsername] = useState('');
@@ -91,8 +91,6 @@ export default function MyPageScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isInterestEditorOpen, setIsInterestEditorOpen] = useState(false);
   const [draftInterests, setDraftInterests] = useState<Category[]>([]);
-  const [bugTitle, setBugTitle] = useState('');
-  const [bugContent, setBugContent] = useState('');
 
   const isSavingProfile =
     updateUsernameMutation.isPending || uploadProfileImageMutation.isPending;
@@ -208,25 +206,6 @@ export default function MyPageScreen() {
     }
   };
 
-  const submitBug = async () => {
-    const title = bugTitle.trim();
-    const content = bugContent.trim();
-    if (!title || !content) {
-      Alert.alert('내용을 확인해주세요', '제목과 내용을 모두 입력해주세요.');
-      return;
-    }
-    if (isSubmittingBugReport) return;
-
-    try {
-      await submitBugReport({ title, content });
-      setBugTitle('');
-      setBugContent('');
-      Alert.alert('접수 완료', '버그 신고가 접수되었습니다.');
-    } catch {
-      Alert.alert('접수 실패', '버그 신고를 접수하지 못했습니다. 잠시 후 다시 시도해주세요.');
-    }
-  };
-
   const handleLogout = async () => {
     if (logoutMutation.isPending) return;
     try {
@@ -308,6 +287,7 @@ export default function MyPageScreen() {
           style={styles.flex}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <ScrollView
+            ref={scrollViewRef}
             style={styles.flex}
             contentContainerStyle={styles.content}
             keyboardShouldPersistTaps="handled"
@@ -483,44 +463,10 @@ export default function MyPageScreen() {
             </View>
 
             <View style={styles.section}>
-              <View style={styles.bugHeader}>
-                <FontAwesomeFreeSolid name="bug" size={20} color="#222222" />
-                <Text style={styles.bugTitle}>버그 신고</Text>
-              </View>
-              <Text style={styles.sectionDescription}>이용 중 발견한 문제를 알려주세요.</Text>
-              <TextInput
-                value={bugTitle}
-                onChangeText={setBugTitle}
-                editable={!isSubmittingBugReport}
-                maxLength={100}
-                placeholder="제목"
-                placeholderTextColor="#999999"
-                style={styles.reportInput}
+              <BugReportForm
+                onInputFocus={handleInputFocus}
+                onInputBlur={handleInputBlur}
               />
-              <TextInput
-                value={bugContent}
-                onChangeText={setBugContent}
-                editable={!isSubmittingBugReport}
-                maxLength={1000}
-                multiline
-                textAlignVertical="top"
-                placeholder="문제가 발생한 상황을 자세히 적어주세요."
-                placeholderTextColor="#999999"
-                style={[styles.reportInput, styles.reportTextArea]}
-              />
-              <Pressable
-                accessibilityRole="button"
-                onPress={submitBug}
-                disabled={isSubmittingBugReport}
-                style={({ pressed }) => [
-                  styles.reportButton,
-                  pressed && styles.pressed,
-                  isSubmittingBugReport && styles.disabled,
-                ]}>
-                <Text style={styles.reportButtonText}>
-                  {isSubmittingBugReport ? '접수 중' : '신고하기'}
-                </Text>
-              </Pressable>
             </View>
 
             <View style={styles.accountSection}>

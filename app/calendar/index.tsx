@@ -7,6 +7,7 @@ export default function CalendarIndexScreen() {
 
   return (
     <CalendarScreen
+      onSearch={() => router.push('/search')}
       onSelectDate={(dateKey) =>
         router.push({ pathname: '/calendar/[date]', params: { date: dateKey } })
       }
