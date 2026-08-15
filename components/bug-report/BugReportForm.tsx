@@ -1,5 +1,5 @@
 import { FontAwesomeFreeSolid } from '@react-native-vector-icons/fontawesome-free-solid';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { useBugReport } from '@/contexts/BugReportContext';
@@ -7,13 +7,22 @@ import { useBugReport } from '@/contexts/BugReportContext';
 type BugReportFormProps = {
   onSubmitted?: () => void;
   compact?: boolean;
+  onInputFocus?: (input: TextInput | null) => void;
+  onInputBlur?: (input: TextInput | null) => void;
 };
 
 /** Shared by My Page and the event-detail report dialog. */
-export function BugReportForm({ onSubmitted, compact = false }: BugReportFormProps) {
+export function BugReportForm({
+  onSubmitted,
+  compact = false,
+  onInputFocus,
+  onInputBlur,
+}: BugReportFormProps) {
   const { isSubmitting, submitBugReport } = useBugReport();
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const titleInputRef = useRef<TextInput>(null);
+  const contentInputRef = useRef<TextInput>(null);
 
   const submit = async () => {
     const trimmedTitle = title.trim();
@@ -42,8 +51,11 @@ export function BugReportForm({ onSubmitted, compact = false }: BugReportFormPro
       </View>
       <Text style={styles.description}>이용 중 발견한 문제를 알려주세요.</Text>
       <TextInput
+        ref={titleInputRef}
         value={title}
         onChangeText={setTitle}
+        onFocus={() => onInputFocus?.(titleInputRef.current)}
+        onBlur={() => onInputBlur?.(titleInputRef.current)}
         editable={!isSubmitting}
         maxLength={100}
         placeholder="제목"
@@ -51,8 +63,11 @@ export function BugReportForm({ onSubmitted, compact = false }: BugReportFormPro
         style={styles.input}
       />
       <TextInput
+        ref={contentInputRef}
         value={content}
         onChangeText={setContent}
+        onFocus={() => onInputFocus?.(contentInputRef.current)}
+        onBlur={() => onInputBlur?.(contentInputRef.current)}
         editable={!isSubmitting}
         maxLength={1000}
         multiline

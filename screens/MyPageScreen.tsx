@@ -26,6 +26,7 @@ import { MobileBottomNavigation } from '@/components/mobile-bottom-navigation';
 import { useAuth } from '@/contexts/AuthProvider';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useUserData } from '@/contexts/UserDataContext';
+import { useScrollToFocusedInput } from '@/hooks/use-scroll-to-focused-input';
 import type { ProfileImage } from '@/types/auth';
 import type { Category } from '@/types/category';
 import type { Event } from '@/types/event';
@@ -55,6 +56,7 @@ const truncateToWeight = (value: string, maxWeight: number) => {
 
 export default function MyPageScreen() {
   const router = useRouter();
+  const { scrollViewRef, handleInputFocus, handleInputBlur } = useScrollToFocusedInput();
   const {
     user,
     isLoading: isAuthLoading,
@@ -285,6 +287,7 @@ export default function MyPageScreen() {
           style={styles.flex}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <ScrollView
+            ref={scrollViewRef}
             style={styles.flex}
             contentContainerStyle={styles.content}
             keyboardShouldPersistTaps="handled"
@@ -460,7 +463,10 @@ export default function MyPageScreen() {
             </View>
 
             <View style={styles.section}>
-              <BugReportForm />
+              <BugReportForm
+                onInputFocus={handleInputFocus}
+                onInputBlur={handleInputBlur}
+              />
             </View>
 
             <View style={styles.accountSection}>

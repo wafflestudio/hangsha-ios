@@ -13,9 +13,12 @@ import { EventDate } from '@/components/events/EventDate';
 import { useAuth } from '@/contexts/AuthProvider';
 import { useEventDetailQuery } from '@/contexts/EventDataContext';
 import { useUserData } from '@/contexts/UserDataContext';
+import { useScrollToFocusedInput } from '@/hooks/use-scroll-to-focused-input';
 import { useTheme } from '@/hooks/use-theme';
 import { getDDay } from '@/util/calendar/getDday';
 import { BottomTabInset, getEventTypeColors, getEventTypeLabel, Spacing } from '@/util/theme';
+
+const MEMO_INPUT_KEYBOARD_OFFSET = 96;
 
 export function EventDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -30,6 +33,11 @@ export function EventDetailScreen() {
   const [isBookmarkPending, setIsBookmarkPending] = useState(false);
   const [isBugReportOpen, setIsBugReportOpen] = useState(false);
   const memoRef = useRef<DetailMemoHandle>(null);
+  const {
+    scrollViewRef,
+    handleInputFocus: handleMemoInputFocus,
+    handleInputBlur: handleMemoInputBlur,
+  } = useScrollToFocusedInput(MEMO_INPUT_KEYBOARD_OFFSET);
 
   if (isPending) return <View style={styles.centered}><ActivityIndicator color={theme.text} /></View>;
   if (isError || !event) return <View style={styles.centered}><Text style={{ color: theme.text }}>행사 정보를 불러오지 못했어요.</Text></View>;
@@ -66,6 +74,7 @@ export function EventDetailScreen() {
           style={styles.keyboardAvoidingView}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <ScrollView
+            ref={scrollViewRef}
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
             keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
@@ -136,7 +145,12 @@ export function EventDetailScreen() {
                 }}
               />
               <View onTouchStart={(event) => event.stopPropagation()}>
-                <DetailMemo ref={memoRef} eventId={eventId} />
+                <DetailMemo
+                  ref={memoRef}
+                  eventId={eventId}
+                  onInputFocus={handleMemoInputFocus}
+                  onInputBlur={handleMemoInputBlur}
+                />
               </View>
               <Pressable accessibilityRole="button" onPress={() => setIsBugReportOpen(true)} style={({ pressed }) => [styles.reportButton, pressed && styles.pressed]}>
                 <FontAwesomeFreeSolid name="triangle-exclamation" size={17} color="#777777" />

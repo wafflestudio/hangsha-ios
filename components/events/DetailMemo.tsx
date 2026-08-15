@@ -12,7 +12,17 @@ export type DetailMemoHandle = {
   blur: () => void;
 };
 
-export const DetailMemo = forwardRef<DetailMemoHandle, { eventId: number }>(function DetailMemo({ eventId }, ref) {
+type DetailMemoProps = {
+  eventId: number;
+  onInputFocus?: (input: TextInput | null) => void;
+  onInputBlur?: (input: TextInput | null) => void;
+};
+
+export const DetailMemo = forwardRef<DetailMemoHandle, DetailMemoProps>(function DetailMemo({
+  eventId,
+  onInputFocus,
+  onInputBlur,
+}, ref) {
   const { isAuthenticated } = useAuth();
   const { eventMemos, memoLoading, addMemo, updateMemo } = useUserData();
   const currentMemo = eventMemos.find((memo) => memo.eventId === eventId);
@@ -27,6 +37,8 @@ export const DetailMemo = forwardRef<DetailMemoHandle, { eventId: number }>(func
       memoLoading={memoLoading}
       addMemo={addMemo}
       updateMemo={updateMemo}
+      onInputFocus={onInputFocus}
+      onInputBlur={onInputBlur}
     />
   );
 });
@@ -38,6 +50,8 @@ type DetailMemoEditorProps = {
   memoLoading: boolean;
   addMemo: (eventId: number, content: string, tagNames: string[]) => Promise<void>;
   updateMemo: (id: number, updates: { content?: string; tagNames?: string[] }) => Promise<Memo>;
+  onInputFocus?: (input: TextInput | null) => void;
+  onInputBlur?: (input: TextInput | null) => void;
 };
 
 const DetailMemoEditor = forwardRef<DetailMemoHandle, DetailMemoEditorProps>(function DetailMemoEditor({
@@ -47,6 +61,8 @@ const DetailMemoEditor = forwardRef<DetailMemoHandle, DetailMemoEditorProps>(fun
   memoLoading,
   addMemo,
   updateMemo,
+  onInputFocus,
+  onInputBlur,
 }, ref) {
   const [expanded, setExpanded] = useState(false);
   const [content, setContent] = useState(currentMemo?.content ?? '');
@@ -76,6 +92,11 @@ const DetailMemoEditor = forwardRef<DetailMemoHandle, DetailMemoEditorProps>(fun
     }
     setExpanded(true);
     requestAnimationFrame(() => inputRef.current?.focus());
+  };
+
+  const handleMemoFocus = () => {
+    setExpanded(true);
+    requestAnimationFrame(() => onInputFocus?.(inputRef.current));
   };
 
   const addTag = () => {
@@ -115,9 +136,10 @@ const DetailMemoEditor = forwardRef<DetailMemoHandle, DetailMemoEditorProps>(fun
         ref={inputRef}
         value={content}
         onChangeText={setContent}
-        onFocus={expand}
+        onFocus={handleMemoFocus}
+        onBlur={() => onInputBlur?.(inputRef.current)}
         editable={isAuthenticated && !memoLoading}
-        multiline={expanded}
+        multiline
         numberOfLines={expanded ? 5 : 1}
         textAlignVertical={expanded ? 'top' : 'center'}
         placeholder={isAuthenticated ? '메모를 입력하세요' : '로그인 이후 작성 가능합니다.'}
@@ -125,7 +147,7 @@ const DetailMemoEditor = forwardRef<DetailMemoHandle, DetailMemoEditorProps>(fun
         style={[styles.memoInput, expanded && styles.memoTextArea]}
       />
       {expanded && <View style={styles.tagEditor}>
-        <TextInput ref={tagInputRef} value={tagInput} onChangeText={setTagInput} onSubmitEditing={addTag} returnKeyType="done" placeholder="태그 추가..." placeholderTextColor="#888888" style={styles.tagInput} />
+        <TextInput ref={tagInputRef} value={tagInput} onChangeText={setTagInput} onFocus={() => onInputFocus?.(tagInputRef.current)} onBlur={() => onInputBlur?.(tagInputRef.current)} onSubmitEditing={addTag} returnKeyType="done" placeholder="태그 추가..." placeholderTextColor="#888888" style={styles.tagInput} />
         <Pressable accessibilityRole="button" onPress={addTag} disabled={!normalizeTag(tagInput)} style={[styles.addButton, !normalizeTag(tagInput) && styles.addDisabled]}><Text style={styles.addText}>추가</Text></Pressable>
       </View>}
       {tags.length > 0 && <View style={styles.tagList}>{tags.map((tag) => <View key={tag} style={styles.tag}><Text style={styles.tagText}># {tag}</Text>{expanded && <Pressable accessibilityRole="button" onPress={() => setTags((previous) => previous.filter((item) => item !== tag))}><Text style={styles.removeText}>×</Text></Pressable>}</View>)}</View>}
