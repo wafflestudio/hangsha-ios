@@ -1,15 +1,18 @@
+import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CalendarHeader } from '@/components/calendar/CalendarHeader';
 import { DailyEventCard } from '@/components/calendar/DailyEventCard';
+import { FilterSheet } from '@/components/calendar/FilterSheet';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useDayEventsQuery } from '@/contexts/EventDataContext';
+import { useEventFilterParams } from '@/hooks/use-event-filter-params';
 import type { Event } from '@/types/event';
 import { formatDateToYYYYMMDD, parseDateString } from '@/util/calendar/dateFormatter';
 import { filterDayEvents } from '@/util/calendar/filterDayEvents';
@@ -29,12 +32,14 @@ const addDays = (date: Date, amount: number): Date => {
 export function DailyEventsScreen({ date }: DailyEventsScreenProps) {
   const theme = useTheme();
   const router = useRouter();
+  const filterSheetRef = useRef<BottomSheetModal>(null);
+  const filterParams = useEventFilterParams();
 
   const {
     data,
     isPending,
     isError,
-  } = useDayEventsQuery(date);
+  } = useDayEventsQuery(date, filterParams);
 
   const selectedDate = date ? parseDateString(date) : null;
 
@@ -125,7 +130,8 @@ export function DailyEventsScreen({ date }: DailyEventsScreenProps) {
                 style={styles.filterButton}
                 hitSlop={Spacing.two}
                 accessibilityRole="button"
-                accessibilityLabel="필터">
+                accessibilityLabel="필터"
+                onPress={() => filterSheetRef.current?.present()}>
                 <Image
                   source={require('@/assets/images/filter.svg')}
                   style={styles.filterIcon}
@@ -157,6 +163,8 @@ export function DailyEventsScreen({ date }: DailyEventsScreenProps) {
           }
         />
       </SafeAreaView>
+
+      <FilterSheet ref={filterSheetRef} />
     </ThemedView>
   );
 }

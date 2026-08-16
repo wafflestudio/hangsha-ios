@@ -14,12 +14,21 @@ import type {
 } from "@/types/event";
 import { transformEvent, transformEventDetail } from "@/util/calendar/transformEvent";
 
+export type EventFilterParams = {
+  statusId?: number[];
+  eventTypeId?: number[];
+  orgId?: number[];
+};
+
 export const eventKeys = {
   all: ["events"] as const,
   detail: (id: number) => [...eventKeys.all, "detail", id] as const,
-  day: (date: string) => [...eventKeys.all, "day", date] as const,
-  month: (from: string, to: string) => [...eventKeys.all, "month", from, to] as const,
-  search: (query: string) => [...eventKeys.all, "search", query] as const,
+  day: (date: string, filters: EventFilterParams = {}) =>
+    [...eventKeys.all, "day", date, filters] as const,
+  month: (from: string, to: string, filters: EventFilterParams = {}) =>
+    [...eventKeys.all, "month", from, to, filters] as const,
+  search: (query: string, filters: EventFilterParams = {}) =>
+    [...eventKeys.all, "search", query, filters] as const,
 };
 
 export async function getEventDetail(id: number): Promise<EventDetail> {
