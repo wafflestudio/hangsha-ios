@@ -1,29 +1,57 @@
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 
 import {
+  type EventFilterParams,
   eventKeys,
   getDayEvents,
   getEventDetail,
   getMonthEvents,
   searchEvents,
 } from '@/api/event';
+import { getCategoryGroups, getOrganizations } from '@/api/user';
 import { filterEventTimeVariants } from '@/util/calendar/filterEventTimeVariants';
 
 const DEFAULT_SEARCH_PAGE_SIZE = 20;
 
-export function useDayEventsQuery(date: string) {
+const categoryMetadataKeys = {
+  groups: ['category-groups'] as const,
+  orgs: ['organizations'] as const,
+};
+
+export function useCategoryGroupsQuery() {
   return useQuery({
-    queryKey: eventKeys.day(date),
-    queryFn: () => getDayEvents({ date }),
-    enabled: Boolean(date),
+    queryKey: categoryMetadataKeys.groups,
+    queryFn: getCategoryGroups,
   });
 }
 
-export function useMonthEventsQuery(from: string, to: string, enabled = true) {
+export function useOrganizationsQuery() {
   return useQuery({
-    queryKey: eventKeys.month(from, to),
-    queryFn: () => getMonthEvents({ from, to }),
+    queryKey: categoryMetadataKeys.orgs,
+    queryFn: getOrganizations,
+  });
+}
+
+export function useDayEventsQuery(date: string, filters: EventFilterParams = {}) {
+  return useQuery({
+    queryKey: eventKeys.day(date, filters),
+    queryFn: () => getDayEvents({ date, ...filters }),
+    enabled: Boolean(date),
+    placeholderData: keepPreviousData,
+  });
+}
+
+export function useMonthEventsQuery(
+  from: string,
+  to: string,
+  filters: EventFilterParams = {},
+  enabled = true,
+) {
+  return useQuery({
+    queryKey: eventKeys.month(from, to, filters),
+    queryFn: () => getMonthEvents({ from, to, ...filters }),
     enabled: Boolean(from && to && enabled),
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -35,16 +63,17 @@ export function useEventDetailQuery(eventId: number) {
   });
 }
 
-export function useEventSearchQuery(query: string) {
+export function useEventSearchQuery(query: string, filters: EventFilterParams = {}) {
   const normalizedQuery = query.trim();
 
   return useQuery({
-    queryKey: eventKeys.search(normalizedQuery),
+    queryKey: eventKeys.search(normalizedQuery, filters),
     queryFn: async () => {
       const firstResult = await searchEvents({
         query: normalizedQuery,
         page: 1,
         size: DEFAULT_SEARCH_PAGE_SIZE,
+        ...filters,
       });
       const fullResult =
         firstResult.items.length < firstResult.total
@@ -52,6 +81,7 @@ export function useEventSearchQuery(query: string) {
               query: normalizedQuery,
               page: 1,
               size: firstResult.total,
+              ...filters,
             })
           : firstResult;
       const items = filterEventTimeVariants(fullResult.items, (item) => item.event);
@@ -65,5 +95,6 @@ export function useEventSearchQuery(query: string) {
       };
     },
     enabled: normalizedQuery.length > 0,
+    placeholderData: keepPreviousData,
   });
 }

@@ -1,7 +1,8 @@
+import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -16,13 +17,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CalendarHeader } from '@/components/calendar/CalendarHeader';
 import { DailyEventCard } from '@/components/calendar/DailyEventCard';
+import { FilterSheet } from '@/components/calendar/FilterSheet';
 import { MobileBottomNavigation } from '@/components/mobile-bottom-navigation';
 import { useAuth } from '@/contexts/AuthProvider';
 import { useDayEventsQuery } from '@/contexts/EventDataContext';
 import { useUserData } from '@/contexts/UserDataContext';
+import { useEventFilterParams } from '@/hooks/use-event-filter-params';
 import type { Event } from '@/types/event';
-import { filterDayEvents } from '@/util/calendar/filterDayEvents';
 import { formatDateToYYYYMMDD, parseDateString } from '@/util/calendar/dateFormatter';
+import { filterDayEvents } from '@/util/calendar/filterDayEvents';
 import { Spacing } from '@/util/theme';
 
 type DailyEventsScreenProps = {
@@ -37,9 +40,11 @@ const addDays = (date: Date, amount: number): Date => {
 
 export function DailyEventsScreen({ date }: DailyEventsScreenProps) {
   const router = useRouter();
+  const filterSheetRef = useRef<BottomSheetModal>(null);
+  const filterParams = useEventFilterParams();
   const { user } = useAuth();
   const { toggleBookmark } = useUserData();
-  const dayEventsQuery = useDayEventsQuery(date);
+  const dayEventsQuery = useDayEventsQuery(date, filterParams);
   const { data, isPending, isError, isRefetching } = dayEventsQuery;
   const selectedDate = date ? parseDateString(date) : null;
 
@@ -119,8 +124,7 @@ export function DailyEventsScreen({ date }: DailyEventsScreenProps) {
                 disabled
                 style={styles.filterButton}
                 accessibilityRole="button"
-                accessibilityLabel="필터"
-                accessibilityState={{ disabled: true }}>
+                accessibilityLabel="필터">
                 <Image
                   source={require('@/assets/images/filter.svg')}
                   style={styles.filterIcon}
@@ -190,6 +194,8 @@ export function DailyEventsScreen({ date }: DailyEventsScreenProps) {
       </SafeAreaView>
 
       <MobileBottomNavigation activeTab="calendar" />
+
+      <FilterSheet ref={filterSheetRef} applyLabel={`${events.length}개의 행사 보기`} />
     </View>
   );
 }

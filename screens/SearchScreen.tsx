@@ -1,3 +1,4 @@
+import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
@@ -16,11 +17,13 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { FilterSheet } from '@/components/calendar/FilterSheet';
 import { MobileBottomNavigation } from '@/components/mobile-bottom-navigation';
 import { SearchResultCard } from '@/components/search/SearchResultCard';
 import { useAuth } from '@/contexts/AuthProvider';
 import { useEventSearchQuery } from '@/contexts/EventDataContext';
 import { useUserData } from '@/contexts/UserDataContext';
+import { useEventFilterParams } from '@/hooks/use-event-filter-params';
 import {
   SEARCH_PAGE_SIZES,
   type SearchPageSize,
@@ -36,6 +39,7 @@ export function SearchScreen({ initialQuery }: SearchScreenProps) {
   const router = useRouter();
   const inputRef = useRef<TextInput>(null);
   const listRef = useRef<FlatList>(null);
+  const filterSheetRef = useRef<BottomSheetModal>(null);
   const { user } = useAuth();
   const { toggleBookmark } = useUserData();
   const [profileImageFailed, setProfileImageFailed] = useState(false);
@@ -53,7 +57,8 @@ export function SearchScreen({ initialQuery }: SearchScreenProps) {
     setPageSize,
     setPageSizeMenuOpen,
   } = useSearchUiStore();
-  const searchQuery = useEventSearchQuery(submittedQuery);
+  const filterParams = useEventFilterParams();
+  const searchQuery = useEventSearchQuery(submittedQuery, filterParams);
   const result = searchQuery.data;
   const totalPages = result ? Math.ceil(result.total / pageSize) : 0;
   const safePage = totalPages > 0 ? Math.min(page, totalPages) : 1;
@@ -122,6 +127,7 @@ export function SearchScreen({ initialQuery }: SearchScreenProps) {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="검색 필터"
+                onPress={() => filterSheetRef.current?.present()}
                 style={({ pressed }) => [styles.filterButton, pressed && styles.pressed]}>
                 <Image
                   source={require('@/assets/images/filter.svg')}
@@ -259,6 +265,8 @@ export function SearchScreen({ initialQuery }: SearchScreenProps) {
         onClose={() => setPageSizeMenuOpen(false)}
         onSelect={setPageSize}
       />
+
+      <FilterSheet ref={filterSheetRef} applyLabel={`${result?.total ?? 0}개의 행사 보기`} />
     </View>
   );
 }
