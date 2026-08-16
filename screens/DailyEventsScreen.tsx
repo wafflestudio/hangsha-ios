@@ -2,19 +2,28 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useMemo } from 'react';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Pressable,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CalendarHeader } from '@/components/calendar/CalendarHeader';
 import { DailyEventCard } from '@/components/calendar/DailyEventCard';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+import { MobileBottomNavigation } from '@/components/mobile-bottom-navigation';
+import { useAuth } from '@/contexts/AuthProvider';
 import { useDayEventsQuery } from '@/contexts/EventDataContext';
+import { useUserData } from '@/contexts/UserDataContext';
 import type { Event } from '@/types/event';
-import { formatDateToYYYYMMDD, parseDateString } from '@/util/calendar/dateFormatter';
 import { filterDayEvents } from '@/util/calendar/filterDayEvents';
-import { BottomTabInset, Spacing } from '@/util/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { formatDateToYYYYMMDD, parseDateString } from '@/util/calendar/dateFormatter';
+import { Spacing } from '@/util/theme';
 
 type DailyEventsScreenProps = {
   date: string;
@@ -27,23 +36,15 @@ const addDays = (date: Date, amount: number): Date => {
 };
 
 export function DailyEventsScreen({ date }: DailyEventsScreenProps) {
-  const theme = useTheme();
   const router = useRouter();
-
-  const {
-    data,
-    isPending,
-    isError,
-  } = useDayEventsQuery(date);
-
+  const { user } = useAuth();
+  const { toggleBookmark } = useUserData();
+  const dayEventsQuery = useDayEventsQuery(date);
+  const { data, isPending, isError, isRefetching } = dayEventsQuery;
   const selectedDate = date ? parseDateString(date) : null;
 
   const headerLabel = selectedDate
-    ? selectedDate.toLocaleDateString('ko-KR', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      })
+    ? `${selectedDate.getMonth() + 1}월 ${selectedDate.getDate()}일`
     : '';
 
   const events = useMemo(
@@ -55,77 +56,71 @@ export function DailyEventsScreen({ date }: DailyEventsScreenProps) {
     router.setParams({ date: formatDateToYYYYMMDD(nextDate) });
   };
 
-  const goToToday = () => goToDate(new Date());
-  const goToPreviousDay = () => selectedDate && goToDate(addDays(selectedDate, -1));
-  const goToNextDay = () => selectedDate && goToDate(addDays(selectedDate, 1));
+  const close = () => {
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+    router.replace('/calendar');
+  };
 
-  if (isPending) {
-    return (
-      <ThemedView style={styles.centered}>
-        <ActivityIndicator color={theme.text} />
-      </ThemedView>
-    );
-  }
+  const toggleEventBookmark = async (event: Event) => {
+    if (!user) {
+      Alert.alert('로그인이 필요해요', '행사를 찜하려면 로그인해주세요.', [
+        { text: '취소', style: 'cancel' },
+        { text: '로그인', onPress: () => router.replace('/') },
+      ]);
+      throw new Error('Authentication is required to toggle a bookmark.');
+    }
 
-  if (isError) {
-    return (
-      <ThemedView style={styles.centered}>
-        <ThemedText themeColor="textSecondary">행사 정보를 불러오지 못했어요.</ThemedText>
-      </ThemedView>
-    );
-  }
+    try {
+      await toggleBookmark(event);
+    } catch (error) {
+      Alert.alert('찜 변경 실패', '찜 상태를 변경하지 못했습니다. 잠시 후 다시 시도해주세요.');
+      throw error;
+    }
+  };
 
   return (
-    <ThemedView style={styles.container}>
+    <View style={styles.root}>
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
         <CalendarHeader
           label={headerLabel}
           left={
             <>
               <Pressable
-                style={styles.todayButton}
-                onPress={goToToday}
+                style={({ pressed }) => [styles.todayButton, pressed && styles.controlPressed]}
+                onPress={() => goToDate(new Date())}
                 hitSlop={Spacing.two}
                 accessibilityRole="button"
                 accessibilityLabel="오늘로 이동">
-                <ThemedText type="small" themeColor="textSecondary">
-                  오늘
-                </ThemedText>
+                <Text style={styles.todayText}>오늘</Text>
               </Pressable>
 
               <Pressable
-                style={styles.headerArrow}
-                onPress={goToPreviousDay}
+                style={({ pressed }) => [styles.headerArrow, pressed && styles.controlPressed]}
+                onPress={() => selectedDate && goToDate(addDays(selectedDate, -1))}
                 hitSlop={Spacing.two}
                 accessibilityRole="button"
                 accessibilityLabel="이전 날">
-                <SymbolView
-                  name="chevron.left"
-                  tintColor={theme.textSecondary}
-                  size={18}
-                  weight="bold"
-                />
+                <SymbolView name="chevron.left" tintColor="#ABABAB" size={18} weight="bold" />
               </Pressable>
 
               <Pressable
-                style={styles.headerArrow}
-                onPress={goToNextDay}
+                style={({ pressed }) => [styles.headerArrow, pressed && styles.controlPressed]}
+                onPress={() => selectedDate && goToDate(addDays(selectedDate, 1))}
                 hitSlop={Spacing.two}
                 accessibilityRole="button"
                 accessibilityLabel="다음 날">
-                <SymbolView
-                  name="chevron.right"
-                  tintColor={theme.textSecondary}
-                  size={18}
-                  weight="bold"
-                />
+                <SymbolView name="chevron.right" tintColor="#ABABAB" size={18} weight="bold" />
               </Pressable>
 
               <Pressable
+                disabled
                 style={styles.filterButton}
-                hitSlop={Spacing.two}
                 accessibilityRole="button"
-                accessibilityLabel="필터">
+                accessibilityLabel="필터"
+                accessibilityState={{ disabled: true }}>
                 <Image
                   source={require('@/assets/images/filter.svg')}
                   style={styles.filterIcon}
@@ -134,89 +129,107 @@ export function DailyEventsScreen({ date }: DailyEventsScreenProps) {
               </Pressable>
             </>
           }
-        />
-
-        <FlatList
-          data={events}
-          keyExtractor={(event: Event) => String(event.id)}
-          contentContainerStyle={styles.listContent}
-          renderItem={({ item }) => (
-            <DailyEventCard
-              event={item}
-              onPress={() =>
-                router.push({ pathname: '/event/[id]', params: { id: String(item.id) } })
-              }
-            />
-          )}
-          ListEmptyComponent={
-            <ThemedView style={styles.empty}>
-              <ThemedText themeColor="textSecondary">
-                해당 날짜에 등록된 행사가 없어요.
-              </ThemedText>
-            </ThemedView>
+          right={
+            <Pressable
+              hitSlop={Spacing.two}
+              onPress={close}
+              accessibilityRole="button"
+              accessibilityLabel="일별 행사 닫기"
+              style={({ pressed }) => [styles.closeButton, pressed && styles.controlPressed]}>
+              <SymbolView name="xmark" tintColor="#ABABAB" size={22} weight="semibold" />
+            </Pressable>
           }
         />
+
+        {isPending ? (
+          <View style={styles.centered}>
+            <ActivityIndicator color="#828282" />
+          </View>
+        ) : isError ? (
+          <View style={styles.centered}>
+            <Text style={styles.stateText}>행사 정보를 불러오지 못했어요.</Text>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => dayEventsQuery.refetch()}
+              style={({ pressed }) => [styles.retryButton, pressed && styles.controlPressed]}>
+              <Text style={styles.retryText}>다시 시도</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <FlatList
+            data={events}
+            keyExtractor={(event: Event) => String(event.id)}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={[
+              styles.listContent,
+              events.length === 0 && styles.emptyListContent,
+            ]}
+            refreshControl={
+              <RefreshControl
+                refreshing={isRefetching}
+                onRefresh={() => dayEventsQuery.refetch()}
+                tintColor="#828282"
+              />
+            }
+            renderItem={({ item }) => (
+              <DailyEventCard
+                event={item}
+                onPress={() =>
+                  router.push({ pathname: '/event/[id]', params: { id: String(item.id) } })
+                }
+                onToggleBookmark={toggleEventBookmark}
+              />
+            )}
+            ListEmptyComponent={
+              <View style={styles.empty}>
+                <Text style={styles.stateText}>행사가 없습니다.</Text>
+              </View>
+            }
+          />
+        )}
       </SafeAreaView>
-    </ThemedView>
+
+      <MobileBottomNavigation activeTab="calendar" />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  safeArea: {
-    flex: 1,
-    paddingBottom: BottomTabInset,
-  },
-  centered: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  root: { flex: 1, backgroundColor: '#FFFFFF' },
+  safeArea: { flex: 1, backgroundColor: '#FFFFFF' },
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
   todayButton: {
-    paddingHorizontal: 7,
-    paddingVertical: Spacing.half,
-    borderRadius: Spacing.three,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     borderWidth: 1,
-    borderColor: '#D9D9D9',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 4,
+    borderColor: '#E0E0E0',
+    borderRadius: 13,
+    backgroundColor: '#FFFFFF',
   },
-  headerArrow: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: Spacing.one,
-  },
+  todayText: { color: '#555555', fontSize: 13, lineHeight: 18, fontWeight: '500' },
+  headerArrow: { width: 28, height: 36, alignItems: 'center', justifyContent: 'center' },
   filterButton: {
-    width: 50,
-    height: 50,
+    width: 40,
+    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 5,
     borderWidth: 1,
     borderColor: '#FFFFFF',
+    borderRadius: 5,
+    backgroundColor: '#FFFFFF',
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
   },
-  filterIcon: {
-    width: 19,
-    height: 19,
-  },
-  listContent: {
-    paddingHorizontal: Spacing.three,
-    flexGrow: 1,
-  },
-  empty: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: Spacing.six,
-  },
+  filterIcon: { width: 19, height: 19 },
+  closeButton: { width: 36, height: 40, alignItems: 'center', justifyContent: 'center' },
+  listContent: { paddingHorizontal: 20, paddingTop: 1, paddingBottom: 18 },
+  emptyListContent: { flexGrow: 1 },
+  empty: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  stateText: { color: '#888888', fontSize: 14, lineHeight: 20, fontWeight: '500' },
+  retryButton: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 9, backgroundColor: '#F0F0F0' },
+  retryText: { color: '#555555', fontSize: 13, fontWeight: '700' },
+  controlPressed: { opacity: 0.55 },
 });
