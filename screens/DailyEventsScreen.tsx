@@ -121,8 +121,9 @@ export function DailyEventsScreen({ date }: DailyEventsScreenProps) {
               </Pressable>
 
               <Pressable
-                disabled
-                style={styles.filterButton}
+                style={({ pressed }) => [styles.filterButton, pressed && styles.controlPressed]}
+                onPress={() => filterSheetRef.current?.present()}
+                hitSlop={Spacing.two}
                 accessibilityRole="button"
                 accessibilityLabel="필터">
                 <Image

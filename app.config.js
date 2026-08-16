@@ -20,10 +20,6 @@ const iosBundleIdentifier = readBuildEnv(
   "com.wafflestudio.hangsha-ios.dev",
 );
 
-if (isEasBuildConfig) {
-  requireEnv("EXPO_PUBLIC_API_URL");
-}
-
 module.exports = {
   expo: {
     name: isDevelopment ? "행샤 dev" : "행샤",
