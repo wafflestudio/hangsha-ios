@@ -1,15 +1,18 @@
+import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { Image } from 'expo-image';
 import { SymbolView } from 'expo-symbols';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CalendarHeader } from '@/components/calendar/CalendarHeader';
 import { CalendarWeekRow } from '@/components/calendar/CalendarWeekRow';
+import { FilterSheet } from '@/components/calendar/FilterSheet';
 import { MobileBottomNavigation } from '@/components/mobile-bottom-navigation';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useMonthEventsQuery } from '@/contexts/EventDataContext';
+import { useEventFilterParams } from '@/hooks/use-event-filter-params';
 import { useTheme } from '@/hooks/use-theme';
 import type { Event, MonthViewResponse } from '@/types/event';
 import { buildMonthEventLayout } from '@/util/calendar/buildMonthEventLayout';
@@ -71,6 +74,8 @@ export function CalendarScreen({ onSelectDate, onSearch }: CalendarScreenProps) 
   const [visibleMonth, setVisibleMonth] = useState(
     () => new Date(today.getFullYear(), today.getMonth(), 1),
   );
+  const filterSheetRef = useRef<BottomSheetModal>(null);
+  const filterParams = useEventFilterParams();
 
   const year = visibleMonth.getFullYear();
   const month = visibleMonth.getMonth();
@@ -86,7 +91,7 @@ export function CalendarScreen({ onSelectDate, onSearch }: CalendarScreenProps) 
     data: monthData,
     isPending,
     isError,
-  } = useMonthEventsQuery(rangeFrom, rangeTo);
+  } = useMonthEventsQuery(rangeFrom, rangeTo, filterParams);
 
   const events = useMemo(() => flattenByDate(monthData?.byDate), [monthData]);
   const weeks = useMemo(
@@ -142,7 +147,8 @@ export function CalendarScreen({ onSelectDate, onSearch }: CalendarScreenProps) 
                 style={styles.filterButton}
                 hitSlop={Spacing.two}
                 accessibilityRole="button"
-                accessibilityLabel="필터">
+                accessibilityLabel="필터"
+                onPress={() => filterSheetRef.current?.present()}>
                 <Image
                   source={require('@/assets/images/filter.svg')}
                   style={styles.filterIcon}
@@ -214,6 +220,7 @@ export function CalendarScreen({ onSelectDate, onSearch }: CalendarScreenProps) 
       </SafeAreaView>
 
       <MobileBottomNavigation activeTab="calendar" />
+      <FilterSheet ref={filterSheetRef} applyLabel={`${events.length}개의 행사 보기`} />
     </ThemedView>
   );
 }

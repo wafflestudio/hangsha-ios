@@ -62,6 +62,8 @@ export type DayViewParams = {
   statusId?: number[];
   eventTypeId?: number[];
   orgId?: number[];
+  /** 비로그인 사용자용 — 넘기면 서버가 이 목록으로 필터링, 안 넘기면 로그인된 유저의 저장된 제외 키워드 사용 */
+  excludedKeywords?: string[];
 };
 
 export type DayViewResponseDTO = {
@@ -86,6 +88,8 @@ export type MonthViewParams = {
   statusId?: number[];
   eventTypeId?: number[];
   orgId?: number[];
+  /** 비로그인 사용자용 — 넘기면 서버가 이 목록으로 필터링, 안 넘기면 로그인된 유저의 저장된 제외 키워드 사용 */
+  excludedKeywords?: string[];
 };
 
 export type MonthViewResponseDTO = {
@@ -111,6 +115,8 @@ export type EventSearchParams = {
   statusId?: number[];
   eventTypeId?: number[];
   orgId?: number[];
+  /** 비로그인 사용자용 — 넘기면 서버가 이 목록으로 필터링, 안 넘기면 로그인된 유저의 저장된 제외 키워드 사용 */
+  excludedKeywords?: string[];
 };
 
 export type EventSearchHighlight = {

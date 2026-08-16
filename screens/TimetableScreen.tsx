@@ -66,7 +66,7 @@ export function TimetableScreen() {
   const weekRange = useMemo(() => getWeekRange(new Date(weekAnchor)), [weekAnchor]);
   const from = useMemo(() => formatLocalDate(weekRange.from), [weekRange.from]);
   const to = useMemo(() => formatLocalDate(weekRange.to), [weekRange.to]);
-  const eventQuery = useMonthEventsQuery(from, to, eventOverlayOn);
+  const eventQuery = useMonthEventsQuery(from, to, {}, eventOverlayOn);
 
   const weekEvents = useMemo(() => {
     if (!eventOverlayOn) return [];
