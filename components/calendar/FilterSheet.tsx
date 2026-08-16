@@ -4,7 +4,6 @@ import {
   BottomSheetScrollView,
   BottomSheetTextInput,
 } from '@gorhom/bottom-sheet';
-import { useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -14,6 +13,7 @@ import { useAuth } from '@/contexts/AuthProvider';
 import { useCategoryGroupsQuery } from '@/contexts/EventDataContext';
 import { useUserData } from '@/contexts/UserDataContext';
 import { type FilterTab, useFilterStore } from '@/stores/filterStore';
+import { useLocalExcludedKeywordsStore } from '@/stores/localExcludedKeywordsStore';
 import type { Category } from '@/types/category';
 import { normalizeEventTypeId } from '@/util/calendar/transformEvent';
 import type { EventTypeId } from '@/util/theme';
@@ -57,16 +57,18 @@ export const FilterSheet = forwardRef<BottomSheetModal, FilterSheetProps>(functi
 ) {
   const sheetRef = useRef<BottomSheetModal>(null);
   useImperativeHandle(ref, () => sheetRef.current as BottomSheetModal);
-  const router = useRouter();
   const { isAuthenticated } = useAuth();
 
   const { data: categoryGroups } = useCategoryGroupsQuery();
   const {
-    excludedKeywords,
+    excludedKeywords: serverExcludedKeywords,
     addExcludedKeyword,
     deleteExcludedKeyword,
     excludedKeywordLoading,
   } = useUserData();
+  const localKeywords = useLocalExcludedKeywordsStore((state) => state.keywords);
+  const addLocalKeyword = useLocalExcludedKeywordsStore((state) => state.addKeyword);
+  const removeLocalKeyword = useLocalExcludedKeywordsStore((state) => state.removeKeyword);
 
   const activeTab = useFilterStore((state) => state.activeTab);
   const selectedCategory = useFilterStore((state) => state.selectedCategory);
@@ -151,17 +153,21 @@ export const FilterSheet = forwardRef<BottomSheetModal, FilterSheetProps>(functi
 
       <BottomSheetScrollView contentContainerStyle={styles.body}>
         {activeTab === 'exclude' ? (
-          <ExcludeKeywordPanel
-            isAuthenticated={isAuthenticated}
-            onNavigateToLogin={() => {
-              sheetRef.current?.dismiss();
-              router.replace('/');
-            }}
-            keywords={excludedKeywords}
-            isLoading={excludedKeywordLoading}
-            onAdd={addExcludedKeyword}
-            onRemove={deleteExcludedKeyword}
-          />
+          isAuthenticated ? (
+            <ExcludeKeywordPanel
+              keywords={serverExcludedKeywords.map((tag) => ({ key: String(tag.id), label: tag.keyword }))}
+              isLoading={excludedKeywordLoading}
+              onAdd={addExcludedKeyword}
+              onRemove={(key) => deleteExcludedKeyword(Number(key))}
+            />
+          ) : (
+            <ExcludeKeywordPanel
+              keywords={localKeywords.map((keyword) => ({ key: keyword, label: keyword }))}
+              isLoading={false}
+              onAdd={async (keyword) => addLocalKeyword(keyword)}
+              onRemove={async (key) => removeLocalKeyword(key)}
+            />
+          )
         ) : (
           <View style={styles.optionList}>
             <Pressable
@@ -232,47 +238,26 @@ function Checkbox({ checked }: { checked: boolean }) {
   );
 }
 
-type ExcludeKeywordPanelProps = {
-  isAuthenticated: boolean;
-  onNavigateToLogin: () => void;
-  keywords: { id: number; keyword: string }[];
-  isLoading: boolean;
-  onAdd: (keyword: string) => Promise<void>;
-  onRemove: (id: number) => Promise<void>;
+type ExcludeKeywordTag = {
+  /** 서버 저장 시 id, 로컬 저장 시 keyword 문자열 자체 */
+  key: string;
+  label: string;
 };
 
-function ExcludeKeywordPanel({
-  isAuthenticated,
-  onNavigateToLogin,
-  keywords,
-  isLoading,
-  onAdd,
-  onRemove,
-}: ExcludeKeywordPanelProps) {
+type ExcludeKeywordPanelProps = {
+  keywords: ExcludeKeywordTag[];
+  isLoading: boolean;
+  onAdd: (keyword: string) => Promise<void>;
+  onRemove: (key: string) => Promise<void>;
+};
+
+function ExcludeKeywordPanel({ keywords, isLoading, onAdd, onRemove }: ExcludeKeywordPanelProps) {
   const commitKeyword = (value: string, clear: () => void) => {
     const trimmed = value.trim();
     if (!trimmed) return;
     onAdd(trimmed);
     clear();
   };
-
-  if (!isAuthenticated) {
-    return (
-      <View style={styles.authPrompt}>
-        <ThemedText type="small" style={styles.authPromptText}>
-          제외 키워드 기능을 이용하려면 로그인을 해주세요.
-        </ThemedText>
-        <Pressable
-          style={[styles.authButton, styles.authButtonPrimary]}
-          onPress={onNavigateToLogin}
-          accessibilityRole="button">
-          <ThemedText type="smallBold" style={styles.authButtonPrimaryText}>
-            로그인
-          </ThemedText>
-        </Pressable>
-      </View>
-    );
-  }
 
   return (
     <View style={styles.excludePanel}>
@@ -283,14 +268,14 @@ function ExcludeKeywordPanel({
       <ExcludeKeywordInput isLoading={isLoading} onCommit={commitKeyword} />
 
       {keywords.map((tag) => (
-        <View key={tag.id} style={styles.excludeItem}>
+        <View key={tag.key} style={styles.excludeItem}>
           <Pressable
-            onPress={() => onRemove(tag.id)}
+            onPress={() => onRemove(tag.key)}
             accessibilityRole="button"
-            accessibilityLabel={`${tag.keyword} 제거`}>
+            accessibilityLabel={`${tag.label} 제거`}>
             <SymbolView name="xmark" tintColor="#8a8a8a" size={16} />
           </Pressable>
-          <ThemedText type="small">{tag.keyword}</ThemedText>
+          <ThemedText type="small">{tag.label}</ThemedText>
         </View>
       ))}
     </View>
@@ -405,29 +390,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     paddingVertical: 8,
-  },
-  authPrompt: {
-    alignItems: 'center',
-    gap: 16,
-    paddingVertical: 24,
-  },
-  authPromptText: {
-    textAlign: 'center',
-  },
-  authButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: '#e4e4e4',
-    backgroundColor: '#ffffff',
-  },
-  authButtonPrimary: {
-    borderColor: '#494949',
-    backgroundColor: '#494949',
-  },
-  authButtonPrimaryText: {
-    color: '#ffffff',
   },
   footer: {
     flexDirection: 'row',

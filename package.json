@@ -5,6 +5,7 @@
   "dependencies": {
     "@expo/ui": "~57.0.9",
     "@gorhom/bottom-sheet": "^5.2.14",
+    "@react-native-async-storage/async-storage": "^3.1.1",
     "@react-native-google-signin/google-signin": "^16.1.4",
     "@react-native-vector-icons/fontawesome-free-solid": "^1.1.2",
     "@tanstack/react-query": "^5.101.2",
