@@ -266,7 +266,7 @@ export function SearchScreen({ initialQuery }: SearchScreenProps) {
         onSelect={setPageSize}
       />
 
-      <FilterSheet ref={filterSheetRef} />
+      <FilterSheet ref={filterSheetRef} applyLabel={`${result?.total ?? 0}개의 행사 보기`} />
     </View>
   );
 }

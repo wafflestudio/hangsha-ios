@@ -220,7 +220,7 @@ export function CalendarScreen({ onSelectDate, onSearch }: CalendarScreenProps) 
       </SafeAreaView>
 
       <MobileBottomNavigation activeTab="calendar" />
-      <FilterSheet ref={filterSheetRef} />
+      <FilterSheet ref={filterSheetRef} applyLabel={`${events.length}개의 행사 보기`} />
     </ThemedView>
   );
 }

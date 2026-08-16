@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 
 import {
   type EventFilterParams,
@@ -37,6 +37,7 @@ export function useDayEventsQuery(date: string, filters: EventFilterParams = {})
     queryKey: eventKeys.day(date, filters),
     queryFn: () => getDayEvents({ date, ...filters }),
     enabled: Boolean(date),
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -50,6 +51,7 @@ export function useMonthEventsQuery(
     queryKey: eventKeys.month(from, to, filters),
     queryFn: () => getMonthEvents({ from, to, ...filters }),
     enabled: Boolean(from && to && enabled),
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -93,5 +95,6 @@ export function useEventSearchQuery(query: string, filters: EventFilterParams = 
       };
     },
     enabled: normalizedQuery.length > 0,
+    placeholderData: keepPreviousData,
   });
 }

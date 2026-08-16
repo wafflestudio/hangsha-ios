@@ -4,20 +4,38 @@ import {
   BottomSheetScrollView,
   BottomSheetTextInput,
 } from '@gorhom/bottom-sheet';
+import { useRouter } from 'expo-router';
+import { SymbolView } from 'expo-symbols';
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
-import { Pressable, StyleSheet, View, useColorScheme } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
+import { useAuth } from '@/contexts/AuthProvider';
 import { useCategoryGroupsQuery } from '@/contexts/EventDataContext';
 import { useUserData } from '@/contexts/UserDataContext';
 import { type FilterTab, useFilterStore } from '@/stores/filterStore';
 import type { Category } from '@/types/category';
 import { normalizeEventTypeId } from '@/util/calendar/transformEvent';
-import { getEventTypeColors } from '@/util/theme';
+import type { EventTypeId } from '@/util/theme';
 
 const STATUS_GROUP_ID = 1;
 const ORG_GROUP_ID = 2;
 const CATEGORY_GROUP_ID = 3;
+
+/**
+ * 필터시트 전용 카테고리 색상 — hangsha-web CATEGORY_BUTTON_COLORS(15% 알파)
+ * 그대로 이식. EventTypeColors(캘린더/상세/칩용 60% 알파 팔레트)와는 알파값만
+ * 다르고 베이스 RGB는 동일.
+ */
+const FILTER_CATEGORY_COLORS: Record<EventTypeId, string> = {
+  1: 'rgba(255, 140, 40, 0.15)',
+  2: 'rgba(255, 204, 0, 0.15)',
+  3: 'rgba(11, 206, 131, 0.15)',
+  4: 'rgba(0, 193, 232, 0.15)',
+  5: 'rgba(0, 136, 255, 0.15)',
+  6: 'rgba(162, 90, 255, 0.15)',
+  7: 'rgba(255, 45, 83, 0.15)',
+};
 
 const TABS: { key: FilterTab; label: string }[] = [
   { key: 'category', label: '행사 종류' },
@@ -28,10 +46,19 @@ const TABS: { key: FilterTab; label: string }[] = [
 
 const SNAP_POINTS = ['75%'];
 
-export const FilterSheet = forwardRef<BottomSheetModal>(function FilterSheet(_props, ref) {
-  const scheme = useColorScheme() === 'dark' ? 'dark' : 'light';
+type FilterSheetProps = {
+  /** 시트 하단 "적용" 버튼에 표시할 라벨. 예: "32개의 행사 보기" */
+  applyLabel?: string;
+};
+
+export const FilterSheet = forwardRef<BottomSheetModal, FilterSheetProps>(function FilterSheet(
+  { applyLabel = '적용' },
+  ref,
+) {
   const sheetRef = useRef<BottomSheetModal>(null);
   useImperativeHandle(ref, () => sheetRef.current as BottomSheetModal);
+  const router = useRouter();
+  const { isAuthenticated } = useAuth();
 
   const { data: categoryGroups } = useCategoryGroupsQuery();
   const {
@@ -99,6 +126,7 @@ export const FilterSheet = forwardRef<BottomSheetModal>(function FilterSheet(_pr
     <BottomSheetModal
       ref={sheetRef}
       snapPoints={SNAP_POINTS}
+      enableDynamicSizing={false}
       backdropComponent={(props) => (
         <BottomSheetBackdrop {...props} appearsOnIndex={0} disappearsOnIndex={-1} />
       )}
@@ -124,6 +152,11 @@ export const FilterSheet = forwardRef<BottomSheetModal>(function FilterSheet(_pr
       <BottomSheetScrollView contentContainerStyle={styles.body}>
         {activeTab === 'exclude' ? (
           <ExcludeKeywordPanel
+            isAuthenticated={isAuthenticated}
+            onNavigateToLogin={() => {
+              sheetRef.current?.dismiss();
+              router.replace('/');
+            }}
             keywords={excludedKeywords}
             isLoading={excludedKeywordLoading}
             onAdd={addExcludedKeyword}
@@ -136,7 +169,7 @@ export const FilterSheet = forwardRef<BottomSheetModal>(function FilterSheet(_pr
               onPress={() => toggleAll(activeTab, activeList)}
               accessibilityRole="checkbox"
               accessibilityState={{ checked: isAllSelected }}>
-              <View style={[styles.checkbox, isAllSelected && styles.checkboxChecked]} />
+              <Checkbox checked={isAllSelected} />
               <ThemedText type="small" style={styles.optionText}>
                 {allLabel}
               </ThemedText>
@@ -146,7 +179,7 @@ export const FilterSheet = forwardRef<BottomSheetModal>(function FilterSheet(_pr
               const isChecked = activeSelection.some((s) => s.id === option.id);
               const rowBackground =
                 activeTab === 'category'
-                  ? getEventTypeColors(scheme, normalizeEventTypeId(option.id)).background
+                  ? FILTER_CATEGORY_COLORS[normalizeEventTypeId(option.id) as EventTypeId]
                   : undefined;
 
               return (
@@ -156,8 +189,10 @@ export const FilterSheet = forwardRef<BottomSheetModal>(function FilterSheet(_pr
                   onPress={() => toggle(activeTab, option)}
                   accessibilityRole="checkbox"
                   accessibilityState={{ checked: isChecked }}>
-                  <View style={[styles.checkbox, isChecked && styles.checkboxChecked]} />
-                  <ThemedText type="small" style={styles.optionText}>
+                  <Checkbox checked={isChecked} />
+                  <ThemedText
+                    type="small"
+                    style={[styles.optionText, rowBackground && styles.optionTextOnColor]}>
                     {option.name}
                   </ThemedText>
                 </Pressable>
@@ -168,7 +203,12 @@ export const FilterSheet = forwardRef<BottomSheetModal>(function FilterSheet(_pr
       </BottomSheetScrollView>
 
       <View style={styles.footer}>
-        <Pressable style={styles.resetButton} onPress={resetAll} accessibilityRole="button">
+        <Pressable
+          style={styles.resetButton}
+          onPress={resetAll}
+          accessibilityRole="button"
+          accessibilityLabel="필터 초기화">
+          <SymbolView name="arrow.clockwise" tintColor="#3a3a3a" size={16} />
           <ThemedText type="small" themeColor="textSecondary">
             초기화
           </ThemedText>
@@ -177,27 +217,62 @@ export const FilterSheet = forwardRef<BottomSheetModal>(function FilterSheet(_pr
           style={styles.applyButton}
           onPress={() => sheetRef.current?.dismiss()}
           accessibilityRole="button">
-          <ThemedText type="smallBold">적용</ThemedText>
+          <ThemedText type="smallBold">{applyLabel}</ThemedText>
         </Pressable>
       </View>
     </BottomSheetModal>
   );
 });
 
+function Checkbox({ checked }: { checked: boolean }) {
+  return (
+    <View style={[styles.checkbox, checked && styles.checkboxChecked]}>
+      {checked && <SymbolView name="checkmark" tintColor="#ffffff" size={12} weight="bold" />}
+    </View>
+  );
+}
+
 type ExcludeKeywordPanelProps = {
+  isAuthenticated: boolean;
+  onNavigateToLogin: () => void;
   keywords: { id: number; keyword: string }[];
   isLoading: boolean;
   onAdd: (keyword: string) => Promise<void>;
   onRemove: (id: number) => Promise<void>;
 };
 
-function ExcludeKeywordPanel({ keywords, isLoading, onAdd, onRemove }: ExcludeKeywordPanelProps) {
+function ExcludeKeywordPanel({
+  isAuthenticated,
+  onNavigateToLogin,
+  keywords,
+  isLoading,
+  onAdd,
+  onRemove,
+}: ExcludeKeywordPanelProps) {
   const commitKeyword = (value: string, clear: () => void) => {
     const trimmed = value.trim();
     if (!trimmed) return;
     onAdd(trimmed);
     clear();
   };
+
+  if (!isAuthenticated) {
+    return (
+      <View style={styles.authPrompt}>
+        <ThemedText type="small" style={styles.authPromptText}>
+          제외 키워드 기능을 이용하려면 로그인을 해주세요.
+        </ThemedText>
+        <Pressable
+          style={[styles.authButton, styles.authButtonPrimary]}
+          onPress={onNavigateToLogin}
+          accessibilityRole="button">
+          <ThemedText type="smallBold" style={styles.authButtonPrimaryText}>
+            로그인
+          </ThemedText>
+        </Pressable>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.excludePanel}>
@@ -213,9 +288,7 @@ function ExcludeKeywordPanel({ keywords, isLoading, onAdd, onRemove }: ExcludeKe
             onPress={() => onRemove(tag.id)}
             accessibilityRole="button"
             accessibilityLabel={`${tag.keyword} 제거`}>
-            <ThemedText type="small" themeColor="textSecondary">
-              ×
-            </ThemedText>
+            <SymbolView name="xmark" tintColor="#8a8a8a" size={16} />
           </Pressable>
           <ThemedText type="small">{tag.keyword}</ThemedText>
         </View>
@@ -234,6 +307,13 @@ function ExcludeKeywordInput({ isLoading, onCommit }: ExcludeKeywordInputProps) 
 
   return (
     <View style={styles.excludeInputRow}>
+      <Pressable
+        onPress={() => onCommit(value, () => setValue(''))}
+        accessibilityRole="button"
+        accessibilityLabel="키워드 추가"
+        disabled={isLoading}>
+        <SymbolView name="plus" tintColor="#9a9a9a" size={16} />
+      </Pressable>
       <BottomSheetTextInput
         style={styles.excludeInput}
         placeholder="제외 키워드 입력"
@@ -287,10 +367,14 @@ const styles = StyleSheet.create({
   optionText: {
     flex: 1,
   },
+  optionTextOnColor: {
+    color: '#1f2937',
+  },
   checkbox: {
     width: 18,
     height: 18,
-    borderRadius: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 1.5,
     borderColor: '#c4c4c4',
     backgroundColor: '#ffffff',
@@ -303,11 +387,15 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   excludeInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: '#e4e4e4',
     paddingVertical: 6,
   },
   excludeInput: {
+    flex: 1,
     fontSize: 16,
     paddingVertical: 6,
     color: '#222222',
@@ -318,28 +406,67 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 8,
   },
+  authPrompt: {
+    alignItems: 'center',
+    gap: 16,
+    paddingVertical: 24,
+  },
+  authPromptText: {
+    textAlign: 'center',
+  },
+  authButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#e4e4e4',
+    backgroundColor: '#ffffff',
+  },
+  authButtonPrimary: {
+    borderColor: '#494949',
+    backgroundColor: '#494949',
+  },
+  authButtonPrimaryText: {
+    color: '#ffffff',
+  },
   footer: {
     flexDirection: 'row',
+    justifyContent: 'center',
     gap: 12,
     paddingHorizontal: 20,
     paddingVertical: 16,
   },
   resetButton: {
-    paddingHorizontal: 18,
-    paddingVertical: 12,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: '#e4e4e4',
+    width: 110,
+    height: 45,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    paddingHorizontal: 20,
+    borderRadius: 40,
     backgroundColor: '#dddddd',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   applyButton: {
-    flex: 1,
+    width: 240,
+    height: 45,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 14,
-    borderRadius: 999,
+    borderRadius: 40,
     borderWidth: 1,
     borderColor: '#f5f5f5',
     backgroundColor: '#ffffff',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
 });
