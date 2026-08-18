@@ -1,6 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import {
+  createSnuttTimetablePickerUrl,
+  SNUTT_ORIGIN,
+} from '@/api/snutt';
+import {
   addCustomCourse,
   createTimetable,
   deleteTimetable,
@@ -16,7 +20,18 @@ import type {
   PatchTimetableRequest,
   PatchCustomCourseRequest,
   Semester,
+  Timetable,
 } from '@/types/timetable';
+import {
+  type SnuttFullTimetable,
+  toSnuttImportData,
+} from '@/util/timetable/snuttTimetable';
+
+export type SnuttImportResult = {
+  importedTimetable: Timetable;
+  importedCourseCount: number;
+  excludedCourseCount: number;
+};
 
 export const timetableKeys = {
   all: ['timetables'] as const,
@@ -98,5 +113,57 @@ export function useDeleteTimetableCourseMutation(timetableId: number | null) {
     mutationFn: (enrollId: number) => deleteTimetableCourse(timetableId as number, enrollId),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: timetableKeys.courses(timetableId ?? -1) }),
+  });
+}
+
+export function useSnuttTimetablePickerConfig() {
+  return {
+    pickerUrl: createSnuttTimetablePickerUrl(),
+    snuttOrigin: SNUTT_ORIGIN,
+  } as const;
+}
+
+export function useImportSnuttTimetableMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (snuttTimetable: SnuttFullTimetable): Promise<SnuttImportResult> => {
+      const { timetable, courses, excludedCourseCount } = toSnuttImportData(snuttTimetable);
+      const importedTimetable = await createTimetable(timetable);
+
+      try {
+        for (const course of courses) {
+          await addCustomCourse(importedTimetable.id, course);
+        }
+      } catch (error) {
+        try {
+          await deleteTimetable(importedTimetable.id);
+        } catch {
+          // Preserve the original import error, which is more useful to the caller.
+        }
+        throw error;
+      }
+
+      return {
+        importedTimetable,
+        importedCourseCount: courses.length,
+        excludedCourseCount,
+      };
+    },
+    onSuccess: ({ importedTimetable }) =>
+      Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: timetableKeys.list(importedTimetable.year, importedTimetable.semester),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: timetableKeys.courses(importedTimetable.id),
+        }),
+      ]),
+    onError: (_error, snuttTimetable) => {
+      const { timetable } = toSnuttImportData(snuttTimetable);
+      return queryClient.invalidateQueries({
+        queryKey: timetableKeys.list(timetable.year, timetable.semester),
+      });
+    },
   });
 }

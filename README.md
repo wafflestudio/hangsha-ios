@@ -30,6 +30,8 @@ npx expo start      # 이후엔 이것만 — 이미 설치된 Dev Client가 자
 | ---------------------------------- | ---------------------------------------------------------- |
 | `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` | Google iOS OAuth Client ID                                  |
 | `EXPO_PUBLIC_API_URL`              | 절대 경로 형식의 API base URL                              |
+| `EXPO_PUBLIC_SNUTT_BASE_URL`       | 환경별 SNUTT base URL (`https://snutt-dev.wafflestudio.com` 또는 `https://snutt.wafflestudio.com`) |
+| `EXPO_PUBLIC_TIMETABLE_PICKER_ORIGIN` | SNUTT picker에 전달할 행샤 origin (`https://hangsha-dev.wafflestudio.com` 또는 `https://hangsha.wafflestudio.com`) |
 
 `EXPO_PUBLIC_*` 값은 앱 번들에 포함됩니다. Google이 발급한 사용자 access token은 로그인 요청에만 사용하며 로컬에 저장하지 않습니다.
 `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID`가 비어 있거나 Google iOS client ID 형식이 아니면 잘못된 네이티브 빌드가 만들어지지 않도록 Expo 설정 단계에서 실패합니다.
@@ -127,9 +129,13 @@ EAS의 `development`, `production` 환경에 각각 필요한 변수:
 ```env
 EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID=
 EXPO_PUBLIC_API_URL=
+EXPO_PUBLIC_SNUTT_BASE_URL=
+EXPO_PUBLIC_TIMETABLE_PICKER_ORIGIN=
 ```
 
 `EXPO_PUBLIC_*` 값은 앱 번들에 포함되므로 secret을 저장하지 않습니다. EAS visibility는 `Plain text` 또는 `Sensitive`로 설정합니다.
+
+picker URL의 `origin` 값에는 `EXPO_PUBLIC_TIMETABLE_PICKER_ORIGIN`을 사용합니다. 개발 환경은 `https://hangsha-dev.wafflestudio.com`, 운영 환경은 `https://hangsha.wafflestudio.com`이며 SNUTT의 `VITE_TIMETABLE_PICKER_ORIGINS` 허용 목록과 일치해야 합니다. WebView에서 수신한 메시지는 이 값과 별개로 `EXPO_PUBLIC_SNUTT_BASE_URL`의 origin을 기준으로 검증합니다.
 
 `APP_VARIANT`는 원격 EAS 변수가 아니라 `eas.json`의 build profile에서 고정합니다. 이 값은 앱 이름, URL scheme, iOS Bundle Identifier를 아래처럼 선택하고 실제 EAS Build에서 필수 환경변수 검증을 활성화합니다.
 
