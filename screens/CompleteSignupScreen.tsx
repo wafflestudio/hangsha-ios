@@ -1,4 +1,3 @@
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -21,10 +20,7 @@ export default function CompleteSignupScreen() {
   const router = useRouter();
 
   return (
-    <LinearGradient
-      colors={['#A3EAF6', '#D7F5FA', '#FFFFFF']}
-      locations={[0, 0.42, 0.88]}
-      style={styles.background}>
+    <View style={styles.background}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.decorations} pointerEvents="none" accessibilityElementsHidden>
           {DECORATIONS.map(({ glyph, size, ...position }, index) => (
@@ -44,7 +40,7 @@ export default function CompleteSignupScreen() {
           </View>
         </View>
       </SafeAreaView>
-    </LinearGradient>
+    </View>
   );
 }
 
@@ -60,7 +56,12 @@ function NavigationButton({ label, onPress }: { label: string; onPress: () => vo
 }
 
 const styles = StyleSheet.create({
-  background: { flex: 1 },
+  background: {
+    flex: 1,
+    backgroundColor: '#A3EAF6',
+    experimental_backgroundImage:
+      'linear-gradient(180deg, #A3EAF6 0%, #D7F5FA 42%, #FFFFFF 88%)',
+  },
   safeArea: { flex: 1 },
   decorations: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 },
   decoration: { position: 'absolute', color: '#FFFFFF', textAlign: 'center' },
