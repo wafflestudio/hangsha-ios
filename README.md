@@ -26,11 +26,11 @@ npx expo start      # 이후엔 이것만 — 이미 설치된 Dev Client가 자
 `.env.local`에 아래 필수 앱 설정을 입력해야 합니다.
 구글 로그인은 네이티브 SDK가 포함된 개발 빌드 또는 배포 빌드에서 확인합니다. Expo Go에서는 동작하지 않습니다.
 
-| 환경변수                           | 설명                                                       |
-| ---------------------------------- | ---------------------------------------------------------- |
-| `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` | Google iOS OAuth Client ID                                  |
-| `EXPO_PUBLIC_API_URL`              | 절대 경로 형식의 API base URL                              |
-| `EXPO_PUBLIC_SNUTT_BASE_URL`       | 환경별 SNUTT base URL (`https://snutt-dev.wafflestudio.com` 또는 `https://snutt.wafflestudio.com`) |
+| 환경변수                              | 설명                                                                                                               |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID`    | Google iOS OAuth Client ID                                                                                         |
+| `EXPO_PUBLIC_API_URL`                 | 절대 경로 형식의 API base URL                                                                                      |
+| `EXPO_PUBLIC_SNUTT_BASE_URL`          | 환경별 SNUTT base URL (`https://snutt-dev.wafflestudio.com` 또는 `https://snutt.wafflestudio.com`)                 |
 | `EXPO_PUBLIC_TIMETABLE_PICKER_ORIGIN` | SNUTT picker에 전달할 행샤 origin (`https://hangsha-dev.wafflestudio.com` 또는 `https://hangsha.wafflestudio.com`) |
 
 `EXPO_PUBLIC_*` 값은 앱 번들에 포함됩니다. Google이 발급한 사용자 access token은 로그인 요청에만 사용하며 로컬에 저장하지 않습니다.
@@ -107,6 +107,7 @@ npx eas-cli@latest env:pull --environment development
 
 ```bash
 npx eas-cli@latest env:pull --environment production
+
 ```
 
 `.env.local`은 Git에 커밋하지 않습니다.
@@ -139,10 +140,10 @@ picker URL의 `origin` 값에는 `EXPO_PUBLIC_TIMETABLE_PICKER_ORIGIN`을 사용
 
 `APP_VARIANT`는 원격 EAS 변수가 아니라 `eas.json`의 build profile에서 고정합니다. 이 값은 앱 이름, URL scheme, iOS Bundle Identifier를 아래처럼 선택하고 실제 EAS Build에서 필수 환경변수 검증을 활성화합니다.
 
-| profile       | 앱 이름    | iOS Bundle Identifier                    | channel       |
-| ------------- | ---------- | ---------------------------------------- | ------------- |
-| `development` | `행샤 dev` | `com.wafflestudio.hangsha-ios.dev`       | `development` |
-| `production`  | `행샤`     | `com.wafflestudio.hangsha-ios`           | `production`  |
+| profile       | 앱 이름    | iOS Bundle Identifier              | channel       |
+| ------------- | ---------- | ---------------------------------- | ------------- |
+| `development` | `행샤 dev` | `com.wafflestudio.hangsha-ios.dev` | `development` |
+| `production`  | `행샤`     | `com.wafflestudio.hangsha-ios`     | `production`  |
 
 ---
 
@@ -268,13 +269,13 @@ GitHub Actions는 환경별 진입점과 공통 실행 로직으로 분리되어
 - `.github/workflows/deploy_prod.yml`: `main` 브랜치 이벤트
 - `.github/workflows/_deploy.yml`: 설치, 검사, EAS Build/Submit 공통 로직
 
-| GitHub 이벤트                | 실행 내용                                                     |
-| ---------------------------- | ------------------------------------------------------------- |
-| `dev`, `main` 대상 PR        | `npm ci`, ESLint, TypeScript 검사                              |
-| `dev` push                   | 검사 후 development profile iOS 내부 배포 빌드를 EAS에 요청   |
-| `main` push                  | 검사 후 production profile iOS 빌드 및 TestFlight 제출을 요청 |
-| `Deploy development` 수동 실행 | development profile의 동일한 배포 흐름 실행                  |
-| `Deploy production` 수동 실행  | production profile 빌드 및 TestFlight 제출                   |
+| GitHub 이벤트                  | 실행 내용                                                     |
+| ------------------------------ | ------------------------------------------------------------- |
+| `dev`, `main` 대상 PR          | `npm ci`, ESLint, TypeScript 검사                             |
+| `dev` push                     | 검사 후 development profile iOS 내부 배포 빌드를 EAS에 요청   |
+| `main` push                    | 검사 후 production profile iOS 빌드 및 TestFlight 제출을 요청 |
+| `Deploy development` 수동 실행 | development profile의 동일한 배포 흐름 실행                   |
+| `Deploy production` 수동 실행  | production profile 빌드 및 TestFlight 제출                    |
 
 GitHub repository secret에 Expo personal access token을 등록합니다.
 
