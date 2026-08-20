@@ -21,6 +21,25 @@ type SignupStep = "email" | "code" | "password";
 
 const VERIFICATION_CODE_LENGTH = 6;
 
+const PASSWORD_REQUIREMENTS = [
+  {
+    key: "length",
+    message: "비밀번호는 8자 이상이어야 합니다.",
+    isMet: (value: string) => value.length >= 8,
+  },
+  {
+    key: "characters",
+    message: "영문, 숫자, 특수문자를 포함해 주세요.",
+    isMet: (value: string) =>
+      /[A-Za-z]/.test(value) && /\d/.test(value) && /[^A-Za-z0-9\s]/.test(value),
+  },
+  {
+    key: "spaces",
+    message: "비밀번호에 공백을 사용할 수 없습니다.",
+    isMet: (value: string) => !/\s/.test(value),
+  },
+] as const;
+
 function getRemainingSeconds(expiresAt: string | null) {
   if (!expiresAt) return 0;
 
@@ -64,6 +83,7 @@ export default function SignupScreen() {
   const [signupToken, setSignupToken] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
+  const [hasAttemptedSignup, setHasAttemptedSignup] = useState(false);
   const [isPrivacyAgreed, setIsPrivacyAgreed] = useState(false);
   const [isPrivacyModalVisible, setIsPrivacyModalVisible] = useState(false);
 
@@ -71,6 +91,10 @@ export default function SignupScreen() {
   const isVerifyingCode = verifySignupEmailCodeMutation.isPending;
   const isSubmitting = signupMutation.isPending;
   const isCodeExpired = step === "code" && remainingSeconds === 0;
+  const passwordErrors = PASSWORD_REQUIREMENTS.filter(({ isMet }) => !isMet(password));
+  const shouldShowPasswordErrors = password.length > 0 || hasAttemptedSignup;
+  const showPasswordMismatch =
+    (passwordConfirm.length > 0 || hasAttemptedSignup) && password !== passwordConfirm;
 
   useEffect(() => {
     if (!codeExpiresAt || step !== "code") return;
@@ -161,19 +185,8 @@ export default function SignupScreen() {
   };
 
   const validatePassword = () => {
-    if (!password) {
-      Alert.alert("알림", "비밀번호를 입력해주세요.");
-      return false;
-    }
-    if (!passwordConfirm) {
-      Alert.alert("알림", "비밀번호 확인을 입력해주세요.");
-      return false;
-    }
-    if (password !== passwordConfirm) {
-      Alert.alert("알림", "비밀번호가 일치하지 않습니다.");
-      return false;
-    }
-    return true;
+    setHasAttemptedSignup(true);
+    return passwordErrors.length === 0 && password === passwordConfirm;
   };
 
   const handleSignup = async () => {
@@ -312,33 +325,50 @@ export default function SignupScreen() {
                   editable={false}
                   accessibilityLabel="인증된 이메일"
                 />
-                <TextInput
-                  style={styles.input}
-                  value={password}
-                  onChangeText={setPassword}
-                  placeholder="비밀번호"
-                  placeholderTextColor="#8A8A8A"
-                  secureTextEntry
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  textContentType="newPassword"
-                  returnKeyType="next"
-                  editable={!isSubmitting}
-                />
-                <TextInput
-                  style={styles.input}
-                  value={passwordConfirm}
-                  onChangeText={setPasswordConfirm}
-                  placeholder="비밀번호 확인"
-                  placeholderTextColor="#8A8A8A"
-                  secureTextEntry
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  textContentType="newPassword"
-                  returnKeyType="done"
-                  onSubmitEditing={handleSignup}
-                  editable={!isSubmitting}
-                />
+                <View style={styles.passwordFieldGroup}>
+                  <TextInput
+                    style={[
+                      styles.input,
+                      shouldShowPasswordErrors && passwordErrors.length > 0 && styles.invalidInput,
+                    ]}
+                    value={password}
+                    onChangeText={setPassword}
+                    placeholder="비밀번호"
+                    placeholderTextColor="#8A8A8A"
+                    secureTextEntry
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    textContentType="newPassword"
+                    returnKeyType="next"
+                    editable={!isSubmitting}
+                    accessibilityLabel="비밀번호"
+                  />
+                  {shouldShowPasswordErrors &&
+                    passwordErrors.map(({ key, message }) => (
+                      <ValidationMessage key={key} message={message} />
+                    ))}
+                </View>
+
+                <View style={styles.passwordFieldGroup}>
+                  <TextInput
+                    style={[styles.input, showPasswordMismatch && styles.invalidInput]}
+                    value={passwordConfirm}
+                    onChangeText={setPasswordConfirm}
+                    placeholder="비밀번호 확인"
+                    placeholderTextColor="#8A8A8A"
+                    secureTextEntry
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    textContentType="newPassword"
+                    returnKeyType="done"
+                    onSubmitEditing={handleSignup}
+                    editable={!isSubmitting}
+                    accessibilityLabel="비밀번호 확인"
+                  />
+                  {showPasswordMismatch && (
+                    <ValidationMessage message="비밀번호가 일치하지 않습니다." />
+                  )}
+                </View>
 
                 <View style={styles.consentRow}>
                   <Pressable
@@ -406,6 +436,17 @@ function PrimaryButton({
     >
       <Text style={styles.primaryButtonText}>{label}</Text>
     </Pressable>
+  );
+}
+
+function ValidationMessage({ message }: { message: string }) {
+  return (
+    <View style={styles.validationMessage} accessibilityRole="alert">
+      <View style={styles.validationIcon}>
+        <Text style={styles.validationIconText}>!</Text>
+      </View>
+      <Text style={styles.validationText}>{message}</Text>
+    </View>
   );
 }
 
@@ -538,6 +579,43 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     color: "#111111",
     fontSize: 17,
+  },
+  passwordFieldGroup: { width: "100%", gap: 8 },
+  invalidInput: { borderColor: "#FF3158" },
+  validationMessage: {
+    width: "100%",
+    minHeight: 40,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 7,
+    paddingVertical: 5,
+    borderWidth: 1,
+    borderColor: "#FF3158",
+    borderRadius: 999,
+    backgroundColor: "#FFD6DE",
+  },
+  validationIcon: {
+    width: 29,
+    height: 29,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 10,
+    borderWidth: 2,
+    borderColor: "#FF3158",
+    borderRadius: 15,
+  },
+  validationIconText: {
+    color: "#FF3158",
+    fontSize: 20,
+    lineHeight: 23,
+    fontWeight: "700",
+  },
+  validationText: {
+    flex: 1,
+    color: "#222222",
+    fontSize: 14,
+    lineHeight: 19,
+    fontWeight: "600",
   },
   readonlyInput: { color: "#808080", backgroundColor: "#FFFFFF" },
   primaryButton: {
