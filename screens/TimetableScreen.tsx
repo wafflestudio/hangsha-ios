@@ -1,10 +1,11 @@
 import { useRouter } from 'expo-router';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { MobileBottomNavigation } from '@/components/mobile-bottom-navigation';
 import { AddClassSheet } from '@/components/timetable/AddClassSheet';
+import { SnuttTimetablePickerModal } from '@/components/timetable/SnuttTimetablePickerModal';
 import { TimetableGrid } from '@/components/timetable/TimetableGrid';
 import { TimetableHeader } from '@/components/timetable/TimetableHeader';
 import { TimetableManagerSheet } from '@/components/timetable/TimetableManagerSheet';
@@ -14,8 +15,10 @@ import {
   useCreateTimetableMutation,
   useDeleteTimetableCourseMutation,
   useDeleteTimetableMutation,
+  useImportSnuttTimetableMutation,
   usePatchCustomCourseMutation,
   useRenameTimetableMutation,
+  useSnuttTimetablePickerConfig,
   useTimetableCoursesQuery,
   useTimetablesQuery,
 } from '@/contexts/TimetableContext';
@@ -31,9 +34,12 @@ import {
   formatMonthDay,
   getWeekRange,
 } from '@/util/timetable/layout';
+import type { SnuttFullTimetable } from '@/util/timetable/snuttTimetable';
 
 export function TimetableScreen() {
   const router = useRouter();
+  const [isSnuttPickerOpen, setIsSnuttPickerOpen] = useState(false);
+  const snuttImportingRef = useRef(false);
   const {
     year,
     semester,
@@ -83,6 +89,8 @@ export function TimetableScreen() {
   const addCourseMutation = useAddCustomCourseMutation(selectedTimetable?.id ?? null);
   const patchCourseMutation = usePatchCustomCourseMutation(selectedTimetable?.id ?? null);
   const deleteCourseMutation = useDeleteTimetableCourseMutation(selectedTimetable?.id ?? null);
+  const importSnuttMutation = useImportSnuttTimetableMutation();
+  const snuttPicker = useSnuttTimetablePickerConfig();
   const editingItem = 
     editingEnrollId === null
       ? null
@@ -151,6 +159,35 @@ export function TimetableScreen() {
     }
   };
 
+  const importSnuttTimetable = async (snuttTimetable: SnuttFullTimetable) => {
+    if (snuttImportingRef.current) return;
+
+    snuttImportingRef.current = true;
+    setIsSnuttPickerOpen(false);
+
+    try {
+      const { importedTimetable, importedCourseCount, excludedCourseCount } =
+        await importSnuttMutation.mutateAsync(snuttTimetable);
+
+      setYear(importedTimetable.year);
+      setSemester(importedTimetable.semester);
+      selectTimetable(importedTimetable.id);
+
+      const message =
+        excludedCourseCount > 0
+          ? `SNUTT 시간표를 불러왔어요. 수업 ${importedCourseCount}개를 저장했고, 시간 정보가 없는 수업 ${excludedCourseCount}개는 제외했어요.`
+          : `SNUTT 시간표를 불러왔어요. 수업 ${importedCourseCount}개를 저장했어요.`;
+      Alert.alert('SNUTT 연동 완료', message);
+    } catch {
+      Alert.alert(
+        'SNUTT 연동 실패',
+        '시간표를 저장하지 못했어요. 생성된 시간표는 되돌렸으니 잠시 후 다시 시도해 주세요.',
+      );
+    } finally {
+      snuttImportingRef.current = false;
+    }
+  };
+
   return (
     <View style={styles.page}>
       <SafeAreaView style={styles.content} edges={['top', 'left', 'right']}>
@@ -209,6 +246,18 @@ export function TimetableScreen() {
         )}
 
         <View pointerEvents="box-none" style={styles.floatingActions}>
+          <Pressable
+            disabled={importSnuttMutation.isPending}
+            style={({ pressed }) => [
+              styles.snuttButton,
+              (pressed || importSnuttMutation.isPending) && styles.pressed,
+            ]}
+            onPress={() => setIsSnuttPickerOpen(true)}>
+            <Text style={styles.floatingText}>
+              {importSnuttMutation.isPending ? '불러오는 중...' : 'SNUTT 연동'}
+            </Text>
+          </Pressable>
+
           <Pressable
             style={({ pressed }) => [styles.changeButton, pressed && styles.pressed]}
             onPress={() => setOpenSheet('manager')}>
@@ -284,6 +333,14 @@ export function TimetableScreen() {
             }}
           />
         )}
+
+        <SnuttTimetablePickerModal
+          visible={isSnuttPickerOpen}
+          pickerUrl={snuttPicker.pickerUrl}
+          snuttOrigin={snuttPicker.snuttOrigin}
+          onClose={() => setIsSnuttPickerOpen(false)}
+          onSelect={(snuttTimetable) => void importSnuttTimetable(snuttTimetable)}
+        />
       </SafeAreaView>
 
       <MobileBottomNavigation activeTab="timetable" />
@@ -315,6 +372,18 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     backgroundColor: 'rgba(0,192,232,0.60)',
     shadowColor: '#00C0E8',
+    shadowOffset: { width: 0, height: 7 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+  },
+  snuttButton: {
+    minWidth: 126,
+    height: 42,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 22,
+    backgroundColor: '#7FE2B8',
+    shadowColor: '#57C999',
     shadowOffset: { width: 0, height: 7 },
     shadowOpacity: 0.2,
     shadowRadius: 12,

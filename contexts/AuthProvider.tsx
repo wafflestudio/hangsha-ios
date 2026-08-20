@@ -7,7 +7,14 @@ import { setSessionExpiredHandler } from '@/api/client';
 import { requestGoogleAccessToken } from '@/api/socialAuth';
 import { TokenService } from '@/api/tokenService';
 import { useAuthStore } from '@/stores/authStore';
-import type { LoginInput, ProfileImage, SignupInput, User } from '@/types/auth';
+import type {
+  LoginInput,
+  ProfileImage,
+  SendSignupEmailCodeInput,
+  SignupInput,
+  User,
+  VerifySignupEmailCodeInput,
+} from '@/types/auth';
 import type { SocialLoginProvider } from '@/types/socialAuth';
 
 export const authKeys = {
@@ -132,6 +139,14 @@ export function useAuth() {
     onError: clearLocalSession,
   });
 
+  const sendSignupEmailCodeMutation = useMutation({
+    mutationFn: (input: SendSignupEmailCodeInput) => authApi.sendSignupEmailCode(input),
+  });
+
+  const verifySignupEmailCodeMutation = useMutation({
+    mutationFn: (input: VerifySignupEmailCodeInput) => authApi.verifySignupEmailCode(input),
+  });
+
   const completeSocialLoginMutation = useMutation({
     mutationFn: completeSocialAuthentication,
     onSuccess: commitAuthenticatedUser,
@@ -185,6 +200,8 @@ export function useAuth() {
     userQuery,
     loginMutation,
     signupMutation,
+    sendSignupEmailCodeMutation,
+    verifySignupEmailCodeMutation,
     socialLoginMutation,
     completeSocialLoginMutation,
     logoutMutation,
@@ -194,8 +211,12 @@ export function useAuth() {
     uploadProfileImageMutation,
 
     login: (email: string, password: string) => loginMutation.mutateAsync({ email, password }),
-    signup: (email: string, password: string, username: string) =>
-      signupMutation.mutateAsync({ email, password, username }),
+    signup: (email: string, password: string, signupToken: string) =>
+      signupMutation.mutateAsync({ email, password, signupToken }),
+    sendSignupEmailCode: (email: string) =>
+      sendSignupEmailCodeMutation.mutateAsync({ email }),
+    verifySignupEmailCode: (email: string, code: string) =>
+      verifySignupEmailCodeMutation.mutateAsync({ email, code }),
     loginWithSocial: (provider: SocialLoginProvider) => socialLoginMutation.mutateAsync(provider),
     completeSocialLogin: (accessToken: string) =>
       completeSocialLoginMutation.mutateAsync(accessToken),
