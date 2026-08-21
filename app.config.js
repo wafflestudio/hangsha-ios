@@ -57,6 +57,16 @@ module.exports = {
       config: {
         usesNonExemptEncryption: false,
       },
+      infoPlist: {
+        CFBundleURLTypes: [
+          {
+            CFBundleTypeRole: "Editor",
+            CFBundleURLSchemes: [
+              "com.googleusercontent.apps.986071474016-etl77f2vps7tbnkmhjtfcvldguvor6vo",
+            ],
+          },
+        ],
+      },
     },
 
     android: {
@@ -94,7 +104,9 @@ module.exports = {
         "expo-build-properties",
         {
           android: {
-            extraMavenRepos: ["https://devrepo.kakao.com/nexus/content/groups/public/"],
+            extraMavenRepos: [
+              "https://devrepo.kakao.com/nexus/content/groups/public/",
+            ],
           },
         },
       ],
