@@ -1,9 +1,9 @@
-import { StyleSheet, View, useColorScheme } from 'react-native';
+import { StyleSheet, useColorScheme, View } from 'react-native';
 
 import { CalendarDayCell } from '@/components/calendar/CalendarDayCell';
 import { ThemedText } from '@/components/themed-text';
-import { formatDateToYYYYMMDD } from '@/util/calendar/dateFormatter';
 import type { WeekEventBar } from '@/util/calendar/buildMonthEventLayout';
+import { formatDateToYYYYMMDD } from '@/util/calendar/dateFormatter';
 import { getEventTypeColors, Spacing } from '@/util/theme';
 
 export const MONTH_EVENT_ROW_HEIGHT = 18;
@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
   periodEventText: {
     height: 11,
     paddingHorizontal: 12,
-    fontSize: 9,
+    fontSize: 11,
     lineHeight: 11,
     fontWeight: '600',
     textAlign: 'center',
@@ -176,10 +176,11 @@ const styles = StyleSheet.create({
   },
   blockEventText: {
     color: '#1F2937',
-    fontSize: 9,
+    fontSize: 11,
     lineHeight: 13,
     fontWeight: '500',
-    paddingHorizontal: 2,
+    paddingVertical: 1,
+    paddingHorizontal: 0.5,
     textAlign: 'center',
   },
   arrowHead: {

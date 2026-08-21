@@ -8,15 +8,14 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  View,
   useColorScheme,
   useWindowDimensions,
+  View,
 } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CalendarHeader } from '@/components/calendar/CalendarHeader';
-import { FilterButton } from '@/components/calendar/FilterButton';
 import {
   CalendarWeekRow,
   MONTH_DATE_BADGE_HEIGHT,
@@ -24,6 +23,7 @@ import {
   MONTH_WEEK_ROW_GAP,
   MONTH_WEEK_ROW_HEIGHT,
 } from '@/components/calendar/CalendarWeekRow';
+import { FilterButton } from '@/components/calendar/FilterButton';
 import { FilterSheet } from '@/components/calendar/FilterSheet';
 import { MobileBottomNavigation } from '@/components/mobile-bottom-navigation';
 import { ThemedText } from '@/components/themed-text';
@@ -43,6 +43,23 @@ const MAX_VISIBLE_ROWS = 4;
 const DAYS_PER_WEEK = 7;
 const GRID_HORIZONTAL_MARGIN = 20;
 const LONG_PRESS_DURATION_MS = 250;
+
+/**
+ * 행사 블록의 반투명 카테고리색이 흰 캘린더 카드 위에서 보이는 최종 색을 계산 -> 미리보기는 반투명하게
+ */
+const compositeRgbaOverWhite = (color: string) => {
+  const match = color.match(
+    /^rgba\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*([\d.]+)\s*\)$/,
+  );
+
+  if (!match) return color;
+
+  const [, red, green, blue, alpha] = match;
+  const opacity = Number(alpha);
+  const blend = (channel: string) => Math.round(Number(channel) * opacity + 255 * (1 - opacity));
+
+  return `rgb(${blend(red)}, ${blend(green)}, ${blend(blue)})`;
+};
 
 type MonthEventHitTarget = {
   key: string;
@@ -186,7 +203,9 @@ export function CalendarScreen({ onSelectDate, onSearch }: CalendarScreenProps) 
 
       const visibleCenterY =
         scrollOffsetRef.current + scrollViewportHeightRef.current / 2;
-      const backgroundColor = getEventTypeColors(scheme, target.eventTypeId).background;
+      const backgroundColor = compositeRgbaOverWhite(
+        getEventTypeColors(scheme, target.eventTypeId).background,
+      );
 
       setPreview((current) =>
         current?.key === target.key
