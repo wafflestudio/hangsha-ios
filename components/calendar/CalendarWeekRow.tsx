@@ -1,4 +1,4 @@
-import { Dimensions, StyleSheet, View, useColorScheme } from 'react-native';
+import { StyleSheet, View, useColorScheme } from 'react-native';
 
 import { CalendarDayCell } from '@/components/calendar/CalendarDayCell';
 import { ThemedText } from '@/components/themed-text';
@@ -6,13 +6,12 @@ import { formatDateToYYYYMMDD } from '@/util/calendar/dateFormatter';
 import type { WeekEventBar } from '@/util/calendar/buildMonthEventLayout';
 import { getEventTypeColors, Spacing } from '@/util/theme';
 
-const ROW_HEIGHT = 18;
-const DATE_BADGE_HEIGHT = 34;
+export const MONTH_EVENT_ROW_HEIGHT = 18;
+export const MONTH_DATE_BADGE_HEIGHT = 30;
+export const MONTH_WEEK_ROW_HEIGHT = 118;
+export const MONTH_WEEK_ROW_GAP = 2;
+
 const DAYS_PER_WEEK = 7;
-const GRID_HORIZONTAL_MARGIN = Spacing.three * 2;
-const CELL_WIDTH = Math.floor(
-  (Dimensions.get('window').width - GRID_HORIZONTAL_MARGIN) / DAYS_PER_WEEK,
-);
 
 type CalendarWeekRowProps = {
   weekDates: readonly Date[];
@@ -20,6 +19,7 @@ type CalendarWeekRowProps = {
   todayKey: string;
   bars: readonly WeekEventBar[];
   maxVisibleRows: number;
+  cellWidth: number;
   onSelectDate?: (dateKey: string) => void;
 };
 
@@ -29,11 +29,13 @@ export function CalendarWeekRow({
   todayKey,
   bars,
   maxVisibleRows,
+  cellWidth,
   onSelectDate,
 }: CalendarWeekRowProps) {
   const scheme = useColorScheme() === 'dark' ? 'dark' : 'light';
   const visibleBars = bars.filter((bar) => bar.rowIndex < maxVisibleRows);
   const overflowCountByDay = new Array(DAYS_PER_WEEK).fill(0) as number[];
+
   for (const bar of bars) {
     if (bar.rowIndex < maxVisibleRows) continue;
     for (let day = bar.dayIndex; day < bar.dayIndex + bar.spanDays; day += 1) {
@@ -41,10 +43,8 @@ export function CalendarWeekRow({
     }
   }
 
-  const minHeight = DATE_BADGE_HEIGHT + ROW_HEIGHT * maxVisibleRows;
-
   return (
-    <View style={[styles.container, { minHeight }]}>
+    <View style={styles.container}>
       <View style={styles.dayCells}>
         {weekDates.map((date) => {
           const dateKey = formatDateToYYYYMMDD(date);
@@ -55,8 +55,8 @@ export function CalendarWeekRow({
               isCurrentMonth={date.getMonth() === currentMonth}
               isToday={dateKey === todayKey}
               isSunday={date.getDay() === 0}
-              width={CELL_WIDTH}
-              minHeight={minHeight}
+              width={cellWidth}
+              minHeight={MONTH_WEEK_ROW_HEIGHT}
               onPress={onSelectDate ? () => onSelectDate(dateKey) : undefined}
             />
           );
@@ -66,47 +66,45 @@ export function CalendarWeekRow({
       <View style={styles.barLayer} pointerEvents="none">
         {visibleBars.map((bar) => {
           const colors = getEventTypeColors(scheme, bar.eventTypeId);
-          const left = bar.dayIndex * CELL_WIDTH;
-          const width = bar.spanDays * CELL_WIDTH;
-          const top = DATE_BADGE_HEIGHT + bar.rowIndex * ROW_HEIGHT;
-          const isStart = !bar.continuesBefore;
-          const isEnd = !bar.continuesAfter;
+          const left = bar.dayIndex * cellWidth;
+          const width = bar.spanDays * cellWidth;
+          const top = MONTH_DATE_BADGE_HEIGHT + bar.rowIndex * MONTH_EVENT_ROW_HEIGHT;
 
           return (
             <View
               key={`${bar.eventId}-${bar.rowIndex}`}
               style={[styles.barSlot, { left, width, top }]}>
-              <View
-                style={[
-                  styles.eventBar,
-                  { backgroundColor: colors.background },
-                  isStart && styles.eventBarStart,
-                  isEnd && styles.eventBarEnd,
-                ]}>
-                {bar.isPeriodEvent && isStart && (
-                  <View
-                    style={[
-                      styles.arrowHead,
-                      styles.arrowHeadLeft,
-                      { borderRightColor: colors.background },
-                    ]}
-                  />
-                )}
-                <ThemedText
-                  numberOfLines={1}
-                  style={[styles.eventBarText, { color: colors.text }]}>
-                  {bar.title}
-                </ThemedText>
-                {bar.isPeriodEvent && isEnd && (
-                  <View
-                    style={[
-                      styles.arrowHead,
-                      styles.arrowHeadRight,
-                      { borderLeftColor: colors.background },
-                    ]}
-                  />
-                )}
-              </View>
+              {bar.isPeriodEvent ? (
+                <View style={styles.periodEvent}>
+                  <ThemedText
+                    numberOfLines={1}
+                    style={[styles.periodEventText, { color: colors.text }]}>
+                    {bar.title}
+                  </ThemedText>
+                  <View style={[styles.arrowLine, { backgroundColor: colors.background }]}>
+                    <View
+                      style={[
+                        styles.arrowHead,
+                        styles.arrowHeadLeft,
+                        { borderRightColor: colors.background },
+                      ]}
+                    />
+                    <View
+                      style={[
+                        styles.arrowHead,
+                        styles.arrowHeadRight,
+                        { borderLeftColor: colors.background },
+                      ]}
+                    />
+                  </View>
+                </View>
+              ) : (
+                <View style={[styles.blockEvent, { backgroundColor: colors.background }]}>
+                  <ThemedText numberOfLines={1} style={styles.blockEventText}>
+                    {bar.title}
+                  </ThemedText>
+                </View>
+              )}
             </View>
           );
         })}
@@ -119,7 +117,7 @@ export function CalendarWeekRow({
               key={dayIndex}
               type="small"
               themeColor="textSecondary"
-              style={[styles.overflowText, { left: dayIndex * CELL_WIDTH, width: CELL_WIDTH }]}>
+              style={[styles.overflowText, { left: dayIndex * cellWidth, width: cellWidth }]}>
               +{count}
             </ThemedText>
           ) : null,
@@ -132,6 +130,8 @@ export function CalendarWeekRow({
 const styles = StyleSheet.create({
   container: {
     position: 'relative',
+    height: MONTH_WEEK_ROW_HEIGHT,
+    marginBottom: MONTH_WEEK_ROW_GAP,
   },
   dayCells: {
     flexDirection: 'row',
@@ -145,59 +145,74 @@ const styles = StyleSheet.create({
   },
   barSlot: {
     position: 'absolute',
-    height: ROW_HEIGHT,
+    height: MONTH_EVENT_ROW_HEIGHT,
     justifyContent: 'center',
   },
-  eventBar: {
-    height: 14,
-    justifyContent: 'center',
+  periodEvent: {
+    height: 17,
+    justifyContent: 'flex-start',
   },
-  eventBarStart: {
-    marginLeft: 2,
-    borderTopLeftRadius: 3,
-    borderBottomLeftRadius: 3,
-  },
-  eventBarEnd: {
-    marginRight: 2,
-    borderTopRightRadius: 3,
-    borderBottomRightRadius: 3,
-  },
-  eventBarText: {
+  periodEventText: {
+    height: 11,
+    paddingHorizontal: 12,
     fontSize: 9,
-    lineHeight: 12,
+    lineHeight: 11,
     fontWeight: '600',
-    paddingHorizontal: 3,
+    textAlign: 'center',
+  },
+  arrowLine: {
+    height: 2,
+    marginTop: 1,
+    marginHorizontal: 1,
+    borderRadius: 2,
+    position: 'relative',
+  },
+  blockEvent: {
+    height: 15,
+    marginHorizontal: 1,
+    borderRadius: 3,
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  blockEventText: {
+    color: '#1F2937',
+    fontSize: 9,
+    lineHeight: 13,
+    fontWeight: '500',
+    paddingHorizontal: 2,
+    textAlign: 'center',
   },
   arrowHead: {
     position: 'absolute',
-    top: 0,
+    top: -4,
     width: 0,
     height: 0,
-    borderTopWidth: 7,
-    borderBottomWidth: 7,
+    borderTopWidth: 5,
+    borderBottomWidth: 5,
     borderTopColor: 'transparent',
     borderBottomColor: 'transparent',
   },
   arrowHeadLeft: {
-    left: -6,
-    borderRightWidth: 6,
+    left: -4,
+    borderRightWidth: 8,
   },
   arrowHeadRight: {
-    right: -6,
-    borderLeftWidth: 6,
+    right: -4,
+    borderLeftWidth: 8,
   },
   overflowLayer: {
     position: 'absolute',
-    bottom: 2,
+    bottom: 3,
     left: 0,
     right: 0,
-    height: 11,
+    height: 13,
   },
   overflowText: {
     position: 'absolute',
-    fontSize: 9,
-    lineHeight: 11,
-    textAlign: 'right',
+    fontSize: 11,
+    lineHeight: 13,
+    fontWeight: '600',
+    textAlign: 'left',
     paddingHorizontal: Spacing.one,
   },
 });
