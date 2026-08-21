@@ -1,4 +1,5 @@
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
+import { initializeKakaoSDK } from "@react-native-kakao/core";
 import { login as loginWithKakao } from "@react-native-kakao/user";
 import NaverLogin from "@react-native-seoul/naver-login";
 import { Platform } from "react-native";
@@ -80,10 +81,12 @@ async function requestGoogleAccessToken() {
 }
 
 async function requestKakaoAccessToken() {
-  requireConfig(
+  const nativeAppKey = requireConfig(
     process.env.EXPO_PUBLIC_KAKAO_NATIVE_APP_KEY,
     "EXPO_PUBLIC_KAKAO_NATIVE_APP_KEY",
   );
+
+  await initializeKakaoSDK(nativeAppKey);
   const token = await loginWithKakao();
   return token.accessToken;
 }
