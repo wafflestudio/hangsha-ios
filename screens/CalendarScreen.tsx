@@ -1,5 +1,4 @@
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
-import { Image } from 'expo-image';
 import { SymbolView } from 'expo-symbols';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import {
@@ -17,6 +16,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CalendarHeader } from '@/components/calendar/CalendarHeader';
+import { FilterButton } from '@/components/calendar/FilterButton';
 import {
   CalendarWeekRow,
   MONTH_DATE_BADGE_HEIGHT,
@@ -267,18 +267,7 @@ export function CalendarScreen({ onSelectDate, onSearch }: CalendarScreenProps) 
                 />
               </Pressable>
 
-              <Pressable
-                style={styles.filterButton}
-                hitSlop={Spacing.two}
-                accessibilityRole="button"
-                accessibilityLabel="필터"
-                onPress={() => filterSheetRef.current?.present()}>
-                <Image
-                  source={require('@/assets/images/filter.svg')}
-                  style={styles.filterIcon}
-                  contentFit="contain"
-                />
-              </Pressable>
+              <FilterButton onPress={() => filterSheetRef.current?.present()} />
             </>
           }
           right={
@@ -381,24 +370,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: Spacing.one,
-  },
-  filterButton: {
-    width: 50,
-    height: 50,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 5,
-    borderWidth: 1,
-    borderColor: '#FFFFFF',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  filterIcon: {
-    width: 19,
-    height: 19,
   },
   weekdayRow: {
     flexDirection: 'row',
