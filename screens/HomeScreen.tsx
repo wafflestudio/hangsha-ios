@@ -32,6 +32,9 @@ export default function HomeScreen() {
   const [isLoginValid, setIsLoginValid] = useState(true);
   const isLoggingIn = loginMutation.isPending;
   const isSocialLoginPending = socialLoginMutation.isPending;
+  const activeSocialProvider = isSocialLoginPending
+    ? socialLoginMutation.variables
+    : undefined;
   const isBusy = isLoggingIn || isSocialLoginPending;
 
   /**
@@ -215,7 +218,7 @@ export default function HomeScreen() {
                 iconSource={require("@/assets/images/googleLogo.png")}
                 onPress={handleGoogleLogin}
                 disabled={isBusy}
-                isLoading={isSocialLoginPending}
+                isLoading={activeSocialProvider === "GOOGLE"}
               />
 
               <SocialLoginButton
@@ -223,6 +226,7 @@ export default function HomeScreen() {
                 iconSource={require("@/assets/images/kakaoLogo.png")}
                 onPress={handleKakaoLogin}
                 disabled={isBusy}
+                isLoading={activeSocialProvider === "KAKAO"}
               />
 
               <SocialLoginButton
@@ -230,6 +234,7 @@ export default function HomeScreen() {
                 iconSource={require("@/assets/images/naverLogo.png")}
                 onPress={handleNaverLogin}
                 disabled={isBusy}
+                isLoading={activeSocialProvider === "NAVER"}
               />
 
               {/* Sign Up */}
