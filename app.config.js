@@ -15,6 +15,19 @@ const googleIosClientId = readBuildEnv(
   "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID",
   "000000000000-placeholder.apps.googleusercontent.com",
 );
+const kakaoNativeAppKey = readBuildEnv(
+  "EXPO_PUBLIC_KAKAO_NATIVE_APP_KEY",
+  "placeholder-kakao-native-app-key",
+);
+readBuildEnv("EXPO_PUBLIC_NAVER_CLIENT_ID", "placeholder-naver-client-id");
+readBuildEnv(
+  "EXPO_PUBLIC_NAVER_CLIENT_SECRET",
+  "placeholder-naver-client-secret",
+);
+const naverUrlScheme = readBuildEnv(
+  "EXPO_PUBLIC_NAVER_URL_SCHEME",
+  isDevelopment ? "hangsha-dev-naver" : "hangsha-naver",
+);
 const iosBundleIdentifier = readBuildEnv(
   "IOS_BUNDLE_IDENTIFIER",
   "com.wafflestudio.hangsha-ios.dev",
@@ -78,11 +91,28 @@ module.exports = {
       ],
       "expo-status-bar",
       [
+        "expo-build-properties",
+        {
+          android: {
+            extraMavenRepos: ["https://devrepo.kakao.com/nexus/content/groups/public/"],
+          },
+        },
+      ],
+      [
         "@react-native-google-signin/google-signin",
         {
           iosUrlScheme: getGoogleUrlScheme(googleIosClientId),
         },
       ],
+      [
+        "@react-native-kakao/core",
+        {
+          nativeAppKey: kakaoNativeAppKey,
+          android: {},
+          ios: { handleKakaoOpenUrl: true },
+        },
+      ],
+      ["@react-native-seoul/naver-login", { urlScheme: naverUrlScheme }],
     ],
 
     experiments: {

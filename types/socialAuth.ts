@@ -1,4 +1,4 @@
-export const SOCIAL_LOGIN_PROVIDERS = ["GOOGLE"] as const;
+export const SOCIAL_LOGIN_PROVIDERS = ["GOOGLE", "KAKAO", "NAVER"] as const;
 
 export type SocialLoginProvider = (typeof SOCIAL_LOGIN_PROVIDERS)[number];
 

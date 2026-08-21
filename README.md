@@ -24,17 +24,22 @@ npx expo start      # 이후엔 이것만 — 이미 설치된 Dev Client가 자
 최초 `expo run:ios`는 CocoaPods 설치 + Xcode 네이티브 컴파일이 포함되어 5~10분 정도 걸립니다. 실행하려면 Xcode(Command Line Tools만으로는 부족, 전체 앱 필요)가 설치되어 있어야 하고 `xcode-select -p`가 `/Applications/Xcode.app/Contents/Developer`를 가리켜야 합니다.
 
 `.env.local`에 아래 필수 앱 설정을 입력해야 합니다.
-구글 로그인은 네이티브 SDK가 포함된 개발 빌드 또는 배포 빌드에서 확인합니다. Expo Go에서는 동작하지 않습니다.
+구글·카카오·네이버 로그인은 네이티브 SDK가 포함된 개발 빌드 또는 배포 빌드에서 확인합니다. Expo Go에서는 동작하지 않습니다.
 
 | 환경변수                              | 설명                                                                                                               |
 | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
 | `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID`    | Google iOS OAuth Client ID                                                                                         |
+| `EXPO_PUBLIC_KAKAO_NATIVE_APP_KEY`    | Kakao Native App Key                                                                                               |
+| `EXPO_PUBLIC_NAVER_CLIENT_ID`         | Naver OAuth Client ID                                                                                              |
+| `EXPO_PUBLIC_NAVER_CLIENT_SECRET`     | Naver iOS SDK 초기화에 필요한 모바일 앱 credential                                                                |
+| `EXPO_PUBLIC_NAVER_URL_SCHEME`        | Naver Developers에 등록한 URL scheme (`hangsha-dev-naver` 또는 `hangsha-naver`)                                   |
 | `EXPO_PUBLIC_API_URL`                 | 절대 경로 형식의 API base URL                                                                                      |
 | `EXPO_PUBLIC_SNUTT_BASE_URL`          | 환경별 SNUTT base URL (`https://snutt-dev.wafflestudio.com` 또는 `https://snutt.wafflestudio.com`)                 |
 | `EXPO_PUBLIC_TIMETABLE_PICKER_ORIGIN` | SNUTT picker에 전달할 행샤 origin (`https://hangsha-dev.wafflestudio.com` 또는 `https://hangsha.wafflestudio.com`) |
 
-`EXPO_PUBLIC_*` 값은 앱 번들에 포함됩니다. Google이 발급한 사용자 access token은 로그인 요청에만 사용하며 로컬에 저장하지 않습니다.
-`EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID`가 비어 있거나 Google iOS client ID 형식이 아니면 잘못된 네이티브 빌드가 만들어지지 않도록 Expo 설정 단계에서 실패합니다.
+`EXPO_PUBLIC_*` 값은 앱 번들에 포함됩니다. 따라서 `EXPO_PUBLIC_NAVER_CLIENT_SECRET`을 EAS에서 `Sensitive`로 관리하면 대시보드·CLI 출력은 가릴 수 있지만, 설치된 앱에서 값을 추출하지 못하게 만드는 서버 secret 보관 수단은 아닙니다. 서버용 Naver credential과 재사용하지 말고 iOS 앱 전용 credential로 분리하며, Naver Developers에 bundle identifier와 환경별 URL scheme을 정확히 등록합니다. Google·Kakao·Naver가 발급한 사용자 access token은 로그인 요청에만 사용하고 로컬에 저장하지 않습니다.
+
+실제 EAS Build에서는 Google Client ID, Kakao Native App Key, Naver Client ID/Client Secret/URL scheme이 누락되면 Expo 설정 단계에서 실패합니다.
 
 ## 폴더 구조
 
@@ -129,12 +134,18 @@ EAS의 `development`, `production` 환경에 각각 필요한 변수:
 
 ```env
 EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID=
+EXPO_PUBLIC_KAKAO_NATIVE_APP_KEY=
+EXPO_PUBLIC_NAVER_CLIENT_ID=
+EXPO_PUBLIC_NAVER_CLIENT_SECRET=
+EXPO_PUBLIC_NAVER_URL_SCHEME=
 EXPO_PUBLIC_API_URL=
 EXPO_PUBLIC_SNUTT_BASE_URL=
 EXPO_PUBLIC_TIMETABLE_PICKER_ORIGIN=
 ```
 
-`EXPO_PUBLIC_*` 값은 앱 번들에 포함되므로 secret을 저장하지 않습니다. EAS visibility는 `Plain text` 또는 `Sensitive`로 설정합니다.
+일반 공개 설정은 EAS visibility를 `Plain text` 또는 `Sensitive`로 설정합니다. `EXPO_PUBLIC_NAVER_CLIENT_SECRET`은 네이버 네이티브 SDK 요구사항 때문에 앱에 포함되는 모바일 credential이며, EAS에서는 `Sensitive`로 관리합니다. 이는 빌드 로그와 대시보드 노출을 줄이기 위한 설정이고 앱 바이너리 내부의 비밀성을 보장하지는 않습니다.
+
+Naver URL scheme은 development에서 `hangsha-dev-naver`, production에서 `hangsha-naver`를 사용하며, 각 환경의 Naver Developers 설정과 정확히 일치해야 합니다.
 
 picker URL의 `origin` 값에는 `EXPO_PUBLIC_TIMETABLE_PICKER_ORIGIN`을 사용합니다. 개발 환경은 `https://hangsha-dev.wafflestudio.com`, 운영 환경은 `https://hangsha.wafflestudio.com`이며 SNUTT의 `VITE_TIMETABLE_PICKER_ORIGINS` 허용 목록과 일치해야 합니다. WebView에서 수신한 메시지는 이 값과 별개로 `EXPO_PUBLIC_SNUTT_BASE_URL`의 origin을 기준으로 검증합니다.
 

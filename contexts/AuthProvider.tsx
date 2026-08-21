@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react';
 
 import * as authApi from '@/api/auth';
 import { setSessionExpiredHandler } from '@/api/client';
-import { requestGoogleAccessToken } from '@/api/socialAuth';
+import { requestSocialAccessToken } from '@/api/socialAuth';
 import { TokenService } from '@/api/tokenService';
 import { useAuthStore } from '@/stores/authStore';
 import type {
@@ -155,7 +155,7 @@ export function useAuth() {
 
   const socialLoginMutation = useMutation({
     mutationFn: async (provider: SocialLoginProvider) => {
-      const providerToken = await requestGoogleAccessToken(provider);
+      const providerToken = await requestSocialAccessToken(provider);
       const { accessToken } = await authApi.loginWithSocial(providerToken);
       return completeSocialAuthentication(accessToken);
     },

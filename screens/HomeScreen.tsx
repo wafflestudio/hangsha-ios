@@ -16,7 +16,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useAuth } from "@/contexts/AuthProvider";
-import { SocialLoginError } from "@/types/socialAuth";
+import { SocialLoginError, type SocialLoginProvider } from "@/types/socialAuth";
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -61,12 +61,12 @@ export default function HomeScreen() {
     }
   };
 
-  /**
-   * Google 로그인
-   */
-  const handleGoogleLogin = async () => {
+  const handleSocialLogin = async (
+    provider: SocialLoginProvider,
+    providerName: string,
+  ) => {
     try {
-      await loginWithSocial("GOOGLE");
+      await loginWithSocial(provider);
       router.replace("/calendar");
     } catch (error) {
       if (error instanceof SocialLoginError && error.code === "cancelled") {
@@ -74,7 +74,7 @@ export default function HomeScreen() {
       }
 
       Alert.alert(
-        "구글 로그인 실패",
+        `${providerName} 로그인 실패`,
         error instanceof SocialLoginError
           ? error.message
           : "잠시 후 다시 시도해 주세요.",
@@ -83,17 +83,24 @@ export default function HomeScreen() {
   };
 
   /**
+   * Google 로그인
+   */
+  const handleGoogleLogin = async () => {
+    await handleSocialLogin("GOOGLE", "구글");
+  };
+
+  /**
    * Kakao 로그인
    */
   const handleKakaoLogin = async () => {
-    Alert.alert("알림", "카카오 로그인은 아직 지원하지 않습니다.");
+    await handleSocialLogin("KAKAO", "카카오");
   };
 
   /**
    * Naver 로그인
    */
   const handleNaverLogin = async () => {
-    Alert.alert("알림", "네이버 로그인은 아직 지원하지 않습니다.");
+    await handleSocialLogin("NAVER", "네이버");
   };
 
   /**
