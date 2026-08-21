@@ -69,8 +69,8 @@ export default function HomeScreen() {
     providerName: string,
   ) => {
     try {
-      await loginWithSocial(provider);
-      router.replace("/calendar");
+      const { isNewUser } = await loginWithSocial(provider);
+      router.replace(isNewUser ? "/onboarding/profile" : "/calendar");
     } catch (error) {
       if (error instanceof SocialLoginError && error.code === "cancelled") {
         return;

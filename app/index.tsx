@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthProvider';
 import HomeScreen from '@/screens/HomeScreen';
 
 export default function IndexScreen() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, onboardingStep } = useAuth();
 
   if (isLoading) {
     return (
@@ -16,6 +16,12 @@ export default function IndexScreen() {
   }
 
   if (isAuthenticated) {
+    if (onboardingStep === 'profile') {
+      return <Redirect href="/onboarding/profile" />;
+    }
+    if (onboardingStep === 'interests') {
+      return <Redirect href="/onboarding/interests" />;
+    }
     return <Redirect href="/calendar" />;
   }
 
