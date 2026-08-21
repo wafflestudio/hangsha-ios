@@ -23,6 +23,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BookmarkWidget } from '@/components/bookmarks/BookmarkWidget';
 import { BugReportForm } from '@/components/bug-report/BugReportForm';
 import { MobileBottomNavigation } from '@/components/mobile-bottom-navigation';
+import { LoginRequiredPrompt } from '@/components/auth/LoginRequiredPrompt';
 import { useAuth } from '@/contexts/AuthProvider';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useUserData } from '@/contexts/UserDataContext';
@@ -261,20 +262,10 @@ export default function MyPageScreen() {
   if (!user) {
     return (
       <View style={styles.root}>
-        <SafeAreaView style={styles.guestPage} edges={['top', 'left', 'right']}>
-          <View style={styles.guestCard}>
-            <Text style={styles.guestTitle}>로그인이 필요해요</Text>
-            <Text style={styles.guestDescription}>
-              프로필과 저장한 행사 정보를 확인하려면 로그인해주세요.
-            </Text>
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => router.replace('/')}
-              style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}>
-              <Text style={styles.primaryButtonText}>로그인 · 회원가입</Text>
-            </Pressable>
-          </View>
-        </SafeAreaView>
+        <LoginRequiredPrompt
+          description="프로필과 저장한 행사 정보를 확인하려면 로그인해주세요."
+          onLoginPress={() => router.replace('/')}
+        />
         <MobileBottomNavigation activeTab="profile" />
       </View>
     );
@@ -666,35 +657,6 @@ const styles = StyleSheet.create({
   },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
   loadingText: { color: '#777777', fontSize: 14 },
-  guestPage: { flex: 1 },
-  guestCard: {
-    marginHorizontal: 20,
-    marginTop: 80,
-    padding: 28,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E6E6E6',
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
-  },
-  guestTitle: { color: '#222222', fontSize: 21, fontWeight: '800' },
-  guestDescription: {
-    marginTop: 10,
-    color: '#777777',
-    fontSize: 14,
-    lineHeight: 21,
-    textAlign: 'center',
-  },
-  primaryButton: {
-    width: '100%',
-    height: 50,
-    marginTop: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 12,
-    backgroundColor: '#208AEF',
-  },
-  primaryButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '800' },
   profileSection: { paddingHorizontal: 20, paddingBottom: 24 },
   profileRow: { minHeight: 100, flexDirection: 'row', alignItems: 'center', marginBottom: 28 },
   avatarWrapper: { width: 88, height: 88 },

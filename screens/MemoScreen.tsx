@@ -19,6 +19,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { MobileBottomNavigation } from '@/components/mobile-bottom-navigation';
+import { LoginRequiredPrompt } from '@/components/auth/LoginRequiredPrompt';
 import { CategoryChip, DdayChip } from '@/components/events/EventChip';
 import { useAuth } from '@/contexts/AuthProvider';
 import { useUserData } from '@/contexts/UserDataContext';
@@ -115,18 +116,10 @@ export default function MemoScreen() {
   if (!user) {
     return (
       <View style={styles.root}>
-        <SafeAreaView style={styles.guestPage} edges={['top', 'left', 'right']}>
-          <View style={styles.guestCard}>
-            <Text style={styles.guestTitle}>로그인이 필요해요</Text>
-            <Text style={styles.guestDescription}>행사에 남긴 메모를 확인하려면 로그인해주세요.</Text>
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => router.replace('/')}
-              style={({ pressed }) => [styles.loginButton, pressed && styles.pressed]}>
-              <Text style={styles.loginButtonText}>로그인 · 회원가입</Text>
-            </Pressable>
-          </View>
-        </SafeAreaView>
+        <LoginRequiredPrompt
+          description="행사에 남긴 메모를 확인하려면 로그인해주세요."
+          onLoginPress={() => router.replace('/')}
+        />
         <MobileBottomNavigation activeTab="memos" />
       </View>
     );
@@ -397,35 +390,6 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     gap: 16,
   },
-  guestPage: { flex: 1 },
-  guestCard: {
-    marginHorizontal: 20,
-    marginTop: 80,
-    padding: 28,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E6E6E6',
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
-  },
-  guestTitle: { color: '#222222', fontSize: 21, fontWeight: '800' },
-  guestDescription: {
-    marginTop: 10,
-    color: '#777777',
-    fontSize: 14,
-    lineHeight: 21,
-    textAlign: 'center',
-  },
-  loginButton: {
-    width: '100%',
-    height: 50,
-    marginTop: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 12,
-    backgroundColor: '#208AEF',
-  },
-  loginButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '800' },
   modalBackdrop: {
     flex: 1,
     paddingHorizontal: 20,

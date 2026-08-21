@@ -4,6 +4,7 @@ import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'rea
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { MobileBottomNavigation } from '@/components/mobile-bottom-navigation';
+import { LoginRequiredPrompt } from '@/components/auth/LoginRequiredPrompt';
 import { AddClassSheet } from '@/components/timetable/AddClassSheet';
 import { SnuttTimetablePickerModal } from '@/components/timetable/SnuttTimetablePickerModal';
 import { TimetableGrid } from '@/components/timetable/TimetableGrid';
@@ -55,18 +56,10 @@ export function TimetableScreen() {
   if (!user) {
     return (
       <View style={styles.page}>
-        <SafeAreaView style={styles.guestPage} edges={['top', 'left', 'right']}>
-          <View style={styles.guestCard}>
-            <Text style={styles.guestTitle}>로그인이 필요해요</Text>
-            <Text style={styles.guestDescription}>시간표를 확인하려면 로그인해주세요.</Text>
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => router.replace('/')}
-              style={({ pressed }) => [styles.loginButton, pressed && styles.pressed]}>
-              <Text style={styles.loginButtonText}>로그인 · 회원가입</Text>
-            </Pressable>
-          </View>
-        </SafeAreaView>
+        <LoginRequiredPrompt
+          description="시간표를 확인하려면 로그인해주세요."
+          onLoginPress={() => router.replace('/')}
+        />
         <MobileBottomNavigation activeTab="timetable" />
       </View>
     );
@@ -391,35 +384,6 @@ const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: '#FFFFFF' },
   content: { flex: 1, backgroundColor: '#FFFFFF' },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
-  guestPage: { flex: 1 },
-  guestCard: {
-    marginHorizontal: 20,
-    marginTop: 80,
-    padding: 28,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E6E6E6',
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
-  },
-  guestTitle: { color: '#222222', fontSize: 21, fontWeight: '800' },
-  guestDescription: {
-    marginTop: 10,
-    color: '#777777',
-    fontSize: 14,
-    lineHeight: 21,
-    textAlign: 'center',
-  },
-  loginButton: {
-    width: '100%',
-    height: 50,
-    marginTop: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 12,
-    backgroundColor: '#208AEF',
-  },
-  loginButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '800' },
   emptyTitle: { marginBottom: 8, color: '#222222', fontSize: 17, fontWeight: '700' },
   message: { color: '#777777', fontSize: 14, textAlign: 'center' },
   retryButton: { marginTop: 14, paddingHorizontal: 16, paddingVertical: 9, borderRadius: 20, backgroundColor: '#20C4DD' },
