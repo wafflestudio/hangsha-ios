@@ -36,7 +36,7 @@ module.exports = {
     scheme: isDevelopment ? "hangsha-dev" : "hangsha",
     version: "1.0.0",
     orientation: "portrait",
-    icon: "./assets/images/logo.png",
+    icon: "./assets/images/icon.png",
     userInterfaceStyle: "automatic",
 
     updates: {
@@ -49,7 +49,7 @@ module.exports = {
 
     ios: {
       bundleIdentifier: iosBundleIdentifier,
-      icon: "./assets/images/logo.png",
+      icon: "./assets/images/icon.png",
       config: {
         usesNonExemptEncryption: false,
       },
@@ -61,7 +61,7 @@ module.exports = {
 
     web: {
       output: "static",
-      favicon: "./assets/images/logo.png",
+      favicon: "./assets/images/icon.png",
     },
 
     plugins: [
