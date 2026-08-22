@@ -1,15 +1,11 @@
 export interface Category {
   id: number;
-  groupId: number;
   name: string;
   sortOrder: number;
 }
 
-export interface CategoryGroupWithCategories {
-  group: {
-    id: number;
-    name: string;
-    sortOrder: number;
-  };
-  categories: Category[];
+export type CategoryType = 'EVENT_STATUS' | 'EVENT_TYPE' | 'ORGANIZATION';
+
+export interface InterestCategory extends Category {
+  categoryType: CategoryType;
 }

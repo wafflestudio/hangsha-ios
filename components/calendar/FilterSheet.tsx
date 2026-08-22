@@ -5,22 +5,21 @@ import {
   BottomSheetTextInput,
 } from '@gorhom/bottom-sheet';
 import { SymbolView } from 'expo-symbols';
-import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { useAuth } from '@/contexts/AuthProvider';
-import { useCategoryGroupsQuery } from '@/contexts/EventDataContext';
+import {
+  useEventStatusesQuery,
+  useEventTypesQuery,
+  useOrganizationsQuery,
+} from '@/contexts/EventDataContext';
 import { useUserData } from '@/contexts/UserDataContext';
 import { type FilterTab, useFilterStore } from '@/stores/filterStore';
 import { useLocalExcludedKeywordsStore } from '@/stores/localExcludedKeywordsStore';
 import type { Category } from '@/types/category';
-import { normalizeEventTypeId } from '@/util/calendar/transformEvent';
 import type { EventTypeId } from '@/util/theme';
-
-const STATUS_GROUP_ID = 1;
-const ORG_GROUP_ID = 2;
-const CATEGORY_GROUP_ID = 3;
 
 /**
  * 필터시트 전용 카테고리 색상 — hangsha-web CATEGORY_BUTTON_COLORS(15% 알파)
@@ -59,7 +58,9 @@ export const FilterSheet = forwardRef<BottomSheetModal, FilterSheetProps>(functi
   useImperativeHandle(ref, () => sheetRef.current as BottomSheetModal);
   const { isAuthenticated } = useAuth();
 
-  const { data: categoryGroups } = useCategoryGroupsQuery();
+  const { data: statusList = [] } = useEventStatusesQuery();
+  const { data: orgList = [] } = useOrganizationsQuery();
+  const { data: categoryList = [] } = useEventTypesQuery();
   const {
     excludedKeywords: serverExcludedKeywords,
     addExcludedKeyword,
@@ -80,22 +81,9 @@ export const FilterSheet = forwardRef<BottomSheetModal, FilterSheetProps>(functi
   const resetAll = useFilterStore((state) => state.resetAll);
   const applyDefaultStatus = useFilterStore((state) => state.applyDefaultStatus);
 
-  const statusList = useMemo(
-    () => categoryGroups?.find((g) => g.group.id === STATUS_GROUP_ID)?.categories ?? [],
-    [categoryGroups],
-  );
-  const orgList = useMemo(
-    () => categoryGroups?.find((g) => g.group.id === ORG_GROUP_ID)?.categories ?? [],
-    [categoryGroups],
-  );
-  const categoryList = useMemo(
-    () => categoryGroups?.find((g) => g.group.id === CATEGORY_GROUP_ID)?.categories ?? [],
-    [categoryGroups],
-  );
-
-  // 기본 필터: 모집중(status id 2) — hangsha-web FilterContext의 isApplying과 동일
+  // 새 상태 ID는 독립 테이블의 ID이므로 이름으로 기본 상태를 찾는다.
   useEffect(() => {
-    const applyingStatus = statusList.find((c) => c.id === 2);
+    const applyingStatus = statusList.find((category) => category.name === '모집중');
     if (applyingStatus) {
       applyDefaultStatus(applyingStatus);
     }
@@ -185,7 +173,7 @@ export const FilterSheet = forwardRef<BottomSheetModal, FilterSheetProps>(functi
               const isChecked = activeSelection.some((s) => s.id === option.id);
               const rowBackground =
                 activeTab === 'category'
-                  ? FILTER_CATEGORY_COLORS[normalizeEventTypeId(option.id) as EventTypeId]
+                  ? FILTER_CATEGORY_COLORS[option.id as EventTypeId]
                   : undefined;
 
               return (

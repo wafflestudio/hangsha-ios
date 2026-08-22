@@ -22,6 +22,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BookmarkWidget } from '@/components/bookmarks/BookmarkWidget';
 import { BugReportForm } from '@/components/bug-report/BugReportForm';
+import { CategoryChip, DdayChip } from '@/components/events/EventChip';
 import { MobileBottomNavigation } from '@/components/mobile-bottom-navigation';
 import { LoginRequiredPrompt } from '@/components/auth/LoginRequiredPrompt';
 import { useAuth } from '@/contexts/AuthProvider';
@@ -29,8 +30,9 @@ import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useUserData } from '@/contexts/UserDataContext';
 import { useScrollToFocusedInput } from '@/hooks/use-scroll-to-focused-input';
 import type { ProfileImage } from '@/types/auth';
-import type { Category } from '@/types/category';
+import type { InterestCategory } from '@/types/category';
 import type { Event } from '@/types/event';
+import type { Memo } from '@/types/userData';
 import { formatDateDotParsed } from '@/util/calendar/dateFormatter';
 
 const MAX_NAME_WEIGHT = 20;
@@ -91,7 +93,7 @@ export default function MyPageScreen() {
   const [profileImageFailed, setProfileImageFailed] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isInterestEditorOpen, setIsInterestEditorOpen] = useState(false);
-  const [draftInterests, setDraftInterests] = useState<Category[]>([]);
+  const [draftInterests, setDraftInterests] = useState<InterestCategory[]>([]);
 
   const isSavingProfile =
     updateUsernameMutation.isPending || uploadProfileImageMutation.isPending;
@@ -179,14 +181,14 @@ export default function MyPageScreen() {
     setIsInterestEditorOpen(true);
   };
 
-  const toggleInterest = (category: Category) => {
+  const toggleInterest = (category: InterestCategory) => {
     setDraftInterests((current) => {
       const isSelected = current.some(
-        (item) => item.id === category.id && item.groupId === category.groupId,
+        (item) => item.id === category.id && item.categoryType === category.categoryType,
       );
       if (isSelected) {
         return current.filter(
-          (item) => !(item.id === category.id && item.groupId === category.groupId),
+          (item) => !(item.id === category.id && item.categoryType === category.categoryType),
         );
       }
       if (current.length >= MAX_PREFERENCES) {
@@ -244,6 +246,14 @@ export default function MyPageScreen() {
       await toggleBookmark(event);
     } catch {
       Alert.alert('찜 해제 실패', '찜 목록을 변경하지 못했습니다. 잠시 후 다시 시도해주세요.');
+    }
+  };
+
+  const toggleMemoBookmark = async (memo: Memo) => {
+    try {
+      await toggleBookmark({ id: memo.eventId, isBookmarked: memo.isBookmarked });
+    } catch {
+      Alert.alert('찜 변경 실패', '찜 목록을 변경하지 못했습니다. 잠시 후 다시 시도해주세요.');
     }
   };
 
@@ -377,10 +387,10 @@ export default function MyPageScreen() {
                   <View style={styles.chipRow}>
                     {interestCategories.map((category, index) => (
                       <View
-                        key={`${category.groupId}-${category.id}`}
+                        key={`${category.categoryType}-${category.id}`}
                         style={[
                           styles.preferenceChip,
-                          category.groupId === 2
+                          category.categoryType === 'ORGANIZATION'
                             ? styles.organizationChip
                             : styles.categoryChip,
                         ]}>
@@ -429,19 +439,53 @@ export default function MyPageScreen() {
                 <View style={styles.memoPreviewGrid}>
                   {eventMemos.slice(0, 2).map((memo) => (
                     <View key={memo.id} style={styles.memoPreview}>
+                      <View style={styles.memoPreviewTopRow}>
+                        <View style={styles.memoPreviewStatus}>
+                          <CategoryChip categoryId={memo.eventTypeId} variant="circle" />
+                          <DdayChip
+                            prefix=""
+                            targetDate={memo.applyEnd}
+                            variant="plain"
+                            style={styles.memoPreviewDday}
+                          />
+                        </View>
+                        <Pressable
+                          accessibilityRole="button"
+                          accessibilityLabel={memo.isBookmarked ? '찜 해제' : '찜하기'}
+                          accessibilityState={{ selected: memo.isBookmarked }}
+                          hitSlop={8}
+                          onPress={() => toggleMemoBookmark(memo)}
+                          style={({ pressed }) => [
+                            styles.memoBookmarkButton,
+                            pressed && styles.pressed,
+                          ]}>
+                          <ExpoImage
+                            source={
+                              memo.isBookmarked
+                                ? require('@/assets/images/Bookmarked.svg')
+                                : require('@/assets/images/notBookmarked.svg')
+                            }
+                            style={styles.memoBookmarkIcon}
+                            contentFit="contain"
+                          />
+                        </Pressable>
+                      </View>
+                      <Text numberOfLines={2} style={styles.memoPreviewEventTitle}>
+                        {memo.eventTitle}
+                      </Text>
+                      <Text numberOfLines={2} style={styles.memoPreviewMetadata}>
+                        {formatDateDotParsed(memo.createdAt)}
+                        {memo.organization ? ` | ${memo.organization.name}` : ''}
+                      </Text>
                       <Text numberOfLines={2} style={styles.memoPreviewContent}>
                         {memo.content}
                       </Text>
-                      <Text numberOfLines={1} style={styles.memoPreviewEventTitle}>
-                        {memo.eventTitle}
-                      </Text>
-                      <Text style={styles.memoPreviewDate}>{formatDateDotParsed(memo.createdAt)}</Text>
                       {memo.tags.length > 0 && (
                         <View style={styles.memoTagRow}>
                           {memo.tags.slice(0, 3).map((tag) => (
                             <View key={tag.id} style={styles.memoTag}>
                               <Text numberOfLines={1} style={styles.memoTagText}>
-                                {tag.name}
+                                # {tag.name}
                               </Text>
                             </View>
                           ))}
@@ -534,7 +578,7 @@ export default function MyPageScreen() {
                 <Text style={styles.selectedHint}>최대 3개까지, 선택한 순서대로 저장돼요.</Text>
               ) : (
                 draftInterests.map((item, index) => (
-                  <View key={`${item.groupId}-${item.id}`} style={styles.selectedChip}>
+                  <View key={`${item.categoryType}-${item.id}`} style={styles.selectedChip}>
                     <Text style={styles.selectedRankLabel}>{index + 1}순위:</Text>
                     <Text style={styles.selectedChipText}>{item.name}</Text>
                   </View>
@@ -605,9 +649,9 @@ function InterestOptions({
 }: {
   title: string;
   tone: 'category' | 'organization';
-  items: Category[];
-  selected: Category[];
-  onToggle: (category: Category) => void;
+  items: InterestCategory[];
+  selected: InterestCategory[];
+  onToggle: (category: InterestCategory) => void;
 }) {
   return (
     <View style={styles.optionSection}>
@@ -621,11 +665,11 @@ function InterestOptions({
       <View style={styles.optionRow}>
         {items.map((item) => {
           const isSelected = selected.some(
-            (value) => value.id === item.id && value.groupId === item.groupId,
+            (value) => value.id === item.id && value.categoryType === item.categoryType,
           );
           return (
             <Pressable
-              key={`${item.groupId}-${item.id}`}
+              key={`${item.categoryType}-${item.id}`}
               onPress={() => onToggle(item)}
               style={({ pressed }) => [
                 styles.optionChip,
@@ -742,31 +786,54 @@ const styles = StyleSheet.create({
   memoChevron: { color: '#ABABAB', fontSize: 36, lineHeight: 36, fontWeight: '300' },
   memoPreviewGrid: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     gap: 28,
   },
-  memoPreview: { width: '47%', minWidth: 0 },
-  memoPreviewContent: {
-    minHeight: 126,
-    color: '#222222',
+  memoPreview: { minWidth: 0, flex: 1 },
+  memoPreviewTopRow: {
+    minHeight: 27,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  memoPreviewStatus: {
+    minWidth: 0,
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  memoPreviewDday: { color: '#666666', fontSize: 17, lineHeight: 23, fontWeight: '400' },
+  memoBookmarkButton: { width: 27, height: 27, alignItems: 'center', justifyContent: 'center' },
+  memoBookmarkIcon: { width: 23, height: 23 },
+  memoPreviewEventTitle: {
+    minHeight: 46,
+    marginTop: 20,
+    color: '#111111',
     fontSize: 16,
     lineHeight: 23,
-    fontWeight: '700',
-  },
-  memoPreviewEventTitle: {
-    marginTop: 22,
-    color: '#999999',
-    fontSize: 15,
-    lineHeight: 21,
     fontWeight: '800',
   },
-  memoPreviewDate: { marginTop: 7, color: '#999999', fontSize: 14, lineHeight: 20 },
-  memoTagRow: { marginTop: 14, flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
+  memoPreviewMetadata: {
+    minHeight: 40,
+    marginTop: 10,
+    color: '#888888',
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  memoPreviewContent: {
+    minHeight: 40,
+    marginTop: 12,
+    color: '#222222',
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  memoTagRow: { marginTop: 12, flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
   memoTag: {
     maxWidth: '100%',
-    paddingHorizontal: 10,
+    paddingHorizontal: 11,
     paddingVertical: 7,
-    borderRadius: 6,
+    borderRadius: 999,
     backgroundColor: '#ECECEC',
   },
   memoTagText: { color: '#707070', fontSize: 12, fontWeight: '700' },

@@ -6,14 +6,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/contexts/AuthProvider';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useUserData } from '@/contexts/UserDataContext';
-import type { Category } from '@/types/category';
+import type { InterestCategory } from '@/types/category';
 
 const MAX_PREFERENCES = 3;
 
 export default function InterestOnboardingScreen() {
   const router = useRouter();
   const { finishOnboarding } = useAuth();
-  const [selected, setSelected] = useState<Category[]>([]);
+  const [selected, setSelected] = useState<InterestCategory[]>([]);
   const hasInitializedSelection = useRef(false);
   const {
     programTypes,
@@ -37,14 +37,14 @@ export default function InterestOnboardingScreen() {
     hasInitializedSelection.current = true;
   }, [interestCategories, interestCategoriesLoading]);
 
-  const toggle = (category: Category) => {
+  const toggle = (category: InterestCategory) => {
     setSelected((current) => {
       const exists = current.some(
-        (item) => item.id === category.id && item.groupId === category.groupId,
+        (item) => item.id === category.id && item.categoryType === category.categoryType,
       );
       if (exists) {
         return current.filter(
-          (item) => !(item.id === category.id && item.groupId === category.groupId),
+          (item) => !(item.id === category.id && item.categoryType === category.categoryType),
         );
       }
       if (current.length >= MAX_PREFERENCES) {
@@ -90,7 +90,7 @@ export default function InterestOnboardingScreen() {
             <Text style={styles.selectedHint}>최대 3개까지, 선택한 순서대로 저장돼요.</Text>
           ) : (
             selected.map((item, index) => (
-              <View key={`${item.groupId}-${item.id}`} style={styles.rankPill}>
+              <View key={`${item.categoryType}-${item.id}`} style={styles.rankPill}>
                 <Text style={styles.rankLabel}>{index + 1}순위:</Text>
                 <Text style={styles.rankText}>{item.name}</Text>
               </View>
@@ -135,9 +135,9 @@ function OptionSection({
 }: {
   title: string;
   tone: 'category' | 'organization';
-  items: Category[];
-  selected: Category[];
-  onToggle: (item: Category) => void;
+  items: InterestCategory[];
+  selected: InterestCategory[];
+  onToggle: (item: InterestCategory) => void;
 }) {
   return (
     <View style={styles.section}>
@@ -151,11 +151,11 @@ function OptionSection({
       <View style={styles.options}>
         {items.map((item) => {
           const isSelected = selected.some(
-            (value) => value.id === item.id && value.groupId === item.groupId,
+            (value) => value.id === item.id && value.categoryType === item.categoryType,
           );
           return (
             <Pressable
-              key={`${item.groupId}-${item.id}`}
+              key={`${item.categoryType}-${item.id}`}
               onPress={() => onToggle(item)}
               style={({ pressed }) => [
                 styles.pill,

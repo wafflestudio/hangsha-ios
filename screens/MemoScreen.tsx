@@ -248,7 +248,7 @@ function MemoListCard({
     <View style={styles.memoCard}>
       <View style={styles.memoTopRow}>
         <View style={styles.eventChipRow}>
-          <CategoryChip categoryId={memo.categoryId} variant="circle" />
+          <CategoryChip categoryId={memo.eventTypeId} variant="circle" />
           <DdayChip prefix="" targetDate={memo.applyEnd} variant="plain" />
         </View>
         <Pressable
@@ -345,11 +345,6 @@ const styles = StyleSheet.create({
     paddingTop: 17,
     paddingBottom: 14,
     backgroundColor: '#FFFFFF',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.14,
-    shadowRadius: 5,
-    elevation: 4,
   },
   memoTopRow: { minHeight: 27, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   eventChipRow: { minWidth: 0, flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },

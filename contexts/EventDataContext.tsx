@@ -8,20 +8,28 @@ import {
   getMonthEvents,
   searchEvents,
 } from '@/api/event';
-import { getCategoryGroups, getOrganizations } from '@/api/user';
+import { getEventStatuses, getEventTypes, getOrganizations } from '@/api/category';
 import { filterEventTimeVariants } from '@/util/calendar/filterEventTimeVariants';
 
 const DEFAULT_SEARCH_PAGE_SIZE = 20;
 
 const categoryMetadataKeys = {
-  groups: ['category-groups'] as const,
+  statuses: ['event-statuses'] as const,
+  types: ['event-types'] as const,
   orgs: ['organizations'] as const,
 };
 
-export function useCategoryGroupsQuery() {
+export function useEventStatusesQuery() {
   return useQuery({
-    queryKey: categoryMetadataKeys.groups,
-    queryFn: getCategoryGroups,
+    queryKey: categoryMetadataKeys.statuses,
+    queryFn: getEventStatuses,
+  });
+}
+
+export function useEventTypesQuery() {
+  return useQuery({
+    queryKey: categoryMetadataKeys.types,
+    queryFn: getEventTypes,
   });
 }
 
