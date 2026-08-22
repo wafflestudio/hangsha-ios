@@ -1,14 +1,16 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { MobileBottomNavigation } from '@/components/mobile-bottom-navigation';
+import { LoginRequiredPrompt } from '@/components/auth/LoginRequiredPrompt';
 import { AddClassSheet } from '@/components/timetable/AddClassSheet';
 import { SnuttTimetablePickerModal } from '@/components/timetable/SnuttTimetablePickerModal';
 import { TimetableGrid } from '@/components/timetable/TimetableGrid';
 import { TimetableHeader } from '@/components/timetable/TimetableHeader';
 import { TimetableManagerSheet } from '@/components/timetable/TimetableManagerSheet';
+import { useAuth } from '@/contexts/AuthProvider';
 import { useMonthEventsQuery } from '@/contexts/EventDataContext';
 import {
   useAddCustomCourseMutation,
@@ -37,6 +39,36 @@ import {
 import type { SnuttFullTimetable } from '@/util/timetable/snuttTimetable';
 
 export function TimetableScreen() {
+  const router = useRouter();
+  const { user, isLoading: isAuthLoading } = useAuth();
+
+  if (isAuthLoading) {
+    return (
+      <View style={styles.page}>
+        <SafeAreaView style={styles.centered} edges={['top', 'left', 'right']}>
+          <ActivityIndicator color="#208AEF" />
+        </SafeAreaView>
+        <MobileBottomNavigation activeTab="timetable" />
+      </View>
+    );
+  }
+
+  if (!user) {
+    return (
+      <View style={styles.page}>
+        <LoginRequiredPrompt
+          description="시간표를 확인하려면 로그인해주세요."
+          onLoginPress={() => router.replace('/')}
+        />
+        <MobileBottomNavigation activeTab="timetable" />
+      </View>
+    );
+  }
+
+  return <AuthenticatedTimetableScreen />;
+}
+
+function AuthenticatedTimetableScreen() {
   const router = useRouter();
   const [isSnuttPickerOpen, setIsSnuttPickerOpen] = useState(false);
   const snuttImportingRef = useRef(false);

@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react';
 
 import * as authApi from '@/api/auth';
 import { setSessionExpiredHandler } from '@/api/client';
-import { requestGoogleAccessToken } from '@/api/socialAuth';
+import { requestSocialAccessToken } from '@/api/socialAuth';
 import { TokenService } from '@/api/tokenService';
 import { useAuthStore } from '@/stores/authStore';
 import type {
@@ -102,7 +102,10 @@ export function useAuth() {
   const queryClient = useQueryClient();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const isInitialized = useAuthStore((state) => state.isInitialized);
+  const isHydrated = useAuthStore((state) => state.isHydrated);
+  const onboardingStep = useAuthStore((state) => state.onboardingStep);
   const setAuthenticated = useAuthStore((state) => state.setAuthenticated);
+  const setOnboardingStep = useAuthStore((state) => state.setOnboardingStep);
   const resetAuth = useAuthStore((state) => state.reset);
 
   const userQuery = useQuery({
@@ -126,7 +129,10 @@ export function useAuth() {
       await authApi.login(input);
       return getUserAfterAuthentication();
     },
-    onSuccess: commitAuthenticatedUser,
+    onSuccess: (user) => {
+      setOnboardingStep(null);
+      commitAuthenticatedUser(user);
+    },
     onError: clearLocalSession,
   });
 
@@ -135,7 +141,10 @@ export function useAuth() {
       await authApi.signup(input);
       return getUserAfterAuthentication();
     },
-    onSuccess: commitAuthenticatedUser,
+    onSuccess: (user) => {
+      setOnboardingStep('profile');
+      commitAuthenticatedUser(user);
+    },
     onError: clearLocalSession,
   });
 
@@ -155,11 +164,15 @@ export function useAuth() {
 
   const socialLoginMutation = useMutation({
     mutationFn: async (provider: SocialLoginProvider) => {
-      const providerToken = await requestGoogleAccessToken(provider);
-      const { accessToken } = await authApi.loginWithSocial(providerToken);
-      return completeSocialAuthentication(accessToken);
+      const providerToken = await requestSocialAccessToken(provider);
+      const { accessToken, isNewUser } = await authApi.loginWithSocial(providerToken);
+      const user = await completeSocialAuthentication(accessToken);
+      return { user, isNewUser };
     },
-    onSuccess: commitAuthenticatedUser,
+    onSuccess: ({ user, isNewUser }) => {
+      setOnboardingStep(isNewUser ? 'profile' : null);
+      commitAuthenticatedUser(user);
+    },
   });
 
   const logoutMutation = useMutation({
@@ -196,7 +209,8 @@ export function useAuth() {
   return {
     user: isAuthenticated ? (userQuery.data ?? null) : null,
     isAuthenticated,
-    isLoading: !isInitialized || (isAuthenticated && userQuery.isPending),
+    isLoading: !isInitialized || !isHydrated || (isAuthenticated && userQuery.isPending),
+    onboardingStep,
     userQuery,
     loginMutation,
     signupMutation,
@@ -225,5 +239,7 @@ export function useAuth() {
     updateUsername: (username: string) => updateUsernameMutation.mutateAsync(username),
     clearProfileImg: () => clearProfileImageMutation.mutateAsync(),
     setProfileImg: (image: ProfileImage) => uploadProfileImageMutation.mutateAsync(image),
+    continueOnboarding: () => setOnboardingStep('interests'),
+    finishOnboarding: () => setOnboardingStep(null),
   };
 }

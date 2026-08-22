@@ -16,7 +16,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useAuth } from "@/contexts/AuthProvider";
-import { SocialLoginError } from "@/types/socialAuth";
+import { SocialLoginError, type SocialLoginProvider } from "@/types/socialAuth";
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -32,6 +32,9 @@ export default function HomeScreen() {
   const [isLoginValid, setIsLoginValid] = useState(true);
   const isLoggingIn = loginMutation.isPending;
   const isSocialLoginPending = socialLoginMutation.isPending;
+  const activeSocialProvider = isSocialLoginPending
+    ? socialLoginMutation.variables
+    : undefined;
   const isBusy = isLoggingIn || isSocialLoginPending;
 
   /**
@@ -61,20 +64,20 @@ export default function HomeScreen() {
     }
   };
 
-  /**
-   * Google 로그인
-   */
-  const handleGoogleLogin = async () => {
+  const handleSocialLogin = async (
+    provider: SocialLoginProvider,
+    providerName: string,
+  ) => {
     try {
-      await loginWithSocial("GOOGLE");
-      router.replace("/calendar");
+      const { isNewUser } = await loginWithSocial(provider);
+      router.replace(isNewUser ? "/onboarding/profile" : "/calendar");
     } catch (error) {
       if (error instanceof SocialLoginError && error.code === "cancelled") {
         return;
       }
 
       Alert.alert(
-        "구글 로그인 실패",
+        `${providerName} 로그인 실패`,
         error instanceof SocialLoginError
           ? error.message
           : "잠시 후 다시 시도해 주세요.",
@@ -83,17 +86,24 @@ export default function HomeScreen() {
   };
 
   /**
+   * Google 로그인
+   */
+  const handleGoogleLogin = async () => {
+    await handleSocialLogin("GOOGLE", "구글");
+  };
+
+  /**
    * Kakao 로그인
    */
   const handleKakaoLogin = async () => {
-    Alert.alert("알림", "카카오 로그인은 아직 지원하지 않습니다.");
+    await handleSocialLogin("KAKAO", "카카오");
   };
 
   /**
    * Naver 로그인
    */
   const handleNaverLogin = async () => {
-    Alert.alert("알림", "네이버 로그인은 아직 지원하지 않습니다.");
+    await handleSocialLogin("NAVER", "네이버");
   };
 
   /**
@@ -208,7 +218,7 @@ export default function HomeScreen() {
                 iconSource={require("@/assets/images/googleLogo.png")}
                 onPress={handleGoogleLogin}
                 disabled={isBusy}
-                isLoading={isSocialLoginPending}
+                isLoading={activeSocialProvider === "GOOGLE"}
               />
 
               <SocialLoginButton
@@ -216,6 +226,7 @@ export default function HomeScreen() {
                 iconSource={require("@/assets/images/kakaoLogo.png")}
                 onPress={handleKakaoLogin}
                 disabled={isBusy}
+                isLoading={activeSocialProvider === "KAKAO"}
               />
 
               <SocialLoginButton
@@ -223,6 +234,7 @@ export default function HomeScreen() {
                 iconSource={require("@/assets/images/naverLogo.png")}
                 onPress={handleNaverLogin}
                 disabled={isBusy}
+                isLoading={activeSocialProvider === "NAVER"}
               />
 
               {/* Sign Up */}

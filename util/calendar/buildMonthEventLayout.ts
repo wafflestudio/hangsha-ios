@@ -4,6 +4,7 @@ import { calendarEventMapper } from './calendarEventMapper';
 import { sortMonthCalendarEvents } from './sortMonthCalendarEvents';
 
 const DAYS_PER_WEEK = 7;
+const MINUTE_IN_MS = 60 * 1000;
 
 /**
  * 한 주(week) 그리드 위에 절대배치할 이벤트 바. dayIndex는 그 주 내에서
@@ -26,8 +27,31 @@ export type WeekEventBar = {
 const stripTime = (date: Date): Date =>
   new Date(date.getFullYear(), date.getMonth(), date.getDate());
 
+const addDays = (date: Date, amount: number): Date => {
+  const next = new Date(date);
+  next.setDate(next.getDate() + amount);
+  return next;
+};
+
+/** react-big-calendar localizer.ceil(date, 'day')와 같은 규칙. */
+const ceilToDay = (date: Date): Date => {
+  const dayStart = stripTime(date);
+  return dayStart.getTime() === date.getTime() ? dayStart : addDays(dayStart, 1);
+};
+
+const isSameMinute = (a: Date, b: Date): boolean =>
+  Math.floor(a.getTime() / MINUTE_IN_MS) === Math.floor(b.getTime() / MINUTE_IN_MS);
+
 const diffInDays = (start: Date, end: Date): number =>
   Math.round((end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000));
+
+type WeekSegment = {
+  left: number;
+  right: number;
+};
+
+const segmentsOverlap = (segment: WeekSegment, row: readonly WeekSegment[]): boolean =>
+  row.some((other) => other.left <= segment.right && other.right >= segment.left);
 
 /**
  * 한 주(week)에 걸친 이벤트들을 겹치지 않는 행(row)에 배정하고, 주 경계를
@@ -42,41 +66,58 @@ const buildWeekBars = (
 ): WeekEventBar[] => {
   const weekStart = weekDates[0];
   const weekEnd = weekDates[weekDates.length - 1];
+  const weekEndExclusive = addDays(weekEnd, 1);
 
   const weekEvents = calendarEvents
     .map((calendarEvent) => {
       const start = stripTime(calendarEvent.start);
-      const end = stripTime(calendarEvent.end);
-      if (end < weekStart || start > weekEnd) {
+      const hasDurationAfterStartDay = !isSameMinute(start, calendarEvent.end);
+      const endsAfterWeekStart = hasDurationAfterStartDay
+        ? calendarEvent.end > weekStart
+        : calendarEvent.end >= weekStart;
+
+      if (start > weekEnd || !endsAfterWeekStart) {
         return null;
       }
+
+      const endExclusive = ceilToDay(calendarEvent.end);
       const clippedStart = start < weekStart ? weekStart : start;
-      const clippedEnd = end > weekEnd ? weekEnd : end;
+      const clippedEndExclusive =
+        endExclusive > weekEndExclusive ? weekEndExclusive : endExclusive;
+      const spanDays = Math.max(diffInDays(clippedStart, clippedEndExclusive), 1);
+      const dayIndex = diffInDays(weekStart, clippedStart);
+
       return {
         calendarEvent,
-        clippedStart,
-        clippedEnd,
+        dayIndex,
+        spanDays,
         continuesBefore: start < weekStart,
-        continuesAfter: end > weekEnd,
+        continuesAfter: isSameMinute(calendarEvent.start, calendarEvent.end)
+          ? calendarEvent.end >= weekEndExclusive
+          : calendarEvent.end > weekEndExclusive,
       };
     })
     .filter((value): value is NonNullable<typeof value> => value !== null);
 
-  const rowEndDates: Date[] = [];
+  const rowSegments: WeekSegment[][] = [];
   const bars: WeekEventBar[] = [];
 
   for (const {
     calendarEvent,
-    clippedStart,
-    clippedEnd,
+    dayIndex,
+    spanDays,
     continuesBefore,
     continuesAfter,
   } of weekEvents) {
-    let rowIndex = rowEndDates.findIndex((rowEnd) => rowEnd < clippedStart);
+    const segment = {
+      left: dayIndex + 1,
+      right: dayIndex + spanDays,
+    };
+    let rowIndex = rowSegments.findIndex((row) => !segmentsOverlap(segment, row));
     if (rowIndex === -1) {
-      rowIndex = rowEndDates.length;
+      rowIndex = rowSegments.length;
     }
-    rowEndDates[rowIndex] = clippedEnd;
+    (rowSegments[rowIndex] ??= []).push(segment);
 
     bars.push({
       eventId: calendarEvent.resource.event.id,
@@ -84,8 +125,8 @@ const buildWeekBars = (
       eventTypeId: calendarEvent.resource.event.eventTypeId,
       isPeriodEvent: calendarEvent.resource.isPeriodEvent,
       rowIndex,
-      dayIndex: diffInDays(weekStart, clippedStart),
-      spanDays: diffInDays(clippedStart, clippedEnd) + 1,
+      dayIndex,
+      spanDays,
       continuesBefore,
       continuesAfter,
     });

@@ -1,5 +1,4 @@
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
-import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useMemo, useRef } from 'react';
@@ -17,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CalendarHeader } from '@/components/calendar/CalendarHeader';
 import { DailyEventCard } from '@/components/calendar/DailyEventCard';
+import { FilterButton } from '@/components/calendar/FilterButton';
 import { FilterSheet } from '@/components/calendar/FilterSheet';
 import { MobileBottomNavigation } from '@/components/mobile-bottom-navigation';
 import { useAuth } from '@/contexts/AuthProvider';
@@ -120,18 +120,7 @@ export function DailyEventsScreen({ date }: DailyEventsScreenProps) {
                 <SymbolView name="chevron.right" tintColor="#ABABAB" size={18} weight="bold" />
               </Pressable>
 
-              <Pressable
-                style={({ pressed }) => [styles.filterButton, pressed && styles.controlPressed]}
-                onPress={() => filterSheetRef.current?.present()}
-                hitSlop={Spacing.two}
-                accessibilityRole="button"
-                accessibilityLabel="필터">
-                <Image
-                  source={require('@/assets/images/filter.svg')}
-                  style={styles.filterIcon}
-                  contentFit="contain"
-                />
-              </Pressable>
+              <FilterButton onPress={() => filterSheetRef.current?.present()} />
             </>
           }
           right={
@@ -215,22 +204,6 @@ const styles = StyleSheet.create({
   },
   todayText: { color: '#555555', fontSize: 13, lineHeight: 18, fontWeight: '500' },
   headerArrow: { width: 28, height: 36, alignItems: 'center', justifyContent: 'center' },
-  filterButton: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#FFFFFF',
-    borderRadius: 5,
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  filterIcon: { width: 19, height: 19 },
   closeButton: { width: 36, height: 40, alignItems: 'center', justifyContent: 'center' },
   listContent: { paddingHorizontal: 20, paddingTop: 1, paddingBottom: 18 },
   emptyListContent: { flexGrow: 1 },

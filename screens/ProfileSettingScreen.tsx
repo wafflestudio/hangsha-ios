@@ -22,7 +22,14 @@ const DEFAULT_USERNAME = '푱푱한 토끼';
 
 export default function ProfileSettingScreen() {
   const router = useRouter();
-  const { user, updateUsername, setProfileImg, updateUsernameMutation, uploadProfileImageMutation } = useAuth();
+  const {
+    user,
+    updateUsername,
+    setProfileImg,
+    continueOnboarding,
+    updateUsernameMutation,
+    uploadProfileImageMutation,
+  } = useAuth();
   const [username, setUsername] = useState(DEFAULT_USERNAME);
   const [image, setImage] = useState<ProfileImage | null>(null);
   const isUploadingImage = uploadProfileImageMutation.isPending;
@@ -60,6 +67,7 @@ export default function ProfileSettingScreen() {
     try {
       await updateUsername(username.trim() || DEFAULT_USERNAME);
       if (image) await setProfileImg(image);
+      continueOnboarding();
       router.replace('/onboarding/interests');
     } catch {
       Alert.alert('저장 실패', '프로필을 저장하지 못했습니다. 잠시 후 다시 시도해주세요.');
@@ -84,7 +92,13 @@ export default function ProfileSettingScreen() {
             disabled={isSubmitting}
             style={({ pressed }) => [styles.avatar, pressed && !isSubmitting && styles.pressed]}>
             <Image
-              source={image ? { uri: image.uri } : require('@/assets/images/defaultProfile.png')}
+              source={
+                image
+                  ? { uri: image.uri }
+                  : user?.profileImageUrl?.trim()
+                    ? { uri: user.profileImageUrl }
+                    : require('@/assets/images/defaultProfile.png')
+              }
               style={styles.avatarImage}
               resizeMode="cover"
             />
@@ -122,7 +136,7 @@ export default function ProfileSettingScreen() {
                 ? '사진 업로드 중...'
                 : updateUsernameMutation.isPending
                   ? '닉네임 저장 중...'
-                  : '닉네임 설정하기'}
+                  : '완료'}
             </Text>
           </Pressable>
         </View>

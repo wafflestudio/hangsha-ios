@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { useAuth } from '@/contexts/AuthProvider';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useUserData } from '@/contexts/UserDataContext';
 import type { Category } from '@/types/category';
@@ -11,6 +12,7 @@ const MAX_PREFERENCES = 3;
 
 export default function InterestOnboardingScreen() {
   const router = useRouter();
+  const { finishOnboarding } = useAuth();
   const [selected, setSelected] = useState<Category[]>([]);
   const hasInitializedSelection = useRef(false);
   const {
@@ -57,6 +59,7 @@ export default function InterestOnboardingScreen() {
     if (interestCategoriesSaving) return;
     try {
       await saveInterestPreferences(selected);
+      finishOnboarding();
       router.replace('/onboarding/complete');
     } catch {
       Alert.alert('저장 실패', '관심사를 저장하지 못했습니다. 잠시 후 다시 시도해주세요.');
@@ -114,9 +117,9 @@ export default function InterestOnboardingScreen() {
           onPress={submit}
           disabled={interestCategoriesSaving}
           style={[styles.button, interestCategoriesSaving && styles.disabled]}>
-          <Text style={styles.buttonText}>
-            {interestCategoriesSaving ? '저장 중...' : '완료'}
-          </Text>
+            <Text style={styles.buttonText}>
+              {interestCategoriesSaving ? '저장 중...' : '완료'}
+            </Text>
         </Pressable>
       </View>
     </SafeAreaView>

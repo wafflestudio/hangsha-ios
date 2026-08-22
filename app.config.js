@@ -2,7 +2,6 @@ const configuredAppVariant = process.env.APP_VARIANT?.trim();
 const appVariant = configuredAppVariant || "development";
 // APP_VARIANT is supplied by eas.json only while resolving an actual build profile.
 // EAS management commands can therefore resolve the project with safe placeholders.
-const isEasBuildConfig = Boolean(configuredAppVariant);
 const isDevelopment = appVariant === "development";
 
 if (appVariant !== "development" && appVariant !== "production") {
@@ -15,9 +14,19 @@ const googleIosClientId = readBuildEnv(
   "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID",
   "000000000000-placeholder.apps.googleusercontent.com",
 );
+const kakaoNativeAppKey = readBuildEnv(
+  "EXPO_PUBLIC_KAKAO_NATIVE_APP_KEY",
+  "placeholder-kakao-native-app-key",
+);
+const naverUrlScheme = readBuildEnv(
+  "EXPO_PUBLIC_NAVER_URL_SCHEME",
+  isDevelopment ? "hangsha-dev-naver" : "hangsha-naver",
+);
 const iosBundleIdentifier = readBuildEnv(
   "IOS_BUNDLE_IDENTIFIER",
-  "com.wafflestudio.hangsha-ios.dev",
+  isDevelopment
+    ? "com.wafflestudio.hangsha-ios.dev"
+    : "com.wafflestudio.hangsha-ios",
 );
 
 module.exports = {
@@ -78,11 +87,30 @@ module.exports = {
       ],
       "expo-status-bar",
       [
+        "expo-build-properties",
+        {
+          android: {
+            extraMavenRepos: [
+              "https://devrepo.kakao.com/nexus/content/groups/public/",
+            ],
+          },
+        },
+      ],
+      [
         "@react-native-google-signin/google-signin",
         {
           iosUrlScheme: getGoogleUrlScheme(googleIosClientId),
         },
       ],
+      [
+        "@react-native-kakao/core",
+        {
+          nativeAppKey: kakaoNativeAppKey,
+          android: {},
+          ios: { handleKakaoOpenUrl: true },
+        },
+      ],
+      ["@react-native-seoul/naver-login", { urlScheme: naverUrlScheme }],
     ],
 
     experiments: {
@@ -110,17 +138,7 @@ function getGoogleUrlScheme(clientId) {
   return `com.googleusercontent.apps.${identifier}`;
 }
 
-function requireEnv(name) {
-  const value = process.env[name]?.trim();
-  if (!value) {
-    throw new Error(`${name} must be set before building the app.`);
-  }
-  return value;
-}
-
 function readBuildEnv(name, fallback) {
   const value = process.env[name]?.trim();
-  if (value) return value;
-  if (isEasBuildConfig) return requireEnv(name);
-  return fallback;
+  return value || fallback;
 }

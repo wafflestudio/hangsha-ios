@@ -10,7 +10,6 @@
       "channel": "development",
       "env": {
         "APP_VARIANT": "development",
-        "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "1234567890-abcxyz.apps.googleusercontent.com",
         "IOS_BUNDLE_IDENTIFIER": "com.wafflestudio.hangsha-ios.dev"
       }
     },

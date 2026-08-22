@@ -40,7 +40,7 @@ const getGroupKey = (event: Event, range: EventRange) => {
 const getTimeKey = (range: EventRange) =>
   `${range.start.getTime()}-${range.end.getTime()}`;
 
-/** 같은 행사·날짜에서 시간만 다른 회차는 검색 목록에 하나만 표시한다. */
+/** 같은 행사·날짜에서 시간만 다른 회차는 월별 뷰와 검색 결과에 하나만 표시한다. */
 export function filterEventTimeVariants<T>(items: T[], getEvent: (item: T) => Event): T[] {
   const itemMetadata = items.map((item) => {
     const event = getEvent(item);

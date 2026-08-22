@@ -18,6 +18,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { FilterSheet } from '@/components/calendar/FilterSheet';
+import { FilterButton } from '@/components/calendar/FilterButton';
 import { MobileBottomNavigation } from '@/components/mobile-bottom-navigation';
 import { SearchResultCard } from '@/components/search/SearchResultCard';
 import { useAuth } from '@/contexts/AuthProvider';
@@ -124,17 +125,10 @@ export function SearchScreen({ initialQuery }: SearchScreenProps) {
             </Text>
 
             <View style={styles.headerActions}>
-              <Pressable
-                accessibilityRole="button"
+              <FilterButton
                 accessibilityLabel="검색 필터"
                 onPress={() => filterSheetRef.current?.present()}
-                style={({ pressed }) => [styles.filterButton, pressed && styles.pressed]}>
-                <Image
-                  source={require('@/assets/images/filter.svg')}
-                  style={styles.filterIcon}
-                  contentFit="contain"
-                />
-              </Pressable>
+              />
 
               {user ? (
                 <Pressable
@@ -383,22 +377,6 @@ const styles = StyleSheet.create({
     letterSpacing: -0.35,
   },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  filterButton: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#FFFFFF',
-    borderRadius: 5,
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.12,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  filterIcon: { width: 21, height: 21 },
   profileButton: {
     width: 40,
     height: 40,
