@@ -16,6 +16,8 @@ const AUTH_WITHOUT_ACCESS_TOKEN = [
   'mobile/auth/register',
   'mobile/auth/refresh',
   'auth/login/social',
+  'auth/email/send-code',
+  'auth/email/verify-code',
 ];
 const AUTH_WITHOUT_REFRESH_RECOVERY = [...AUTH_WITHOUT_ACCESS_TOKEN, 'mobile/auth/session'];
 

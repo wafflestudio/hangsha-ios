@@ -4,10 +4,15 @@ import type {
   AuthTokens,
   LoginInput,
   ProfileImage,
+  SendSignupEmailCodeInput,
+  SendSignupEmailCodeResponse,
   SignupInput,
   User,
+  VerifySignupEmailCodeInput,
+  VerifySignupEmailCodeResponse,
 } from "@/types/auth";
 import type {
+  SocialLoginPayload,
   SocialLoginRequest,
   SocialLoginResponse,
 } from "@/types/socialAuth";
@@ -32,14 +37,34 @@ export async function signup(input: SignupInput) {
   return response.data;
 }
 
+export async function sendSignupEmailCode(input: SendSignupEmailCodeInput) {
+  const response = await apiClient.post<SendSignupEmailCodeResponse>(
+    "auth/email/send-code",
+    input,
+  );
+  return response.data;
+}
+
+export async function verifySignupEmailCode(input: VerifySignupEmailCodeInput) {
+  const response = await apiClient.post<VerifySignupEmailCodeResponse>(
+    "auth/email/verify-code",
+    input,
+  );
+  return response.data;
+}
+
 export async function loginWithSocial(input: SocialLoginRequest) {
+  const payload: SocialLoginPayload = {
+    provider: input.provider,
+    code: null,
+    accessToken: input.accessToken,
+    codeVerifier: null,
+    client_type: "MOB",
+  };
+
   const response = await apiClient.post<SocialLoginResponse>(
     "auth/login/social",
-    {
-      provider: input.provider.toUpperCase(),
-      code: "",
-      accessToken: input.accessToken,
-    },
+    payload,
   );
   return response.data;
 }

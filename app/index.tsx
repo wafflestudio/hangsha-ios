@@ -1,67 +1,38 @@
-import { StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Redirect } from 'expo-router';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { SocialLoginButtons } from '@/components/social-login-buttons';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/util/theme';
+import { useAuth } from '@/contexts/AuthProvider';
+import HomeScreen from '@/screens/HomeScreen';
 
-export default function HomeScreen() {
-  return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            행샤
-          </ThemedText>
-        </ThemedView>
+export default function IndexScreen() {
+  const { isAuthenticated, isLoading, onboardingStep } = useAuth();
 
-        <ThemedText type="code" style={styles.code}>
-          행사 찾느라 헤매지 말고
-        </ThemedText>
+  if (isLoading) {
+    return (
+      <View style={styles.loading}>
+        <ActivityIndicator color="#208AEF" />
+      </View>
+    );
+  }
 
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <SocialLoginButtons />
-        </ThemedView>
-      </SafeAreaView>
-    </ThemedView>
-  );
+  if (isAuthenticated) {
+    if (onboardingStep === 'profile') {
+      return <Redirect href="/onboarding/profile" />;
+    }
+    if (onboardingStep === 'interests') {
+      return <Redirect href="/onboarding/interests" />;
+    }
+    return <Redirect href="/calendar" />;
+  }
+
+  return <HomeScreen />;
 }
 
 const styles = StyleSheet.create({
-  container: {
+  loading: {
     flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
-  },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
-  },
-  heroSection: {
     alignItems: 'center',
     justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
-  },
-  title: {
-    textAlign: 'center',
-  },
-  code: {
-    textTransform: 'uppercase',
-  },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
+    backgroundColor: '#FFFFFF',
   },
 });

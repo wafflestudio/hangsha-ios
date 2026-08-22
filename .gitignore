@@ -46,4 +46,8 @@ example
 /ios
 /android
 
+# agents harness
+.claude/
+.agents/
+.gitmessage
 AGENTS*.md

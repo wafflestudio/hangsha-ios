@@ -16,7 +16,24 @@ export interface LoginInput {
 }
 
 export interface SignupInput extends LoginInput {
-  username: string;
+  signupToken: string;
+}
+
+export interface SendSignupEmailCodeInput {
+  email: string;
+}
+
+export interface SendSignupEmailCodeResponse {
+  expiresAt: string;
+}
+
+export interface VerifySignupEmailCodeInput extends SendSignupEmailCodeInput {
+  code: string;
+}
+
+export interface VerifySignupEmailCodeResponse {
+  signupToken: string;
+  expiresAt: string;
 }
 
 export interface ProfileImage {
