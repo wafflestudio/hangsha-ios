@@ -1,4 +1,4 @@
-import type { Event } from '@/types/event';
+import type { CalendarEvent, Event } from '@/types/event';
 import type { DayOfWeek, TimetableCourse } from '@/types/timetable';
 
 export const GRID_START_HOUR = 7;
@@ -32,6 +32,17 @@ export type EventGridBlock = {
   widthPct: number;
   opacity: number;
   zIndex: number;
+};
+
+export type SpanningEventGridBlock = {
+  key: string;
+  event: Event;
+  startDayIndex: number;
+  endDayIndex: number;
+  spanDays: number;
+  lane: number;
+  continuesBefore: boolean;
+  continuesAfter: boolean;
 };
 
 const minutesToTop = (minutes: number) =>
@@ -114,13 +125,15 @@ function layoutEventDay(blocks: BaseEventBlock[]): EventGridBlock[] {
   });
 }
 
-export function flattenEvents(events: Event[]): EventGridBlock[] {
+export function flattenEvents(events: CalendarEvent[]): EventGridBlock[] {
   const blocks: BaseEventBlock[] = [];
 
-  for (const event of events) {
-    const start = event.eventStart;
-    const end = event.eventEnd;
-    if (!start || !end || event.isPeriodEvent || !isSameDay(start, end)) continue;
+  for (const calendarEvent of events) {
+    const { start, end } = calendarEvent;
+    const event = calendarEvent.resource.event;
+    if (calendarEvent.allDay || calendarEvent.resource.isPeriodEvent || !isSameDay(start, end)) {
+      continue;
+    }
 
     const dayIndex = start.getDay() - 1;
     if (dayIndex < 0 || dayIndex > 4) continue;
@@ -145,6 +158,88 @@ export function flattenEvents(events: Event[]): EventGridBlock[] {
   return VISIBLE_DAYS.flatMap((_day, dayIndex) =>
     layoutEventDay(blocks.filter((block) => block.dayIndex === dayIndex)),
   );
+}
+
+const startOfDay = (date: Date) =>
+  new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+const addDays = (date: Date, amount: number) => {
+  const next = new Date(date);
+  next.setDate(next.getDate() + amount);
+  return next;
+};
+
+const ceilToDay = (date: Date) => {
+  const dayStart = startOfDay(date);
+  return dayStart.getTime() === date.getTime() ? dayStart : addDays(dayStart, 1);
+};
+
+const dayDifference = (from: Date, to: Date) => {
+  const fromUtc = Date.UTC(from.getFullYear(), from.getMonth(), from.getDate());
+  const toUtc = Date.UTC(to.getFullYear(), to.getMonth(), to.getDate());
+  return Math.round((toUtc - fromUtc) / (24 * 60 * 60 * 1000));
+};
+
+/**
+ * 월~금 열에 걸쳐 표시할 종일/기간 행사를 겹치지 않는 lane으로 배치한다.
+ * weekStart는 일요일 기준이며 주말에만 존재하는 행사는 주간 시간표에서 제외한다.
+ */
+export function flattenSpanningEvents(
+  events: CalendarEvent[],
+  weekStart: Date,
+  keepAdjacentLanesSeparate = false,
+): SpanningEventGridBlock[] {
+  const visibleStart = addDays(startOfDay(weekStart), 1);
+  const visibleEndExclusive = addDays(visibleStart, VISIBLE_DAYS.length);
+
+  const candidates = events
+    .map((calendarEvent) => {
+      const rangeStart = startOfDay(calendarEvent.start);
+      let rangeEndExclusive = ceilToDay(calendarEvent.end);
+      if (rangeEndExclusive <= rangeStart) rangeEndExclusive = addDays(rangeStart, 1);
+
+      if (rangeEndExclusive <= visibleStart || rangeStart >= visibleEndExclusive) return null;
+
+      const clippedStart = rangeStart < visibleStart ? visibleStart : rangeStart;
+      const clippedEnd =
+        rangeEndExclusive > visibleEndExclusive ? visibleEndExclusive : rangeEndExclusive;
+      const startDayIndex = dayDifference(visibleStart, clippedStart);
+      const endDayIndex = dayDifference(visibleStart, clippedEnd) - 1;
+
+      return {
+        key: `spanning-event-${calendarEvent.resource.event.id}`,
+        event: calendarEvent.resource.event,
+        startDayIndex,
+        endDayIndex,
+        spanDays: endDayIndex - startDayIndex + 1,
+        continuesBefore: rangeStart < visibleStart,
+        continuesAfter: rangeEndExclusive > visibleEndExclusive,
+      };
+    })
+    .filter((block): block is NonNullable<typeof block> => block !== null)
+    .sort(
+      (a, b) =>
+        a.startDayIndex - b.startDayIndex ||
+        a.endDayIndex - b.endDayIndex ||
+        a.event.id - b.event.id,
+    );
+
+  const lanes: { start: number; end: number }[][] = [];
+
+  return candidates.map((block) => {
+    const separation = keepAdjacentLanesSeparate ? 1 : 0;
+    let lane = lanes.findIndex((items) =>
+      items.every(
+        (item) =>
+          block.endDayIndex + separation < item.start ||
+          block.startDayIndex > item.end + separation,
+      ),
+    );
+    if (lane === -1) lane = lanes.length;
+    (lanes[lane] ??= []).push({ start: block.startDayIndex, end: block.endDayIndex });
+
+    return { ...block, lane };
+  });
 }
 
 export function getWeekRange(anchor: Date) {

@@ -22,8 +22,9 @@ const normalizeRange = (
   };
 };
 
-export const calendarEventMapper = (
+const mapCalendarEvent = (
   event: Event | EventDetail,
+  allDay: (isPeriodEvent: boolean) => boolean,
 ): CalendarEvent | null => {
   const { isPeriodEvent } = event;
   const eventRange = normalizeRange(event.eventStart, event.eventEnd);
@@ -37,8 +38,17 @@ export const calendarEventMapper = (
   return {
     ...range,
     title: event.title,
-    // 월 뷰 전용: 원본(hangsha-web)의 Views.MONTH 분기와 동일하게 항상 종일 이벤트로 취급
-    allDay: true,
+    allDay: allDay(isPeriodEvent),
     resource: { event, isPeriodEvent },
   };
 };
+
+/** 월 뷰에서는 모든 행사를 날짜 막대로 표시한다. */
+export const calendarEventMapper = (
+  event: Event | EventDetail,
+): CalendarEvent | null => mapCalendarEvent(event, () => true);
+
+/** 주 뷰에서는 모집형 행사만 우선 종일로 취급한다. */
+export const weekCalendarEventMapper = (
+  event: Event | EventDetail,
+): CalendarEvent | null => mapCalendarEvent(event, (isPeriodEvent) => isPeriodEvent);

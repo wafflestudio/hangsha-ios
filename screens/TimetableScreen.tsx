@@ -25,8 +25,9 @@ import {
   useTimetablesQuery,
 } from '@/contexts/TimetableContext';
 import { useTimetableUiStore } from '@/stores/timetableUiStore';
-import type { Event } from '@/types/event';
+import type { CalendarEvent, Event } from '@/types/event';
 import type { Timetable } from '@/types/timetable';
+import { weekCalendarEventMapper } from '@/util/calendar/calendarEventMapper';
 import {
   buildCoursePatch,
   expandCourseFormSlots,
@@ -114,6 +115,42 @@ function AuthenticatedTimetableScreen() {
     }
     return [...unique.values()];
   }, [eventOverlayOn, eventQuery.data]);
+
+  const weekCalendarEvents = useMemo(() => {
+    if (!eventOverlayOn) return [];
+
+    return weekEvents
+      .map(weekCalendarEventMapper)
+      .filter((event): event is CalendarEvent => event !== null)
+      .filter((event) => event.start <= weekRange.to && event.end >= weekRange.from)
+      .map((event) => {
+        const isTwentyThreeHoursFiftyNineMinutes =
+          event.end.getTime() - event.start.getTime() ===
+          (23 * 60 + 59) * 60 * 1000;
+        const startDay = new Date(
+          event.start.getFullYear(),
+          event.start.getMonth(),
+          event.start.getDate(),
+        );
+        const endDay = new Date(
+          event.end.getFullYear(),
+          event.end.getMonth(),
+          event.end.getDate(),
+        );
+        const differentDate =
+          startDay.getFullYear() !== endDay.getFullYear() ||
+          startDay.getMonth() !== endDay.getMonth() ||
+          startDay.getDate() !== endDay.getDate();
+
+        return {
+          ...event,
+          allDay:
+            Boolean(event.allDay) ||
+            differentDate ||
+            isTwentyThreeHoursFiftyNineMinutes,
+        };
+      });
+  }, [eventOverlayOn, weekEvents, weekRange.from, weekRange.to]);
 
   const createMutation = useCreateTimetableMutation(year, semester);
   const renameMutation = useRenameTimetableMutation(year, semester);
@@ -252,7 +289,8 @@ function AuthenticatedTimetableScreen() {
         ) : (
           <TimetableGrid
             courses={courses}
-            events={weekEvents}
+            events={weekCalendarEvents}
+            weekStart={weekRange.from}
             isLoading={
               timetableQuery.isPending ||
               coursesQuery.isPending ||
