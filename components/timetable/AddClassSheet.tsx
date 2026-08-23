@@ -25,6 +25,7 @@ import {
   expandCourseFormSlots,
 } from '@/util/timetable/courseForm';
 import { TimePickerSection } from '@/components/timetable/TimePickerSection';
+import { AdaptiveColors } from '@/util/theme';
 
 const ALL_DAYS: DayOfWeek[] = ['SUN', ...VISIBLE_DAYS, 'SAT'];
 
@@ -112,7 +113,7 @@ export function AddClassSheet({
               accessibilityLabel="수업 추가 닫기"
               hitSlop={10}
               onPress={onClose}>
-              <SymbolView name="xmark.circle.fill" tintColor="#A8A8A8" size={22} />
+              <SymbolView name="xmark.circle.fill" tintColor={AdaptiveColors.icon} size={22} />
             </Pressable>
           </View>
 
@@ -120,7 +121,7 @@ export function AddClassSheet({
             <TextInput
               value={title}
               placeholder="경제학개론"
-              placeholderTextColor="#A3A3A3"
+              placeholderTextColor={AdaptiveColors.textMuted}
               style={styles.input}
               onChangeText={(value) => updateDraft({ title: value })}
             />
@@ -130,7 +131,7 @@ export function AddClassSheet({
             <TextInput
               value={instructor}
               placeholder="박이택"
-              placeholderTextColor="#A3A3A3"
+              placeholderTextColor={AdaptiveColors.textMuted}
               style={styles.input}
               onChangeText={(value) => updateDraft({ instructor: value })}
             />
@@ -141,7 +142,7 @@ export function AddClassSheet({
               value={credit}
               keyboardType="number-pad"
               placeholder="3"
-              placeholderTextColor="#A3A3A3"
+              placeholderTextColor={AdaptiveColors.textMuted}
               style={styles.input}
               onChangeText={(value) => updateDraft({ credit: value.replace(/[^0-9]/g, '') })}
             />
@@ -158,7 +159,7 @@ export function AddClassSheet({
                   hitSlop={8}
                   style={styles.removeSlot}
                   onPress={() => updateDraft({ rows: rows.filter((item) => item.rowId !== row.rowId) })}>
-                  <SymbolView name="xmark.circle.fill" tintColor="#A8A8A8" size={20} />
+                  <SymbolView name="xmark.circle.fill" tintColor={AdaptiveColors.icon} size={20} />
                 </Pressable>
               )}
 
@@ -238,9 +239,9 @@ const styles = StyleSheet.create({
     zIndex: 90,
     maxHeight: '74%',
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#EFEFF1',
+    borderTopColor: AdaptiveColors.border,
     borderTopLeftRadius: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: AdaptiveColors.surfaceElevated,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: -8 },
     shadowOpacity: 0.12,
@@ -249,19 +250,19 @@ const styles = StyleSheet.create({
   },
   content: { paddingHorizontal: 20, paddingTop: 18, paddingBottom: 28 },
   sheetHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 },
-  sheetTitle: { color: '#111111', fontSize: 20, fontWeight: '700' },
+  sheetTitle: { color: AdaptiveColors.text, fontSize: 20, fontWeight: '700' },
   field: { gap: 8, marginBottom: 14 },
-  fieldLabel: { color: '#202020', fontSize: 14, fontWeight: '600' },
+  fieldLabel: { color: AdaptiveColors.text, fontSize: 14, fontWeight: '600' },
   input: {
     height: 46,
     paddingHorizontal: 12,
     borderWidth: 1,
-    borderColor: '#E4E4E4',
+    borderColor: AdaptiveColors.border,
     borderRadius: 9,
-    color: '#111111',
+    color: AdaptiveColors.text,
     fontSize: 16,
   },
-  timeSectionTitle: { marginTop: 2, marginBottom: 14, color: '#111111', fontSize: 16, fontWeight: '700' },
+  timeSectionTitle: { marginTop: 2, marginBottom: 14, color: AdaptiveColors.text, fontSize: 16, fontWeight: '700' },
   slotSection: { marginBottom: 14 },
   removeSlot: { alignSelf: 'flex-end', marginBottom: 5 },
   dayRow: { flexDirection: 'row', gap: 4, marginBottom: 20 },
@@ -271,14 +272,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#E5E5E5',
+    borderColor: AdaptiveColors.border,
     borderRadius: 8,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: AdaptiveColors.surface,
   },
-  dayButtonSelected: { borderWidth: 1.5, borderColor: '#222222' },
-  dayText: { color: '#333333', fontSize: 15, fontWeight: '500' },
-  dayTextSelected: { color: '#111111', fontWeight: '700' },
-  rangeArrow: { alignSelf: 'center', marginVertical: 7, color: '#7B818A', fontSize: 23 },
+  dayButtonSelected: { borderWidth: 1.5, borderColor: AdaptiveColors.accent },
+  dayText: { color: AdaptiveColors.textSecondary, fontSize: 15, fontWeight: '500' },
+  dayTextSelected: { color: AdaptiveColors.text, fontWeight: '700' },
+  rangeArrow: { alignSelf: 'center', marginVertical: 7, color: AdaptiveColors.icon, fontSize: 23 },
   addTimeButton: {
     alignSelf: 'flex-start',
     marginTop: 4,

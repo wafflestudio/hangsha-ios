@@ -12,6 +12,7 @@ import { CategoryChip, DdayChip } from '@/components/events/EventChip';
 import { HighlightedText } from '@/components/search/HighlightedText';
 import type { Event, EventSearchItem } from '@/types/event';
 import { formatEventDateRange } from '@/util/calendar/dateFormatter';
+import { AdaptiveColors } from '@/util/theme';
 
 type SearchResultCardProps = {
   item: EventSearchItem;
@@ -122,7 +123,7 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingVertical: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#EEEEEE',
+    borderBottomColor: AdaptiveColors.border,
   },
   bookmarkColumn: {
     width: 25,
@@ -132,8 +133,8 @@ const styles = StyleSheet.create({
   },
   bookmarkIcon: { width: 22, height: 22 },
   content: { minWidth: 0, flex: 1, gap: 5 },
-  title: { color: '#111111', fontSize: 16, lineHeight: 22, fontWeight: '700' },
-  snippet: { color: '#666666', fontSize: 13.5, lineHeight: 20 },
+  title: { color: AdaptiveColors.text, fontSize: 16, lineHeight: 22, fontWeight: '700' },
+  snippet: { color: AdaptiveColors.textSecondary, fontSize: 13.5, lineHeight: 20 },
   footer: {
     minWidth: 0,
     flexDirection: 'row',
@@ -142,12 +143,12 @@ const styles = StyleSheet.create({
     gap: 7,
     marginTop: 3,
   },
-  date: { color: '#888888', fontSize: 12, lineHeight: 17 },
-  separator: { color: '#CCCCCC', fontSize: 12 },
+  date: { color: AdaptiveColors.textMuted, fontSize: 12, lineHeight: 17 },
+  separator: { color: AdaptiveColors.borderStrong, fontSize: 12 },
   organization: {
     minWidth: 0,
     flexShrink: 1,
-    color: '#555555',
+    color: AdaptiveColors.textSecondary,
     fontSize: 12,
     lineHeight: 17,
     fontWeight: '500',
@@ -157,11 +158,11 @@ const styles = StyleSheet.create({
     height: 76,
     overflow: 'hidden',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#EEEEEE',
+    borderColor: AdaptiveColors.border,
     borderRadius: 9,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: AdaptiveColors.backgroundElement,
   },
   thumbnail: { width: '100%', height: '100%' },
-  pressed: { backgroundColor: '#FAFAFA' },
+  pressed: { backgroundColor: AdaptiveColors.pressed },
   pending: { opacity: 0.45 },
 });

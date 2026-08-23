@@ -25,6 +25,7 @@ import { BugReportForm } from '@/components/bug-report/BugReportForm';
 import { CategoryChip, DdayChip } from '@/components/events/EventChip';
 import { MobileBottomNavigation } from '@/components/mobile-bottom-navigation';
 import { LoginRequiredPrompt } from '@/components/auth/LoginRequiredPrompt';
+import { ThemeSelector } from '@/components/theme-selector';
 import { useAuth } from '@/contexts/AuthProvider';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useUserData } from '@/contexts/UserDataContext';
@@ -34,6 +35,7 @@ import type { InterestCategory } from '@/types/category';
 import type { Event } from '@/types/event';
 import type { Memo } from '@/types/userData';
 import { formatDateDotParsed } from '@/util/calendar/dateFormatter';
+import { AdaptiveColors } from '@/util/theme';
 
 const MAX_NAME_WEIGHT = 20;
 const MAX_PREFERENCES = 3;
@@ -261,7 +263,7 @@ export default function MyPageScreen() {
     return (
       <View style={styles.root}>
         <SafeAreaView style={styles.centered} edges={['top', 'left', 'right']}>
-          <ActivityIndicator color="#208AEF" />
+          <ActivityIndicator color={AdaptiveColors.accent} />
           <Text style={styles.loadingText}>사용자 정보를 불러오는 중...</Text>
         </SafeAreaView>
         <MobileBottomNavigation activeTab="profile" />
@@ -294,7 +296,7 @@ export default function MyPageScreen() {
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
             refreshControl={
-              <RefreshControl refreshing={isRefreshing} onRefresh={refresh} tintColor="#208AEF" />
+              <RefreshControl refreshing={isRefreshing} onRefresh={refresh} tintColor={AdaptiveColors.accent} />
             }>
             <View style={styles.profileSection}>
               <View style={styles.profileRow}>
@@ -330,7 +332,7 @@ export default function MyPageScreen() {
                       autoCorrect={false}
                       returnKeyType="done"
                       placeholder="이름을 입력하세요"
-                      placeholderTextColor="#8F8F8F"
+                      placeholderTextColor={AdaptiveColors.textMuted}
                       style={styles.nameInput}
                     />
                   ) : (
@@ -382,7 +384,7 @@ export default function MyPageScreen() {
                   <Text style={styles.chevron}>›</Text>
                 </View>
                 {interestCategoriesLoading ? (
-                  <ActivityIndicator size="small" color="#208AEF" style={styles.inlineLoader} />
+                  <ActivityIndicator size="small" color={AdaptiveColors.accent} style={styles.inlineLoader} />
                 ) : interestCategories.length > 0 ? (
                   <View style={styles.chipRow}>
                     {interestCategories.map((category, index) => (
@@ -406,6 +408,7 @@ export default function MyPageScreen() {
                   </Text>
                 )}
               </Pressable>
+              <ThemeSelector />
             </View>
 
             <BookmarkWidget
@@ -689,9 +692,9 @@ function InterestOptions({
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#FFFFFF' },
+  root: { flex: 1, backgroundColor: AdaptiveColors.background },
   flex: { flex: 1 },
-  safeArea: { flex: 1, backgroundColor: '#FFFFFF' },
+  safeArea: { flex: 1, backgroundColor: AdaptiveColors.background },
   content: {
     width: '100%',
     maxWidth: 800,
@@ -700,7 +703,7 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
-  loadingText: { color: '#777777', fontSize: 14 },
+  loadingText: { color: AdaptiveColors.textSecondary, fontSize: 14 },
   profileSection: { paddingHorizontal: 20, paddingBottom: 24 },
   profileRow: { minHeight: 100, flexDirection: 'row', alignItems: 'center', marginBottom: 28 },
   avatarWrapper: { width: 88, height: 88 },
@@ -709,8 +712,8 @@ const styles = StyleSheet.create({
     height: 88,
     borderRadius: 44,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#E6E6E6',
-    backgroundColor: '#F3F3F3',
+    borderColor: AdaptiveColors.border,
+    backgroundColor: AdaptiveColors.backgroundElement,
   },
   cameraBadge: {
     position: 'absolute',
@@ -722,68 +725,68 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#BEBEBE',
-    backgroundColor: '#FFFFFF',
+    borderColor: AdaptiveColors.borderStrong,
+    backgroundColor: AdaptiveColors.surface,
   },
-  cameraBadgeText: { color: '#777777', fontSize: 19, lineHeight: 21, fontWeight: '600' },
+  cameraBadgeText: { color: AdaptiveColors.icon, fontSize: 19, lineHeight: 21, fontWeight: '600' },
   identity: { flex: 1, minWidth: 0, marginLeft: 16 },
-  username: { color: '#111111', fontSize: 21, lineHeight: 27, fontWeight: '800' },
-  email: { marginTop: 4, color: '#555555', fontSize: 14 },
-  editText: { padding: 6, color: '#777777', fontSize: 14, fontWeight: '700' },
+  username: { color: AdaptiveColors.text, fontSize: 21, lineHeight: 27, fontWeight: '800' },
+  email: { marginTop: 4, color: AdaptiveColors.textSecondary, fontSize: 14 },
+  editText: { padding: 6, color: AdaptiveColors.textSecondary, fontSize: 14, fontWeight: '700' },
   nameInput: {
     height: 40,
     paddingHorizontal: 10,
     borderWidth: 1,
-    borderColor: '#DADADA',
+    borderColor: AdaptiveColors.border,
     borderRadius: 10,
-    color: '#111111',
+    color: AdaptiveColors.text,
     fontSize: 16,
     fontWeight: '700',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: AdaptiveColors.input,
   },
-  nameHint: { marginTop: 6, color: '#8F8F8F', fontSize: 10, lineHeight: 14 },
-  nameHintMax: { color: '#D33B3B' },
+  nameHint: { marginTop: 6, color: AdaptiveColors.textMuted, fontSize: 10, lineHeight: 14 },
+  nameHintMax: { color: AdaptiveColors.danger },
   editActions: { marginLeft: 8, alignItems: 'flex-end', gap: 12 },
-  cancelText: { color: '#777777', fontSize: 14, fontWeight: '600' },
-  doneText: { color: '#208AEF', fontSize: 14, fontWeight: '800' },
+  cancelText: { color: AdaptiveColors.textSecondary, fontSize: 14, fontWeight: '600' },
+  doneText: { color: AdaptiveColors.accent, fontSize: 14, fontWeight: '800' },
   preferenceCard: {
     width: '100%',
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderWidth: 1,
-    borderColor: '#D0D0D0',
+    borderColor: AdaptiveColors.border,
     borderRadius: 16,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: AdaptiveColors.surface,
   },
-  cardPressed: { backgroundColor: '#F7F7F7' },
+  cardPressed: { backgroundColor: AdaptiveColors.pressed },
   cardHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   cardTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 9 },
-  cardTitle: { color: '#222222', fontSize: 16, fontWeight: '700' },
-  star: { color: '#828282', fontSize: 21 },
-  chevron: { color: '#ABABAB', fontSize: 27, lineHeight: 27 },
+  cardTitle: { color: AdaptiveColors.text, fontSize: 16, fontWeight: '700' },
+  star: { color: AdaptiveColors.icon, fontSize: 21 },
+  chevron: { color: AdaptiveColors.icon, fontSize: 27, lineHeight: 27 },
   inlineLoader: { alignSelf: 'flex-start', marginTop: 12 },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
   preferenceChip: { paddingHorizontal: 11, paddingVertical: 6, borderRadius: 999 },
   categoryChip: { backgroundColor: '#6FD2FF' },
   organizationChip: { backgroundColor: '#36C986' },
   preferenceChipText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
-  emptyPreference: { marginTop: 12, color: '#6A6A6A', fontSize: 13, fontWeight: '600' },
+  emptyPreference: { marginTop: 12, color: AdaptiveColors.textSecondary, fontSize: 13, fontWeight: '600' },
   section: {
     marginHorizontal: 20,
     paddingVertical: 24,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#DDDDDD',
+    borderTopColor: AdaptiveColors.border,
   },
-  sectionTitle: { color: '#222222', fontSize: 18, fontWeight: '800' },
+  sectionTitle: { color: AdaptiveColors.text, fontSize: 18, fontWeight: '800' },
   sectionIcon: { width: 18, height: 18 },
-  emptyText: { paddingVertical: 18, color: '#777777', fontSize: 13, lineHeight: 20, textAlign: 'center' },
+  emptyText: { paddingVertical: 18, color: AdaptiveColors.textSecondary, fontSize: 13, lineHeight: 20, textAlign: 'center' },
   memoSectionHeader: {
     marginBottom: 28,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  memoChevron: { color: '#ABABAB', fontSize: 36, lineHeight: 36, fontWeight: '300' },
+  memoChevron: { color: AdaptiveColors.icon, fontSize: 36, lineHeight: 36, fontWeight: '300' },
   memoPreviewGrid: {
     flexDirection: 'row',
     gap: 28,
@@ -803,13 +806,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
   },
-  memoPreviewDday: { color: '#666666', fontSize: 17, lineHeight: 23, fontWeight: '400' },
+  memoPreviewDday: { color: AdaptiveColors.textSecondary, fontSize: 17, lineHeight: 23, fontWeight: '400' },
   memoBookmarkButton: { width: 27, height: 27, alignItems: 'center', justifyContent: 'center' },
   memoBookmarkIcon: { width: 23, height: 23 },
   memoPreviewEventTitle: {
     minHeight: 46,
     marginTop: 20,
-    color: '#111111',
+    color: AdaptiveColors.text,
     fontSize: 16,
     lineHeight: 23,
     fontWeight: '800',
@@ -817,14 +820,14 @@ const styles = StyleSheet.create({
   memoPreviewMetadata: {
     minHeight: 40,
     marginTop: 10,
-    color: '#888888',
+    color: AdaptiveColors.textMuted,
     fontSize: 14,
     lineHeight: 20,
   },
   memoPreviewContent: {
     minHeight: 40,
     marginTop: 12,
-    color: '#222222',
+    color: AdaptiveColors.text,
     fontSize: 14,
     lineHeight: 20,
   },
@@ -834,15 +837,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 11,
     paddingVertical: 7,
     borderRadius: 999,
-    backgroundColor: '#ECECEC',
+    backgroundColor: AdaptiveColors.backgroundElement,
   },
-  memoTagText: { color: '#707070', fontSize: 12, fontWeight: '700' },
+  memoTagText: { color: AdaptiveColors.textSecondary, fontSize: 12, fontWeight: '700' },
   bugHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  bugTitle: { color: '#222222', fontSize: 18, lineHeight: 25, fontWeight: '800' },
+  bugTitle: { color: AdaptiveColors.text, fontSize: 18, lineHeight: 25, fontWeight: '800' },
   sectionDescription: {
     marginTop: 6,
     marginBottom: 14,
-    color: '#777777',
+    color: AdaptiveColors.textSecondary,
     fontSize: 13,
     lineHeight: 18,
     fontWeight: '600',
@@ -851,12 +854,12 @@ const styles = StyleSheet.create({
     height: 46,
     paddingHorizontal: 13,
     borderWidth: 1,
-    borderColor: '#DDDDDD',
+    borderColor: AdaptiveColors.border,
     borderRadius: 10,
-    color: '#222222',
+    color: AdaptiveColors.text,
     fontSize: 14,
     fontWeight: '600',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: AdaptiveColors.input,
     marginBottom: 10,
   },
   reportTextArea: { height: 136, paddingTop: 13 },
@@ -872,26 +875,26 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     paddingVertical: 24,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#DDDDDD',
+    borderTopColor: AdaptiveColors.border,
   },
   accountText: { marginBottom: 14 },
-  accountTitle: { color: '#222222', fontSize: 17, fontWeight: '800' },
-  accountDescription: { marginTop: 6, color: '#777777', fontSize: 13, lineHeight: 18 },
+  accountTitle: { color: AdaptiveColors.text, fontSize: 17, fontWeight: '800' },
+  accountDescription: { marginTop: 6, color: AdaptiveColors.textSecondary, fontSize: 13, lineHeight: 18 },
   outlineButton: {
     height: 44,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#D9D9D9',
+    borderColor: AdaptiveColors.border,
     borderRadius: 10,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: AdaptiveColors.surface,
   },
-  outlineButtonText: { color: '#494949', fontSize: 14, fontWeight: '800' },
-  deleteButton: { borderColor: '#F1B8B8' },
-  deleteButtonText: { color: '#D33B3B', fontSize: 14, fontWeight: '800' },
+  outlineButtonText: { color: AdaptiveColors.textSecondary, fontSize: 14, fontWeight: '800' },
+  deleteButton: { borderColor: AdaptiveColors.danger },
+  deleteButtonText: { color: AdaptiveColors.danger, fontSize: 14, fontWeight: '800' },
   pressed: { opacity: 0.65 },
   disabled: { opacity: 0.55 },
-  editorSafeArea: { flex: 1, backgroundColor: '#FFFFFF' },
+  editorSafeArea: { flex: 1, backgroundColor: AdaptiveColors.background },
   editorHeader: {
     height: 56,
     paddingHorizontal: 20,
@@ -899,10 +902,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#DDDDDD',
+    borderBottomColor: AdaptiveColors.border,
   },
   editorHeaderAction: { width: 48 },
-  editorTitle: { color: '#222222', fontSize: 17, fontWeight: '800' },
+  editorTitle: { color: AdaptiveColors.text, fontSize: 17, fontWeight: '800' },
   editorContent: {
     flexGrow: 1,
     paddingTop: 30,
@@ -911,7 +914,7 @@ const styles = StyleSheet.create({
   },
   onboardingHeader: { alignItems: 'center' },
   onboardingSubtitle: {
-    color: '#666666',
+    color: AdaptiveColors.textSecondary,
     fontSize: 14,
     lineHeight: 20,
     textAlign: 'center',
@@ -925,7 +928,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 12,
   },
-  selectedHint: { color: '#888888', fontSize: 13, textAlign: 'center' },
+  selectedHint: { color: AdaptiveColors.textMuted, fontSize: 13, textAlign: 'center' },
   selectedChip: {
     paddingHorizontal: 13,
     paddingVertical: 9,
@@ -933,15 +936,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 5,
     borderRadius: 999,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: AdaptiveColors.surface,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.08,
     shadowRadius: 9,
     elevation: 4,
   },
-  selectedRankLabel: { color: '#777777', fontSize: 16, fontWeight: '800' },
-  selectedChipText: { color: '#222222', fontSize: 16, fontWeight: '800' },
+  selectedRankLabel: { color: AdaptiveColors.textSecondary, fontSize: 16, fontWeight: '800' },
+  selectedChipText: { color: AdaptiveColors.text, fontSize: 16, fontWeight: '800' },
   editorLoading: { minHeight: 200, alignItems: 'center', justifyContent: 'center', gap: 14 },
   retryButton: { paddingHorizontal: 16, paddingVertical: 10 },
   optionSections: { marginTop: 44, gap: 26 },

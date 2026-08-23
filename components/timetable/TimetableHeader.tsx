@@ -4,6 +4,7 @@ import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 
 import type { Semester } from '@/types/timetable';
 import { SEMESTER_OPTIONS } from '@/types/timetable';
+import { AdaptiveColors } from '@/util/theme';
 
 type SelectionMenu = 'year' | 'semester' | null;
 
@@ -50,14 +51,14 @@ export function TimetableHeader({
               accessibilityLabel="이전 주"
               style={({ pressed }) => [styles.weekButton, pressed && styles.pressed]}
               onPress={() => onMoveWeek(-1)}>
-              <SymbolView name="chevron.left" tintColor="#374151" size={16} weight="bold" />
+              <SymbolView name="chevron.left" tintColor={AdaptiveColors.text} size={16} weight="bold" />
             </Pressable>
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="다음 주"
               style={({ pressed }) => [styles.weekButton, pressed && styles.pressed]}
               onPress={() => onMoveWeek(1)}>
-              <SymbolView name="chevron.right" tintColor="#374151" size={16} weight="bold" />
+              <SymbolView name="chevron.right" tintColor={AdaptiveColors.text} size={16} weight="bold" />
             </Pressable>
           </View>
         </View>
@@ -71,7 +72,7 @@ export function TimetableHeader({
           style={styles.selectButton}
           onPress={() => setMenu('year')}>
           <Text style={styles.selectText}>{year}학년도</Text>
-          <SymbolView name="chevron.down" tintColor="#90949A" size={14} weight="semibold" />
+          <SymbolView name="chevron.down" tintColor={AdaptiveColors.icon} size={14} weight="semibold" />
         </Pressable>
 
         <Pressable
@@ -81,7 +82,7 @@ export function TimetableHeader({
           style={styles.selectButton}
           onPress={() => setMenu('semester')}>
           <Text style={styles.selectText}>{semesterLabel}</Text>
-          <SymbolView name="chevron.down" tintColor="#90949A" size={14} weight="semibold" />
+          <SymbolView name="chevron.down" tintColor={AdaptiveColors.icon} size={14} weight="semibold" />
         </Pressable>
       </View>
 
@@ -141,7 +142,7 @@ function MenuOption({ label, selected, onPress }: { label: string; selected: boo
       style={[styles.menuOption, selected && styles.menuOptionSelected]}
       onPress={onPress}>
       <Text style={[styles.menuOptionText, selected && styles.menuOptionTextSelected]}>{label}</Text>
-      {selected && <SymbolView name="checkmark" tintColor="#14B8D4" size={16} weight="bold" />}
+      {selected && <SymbolView name="checkmark" tintColor={AdaptiveColors.accent} size={16} weight="bold" />}
     </Pressable>
   );
 }
@@ -152,7 +153,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 28,
     paddingBottom: 18,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: AdaptiveColors.background,
   },
   topRow: {
     minHeight: 54,
@@ -164,13 +165,13 @@ const styles = StyleSheet.create({
   title: {
     flex: 1,
     marginTop: 2,
-    color: '#111827',
+    color: AdaptiveColors.text,
     fontSize: 20,
     fontWeight: '700',
     letterSpacing: -0.5,
   },
   weekGroup: { alignItems: 'flex-end', gap: 5 },
-  weekLabel: { color: '#777777', fontSize: 13, fontWeight: '600' },
+  weekLabel: { color: AdaptiveColors.textSecondary, fontSize: 13, fontWeight: '600' },
   weekButtons: { flexDirection: 'row', gap: 5 },
   weekButton: {
     width: 32,
@@ -178,28 +179,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 16,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: AdaptiveColors.backgroundElement,
   },
   pressed: { opacity: 0.55 },
   selectRow: { flexDirection: 'row', gap: 22 },
   selectButton: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 28 },
-  selectText: { color: '#111111', fontSize: 15, fontWeight: '600' },
+  selectText: { color: AdaptiveColors.text, fontSize: 15, fontWeight: '600' },
   toggleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  toggleLabel: { color: '#6B7280', fontSize: 13, fontWeight: '600' },
+  toggleLabel: { color: AdaptiveColors.textSecondary, fontSize: 13, fontWeight: '600' },
   toggle: {
     width: 44,
     height: 26,
     justifyContent: 'center',
     paddingHorizontal: 3,
     borderRadius: 13,
-    backgroundColor: '#D8D8D8',
+    backgroundColor: AdaptiveColors.borderStrong,
   },
   toggleOn: { backgroundColor: '#20C4DD' },
   toggleThumb: {
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: AdaptiveColors.surface,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.18,
@@ -211,7 +212,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 28,
-    backgroundColor: 'rgba(0,0,0,0.22)',
+    backgroundColor: AdaptiveColors.overlay,
   },
   menuCard: {
     width: '100%',
@@ -219,9 +220,9 @@ const styles = StyleSheet.create({
     maxHeight: 430,
     padding: 18,
     borderRadius: 18,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: AdaptiveColors.surfaceElevated,
   },
-  menuTitle: { marginBottom: 10, color: '#111827', fontSize: 18, fontWeight: '700' },
+  menuTitle: { marginBottom: 10, color: AdaptiveColors.text, fontSize: 18, fontWeight: '700' },
   menuScroll: { flexGrow: 0 },
   menuOption: {
     minHeight: 48,
@@ -231,7 +232,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 10,
   },
-  menuOptionSelected: { backgroundColor: '#EAF9FC' },
-  menuOptionText: { color: '#333333', fontSize: 16 },
+  menuOptionSelected: { backgroundColor: AdaptiveColors.backgroundSelected },
+  menuOptionText: { color: AdaptiveColors.text, fontSize: 16 },
   menuOptionTextSelected: { color: '#0A8397', fontWeight: '700' },
 });

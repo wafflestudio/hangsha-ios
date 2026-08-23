@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthProvider';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useUserData } from '@/contexts/UserDataContext';
 import type { InterestCategory } from '@/types/category';
+import { AdaptiveColors } from '@/util/theme';
 
 const MAX_PREFERENCES = 3;
 
@@ -186,13 +187,13 @@ function Loading({ label, retry }: { label: string; retry?: () => void }) {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#FFFFFF' },
+  safeArea: { flex: 1, backgroundColor: AdaptiveColors.background },
   container: { flex: 1, paddingHorizontal: 22 },
   header: { paddingTop: 28, alignItems: 'center' },
-  title: { color: '#161616', fontSize: 27, fontWeight: '800', letterSpacing: -0.54 },
+  title: { color: AdaptiveColors.text, fontSize: 27, fontWeight: '800', letterSpacing: -0.54 },
   subtitle: {
     marginTop: 12,
-    color: '#666666',
+    color: AdaptiveColors.textSecondary,
     fontSize: 14,
     lineHeight: 20,
     textAlign: 'center',
@@ -208,7 +209,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 12,
   },
-  selectedHint: { color: '#888888', fontSize: 13, textAlign: 'center' },
+  selectedHint: { color: AdaptiveColors.textMuted, fontSize: 13, textAlign: 'center' },
   rankPill: {
     paddingHorizontal: 12,
     paddingVertical: 11,
@@ -216,15 +217,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
     borderRadius: 999,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: AdaptiveColors.surface,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.08,
     shadowRadius: 9,
     elevation: 4,
   },
-  rankLabel: { color: '#777777', fontSize: 15, lineHeight: 21, fontWeight: '800' },
-  rankText: { color: '#222222', fontSize: 15, lineHeight: 21, fontWeight: '800' },
+  rankLabel: { color: AdaptiveColors.textSecondary, fontSize: 15, lineHeight: 21, fontWeight: '800' },
+  rankText: { color: AdaptiveColors.text, fontSize: 15, lineHeight: 21, fontWeight: '800' },
   sections: { paddingBottom: 20, gap: 26 },
   section: { gap: 13 },
   sectionTitle: { fontWeight: '800', fontSize: 18, letterSpacing: -0.18 },
@@ -261,9 +262,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 18,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: AdaptiveColors.background,
   },
-  loadingText: { color: '#555555' },
+  loadingText: { color: AdaptiveColors.textSecondary },
   retry: { paddingHorizontal: 16, paddingVertical: 10 },
-  retryText: { color: '#208AEF', fontWeight: '800' },
+  retryText: { color: AdaptiveColors.accent, fontWeight: '800' },
 });

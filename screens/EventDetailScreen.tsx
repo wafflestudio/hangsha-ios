@@ -16,7 +16,7 @@ import { useUserData } from '@/contexts/UserDataContext';
 import { useScrollToFocusedInput } from '@/hooks/use-scroll-to-focused-input';
 import { useTheme } from '@/hooks/use-theme';
 import { getDDay } from '@/util/calendar/getDday';
-import { BottomTabInset, getEventTypeColors, getEventTypeLabel, Spacing } from '@/util/theme';
+import { AdaptiveColors, BottomTabInset, getEventTypeColors, getEventTypeLabel, Spacing } from '@/util/theme';
 
 const MEMO_INPUT_KEYBOARD_OFFSET = 96;
 
@@ -168,9 +168,9 @@ export function EventDetailScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 }, safeArea: { flex: 1, paddingBottom: BottomTabInset }, keyboardAvoidingView: { flex: 1 }, centered: { flex: 1, alignItems: 'center', justifyContent: 'center' }, scrollContent: { paddingBottom: Spacing.six },
   closeButton: { alignSelf: 'flex-start', marginLeft: Spacing.three, marginTop: Spacing.three, padding: 4 },
-  thumbnailWrapper: { marginHorizontal: Spacing.three, marginTop: Spacing.four }, thumbnail: { width: '100%', aspectRatio: 16 / 9, borderRadius: 18, backgroundColor: '#EEEEEE' },
+  thumbnailWrapper: { marginHorizontal: Spacing.three, marginTop: Spacing.four }, thumbnail: { width: '100%', aspectRatio: 16 / 9, borderRadius: 18, backgroundColor: AdaptiveColors.backgroundElement },
   content: { paddingHorizontal: Spacing.three, paddingTop: 28 }, bookmarkButton: { alignSelf: 'flex-start', paddingBottom: 24 }, bookmarkIcon: { width: 19, height: 19 }, title: { marginBottom: 8, fontSize: 23, fontWeight: '800', lineHeight: 31, letterSpacing: -0.5 },
-  location: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 9 }, locationText: { fontSize: 14, lineHeight: 20 }, badgeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 14 }, badge: { borderRadius: 6 }, ddayBadge: { borderWidth: 1, borderColor: '#E0E0E0', backgroundColor: '#FFFFFF', paddingHorizontal: 8, paddingVertical: 4 }, categoryBadge: { paddingHorizontal: 10, paddingVertical: 5 }, ddayText: { color: '#333333', fontSize: 13, fontWeight: '600' }, categoryText: { color: '#111111', fontSize: 13, fontWeight: '500' }, organization: { marginTop: 20, fontSize: 14, fontWeight: '600' },
+  location: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 9 }, locationText: { fontSize: 14, lineHeight: 20 }, badgeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 14 }, badge: { borderRadius: 6 }, ddayBadge: { borderWidth: 1, borderColor: AdaptiveColors.border, backgroundColor: AdaptiveColors.surface, paddingHorizontal: 8, paddingVertical: 4 }, categoryBadge: { paddingHorizontal: 10, paddingVertical: 5 }, ddayText: { color: AdaptiveColors.text, fontSize: 13, fontWeight: '600' }, categoryText: { color: AdaptiveColors.text, fontSize: 13, fontWeight: '500' }, organization: { marginTop: 20, fontSize: 14, fontWeight: '600' },
   applyLink: { flexDirection: 'row', alignItems: 'center', gap: 7, alignSelf: 'flex-start', marginTop: 8, paddingVertical: 4 }, applyLinkText: { color: '#999999', fontSize: 13, fontWeight: '500' }, divider: { height: StyleSheet.hairlineWidth, marginTop: 24, marginBottom: 20, opacity: 0.7 },
   reportButton: { flexDirection: 'row', alignSelf: 'flex-end', alignItems: 'center', gap: 8, marginTop: 36, paddingVertical: 10 }, reportText: { color: '#777777', fontSize: 16, fontWeight: '700' }, pressed: { opacity: 0.7 },
 });

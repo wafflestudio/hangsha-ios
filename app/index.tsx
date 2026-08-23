@@ -3,6 +3,7 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { useAuth } from '@/contexts/AuthProvider';
 import HomeScreen from '@/screens/HomeScreen';
+import { AdaptiveColors } from '@/util/theme';
 
 export default function IndexScreen() {
   const { isAuthenticated, isLoading, onboardingStep } = useAuth();
@@ -10,7 +11,7 @@ export default function IndexScreen() {
   if (isLoading) {
     return (
       <View style={styles.loading}>
-        <ActivityIndicator color="#208AEF" />
+        <ActivityIndicator color={AdaptiveColors.accent} />
       </View>
     );
   }
@@ -33,6 +34,6 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: AdaptiveColors.background,
   },
 });

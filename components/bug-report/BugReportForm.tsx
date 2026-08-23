@@ -3,6 +3,7 @@ import { useRef, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { useBugReport } from '@/contexts/BugReportContext';
+import { AdaptiveColors } from '@/util/theme';
 
 type BugReportFormProps = {
   onSubmitted?: () => void;
@@ -46,7 +47,7 @@ export function BugReportForm({
   return (
     <View style={compact ? styles.compactContainer : styles.container}>
       <View style={styles.header}>
-        <FontAwesomeFreeSolid name="bug" size={20} color="#222222" />
+        <FontAwesomeFreeSolid name="bug" size={20} color={AdaptiveColors.text} />
         <Text style={styles.title}>버그 신고</Text>
       </View>
       <Text style={styles.description}>이용 중 발견한 문제를 알려주세요.</Text>
@@ -59,7 +60,7 @@ export function BugReportForm({
         editable={!isSubmitting}
         maxLength={100}
         placeholder="제목"
-        placeholderTextColor="#999999"
+        placeholderTextColor={AdaptiveColors.textMuted}
         style={styles.input}
       />
       <TextInput
@@ -73,7 +74,7 @@ export function BugReportForm({
         multiline
         textAlignVertical="top"
         placeholder="문제가 발생한 상황을 자세히 적어주세요."
-        placeholderTextColor="#999999"
+        placeholderTextColor={AdaptiveColors.textMuted}
         style={[styles.input, styles.textArea, compact && styles.compactTextArea]}
       />
       <Pressable
@@ -91,9 +92,9 @@ const styles = StyleSheet.create({
   container: { gap: 12 },
   compactContainer: { gap: 12 },
   header: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  title: { color: '#222222', fontSize: 20, fontWeight: '700' },
-  description: { color: '#777777', fontSize: 15, lineHeight: 22 },
-  input: { minHeight: 48, borderWidth: 1, borderColor: '#DDDDDD', borderRadius: 12, paddingHorizontal: 16, color: '#222222', fontSize: 16 },
+  title: { color: AdaptiveColors.text, fontSize: 20, fontWeight: '700' },
+  description: { color: AdaptiveColors.textSecondary, fontSize: 15, lineHeight: 22 },
+  input: { minHeight: 48, borderWidth: 1, borderColor: AdaptiveColors.border, borderRadius: 12, paddingHorizontal: 16, backgroundColor: AdaptiveColors.input, color: AdaptiveColors.text, fontSize: 16 },
   textArea: { minHeight: 132, paddingTop: 14 },
   compactTextArea: { minHeight: 150 },
   submitButton: { alignSelf: 'flex-end', minWidth: 132, minHeight: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 12, backgroundColor: '#4C4C4C', paddingHorizontal: 20 },

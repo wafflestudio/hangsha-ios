@@ -4,6 +4,7 @@ import { SymbolView } from 'expo-symbols';
 
 import { BugReportForm } from '@/components/bug-report/BugReportForm';
 import { useScrollToFocusedInput } from '@/hooks/use-scroll-to-focused-input';
+import { AdaptiveColors } from '@/util/theme';
 
 export function BugReportModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const { scrollViewRef, handleInputFocus, handleInputBlur } = useScrollToFocusedInput();
@@ -23,7 +24,7 @@ export function BugReportModal({ visible, onClose }: { visible: boolean; onClose
             <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
             <View style={styles.card}>
               <Pressable accessibilityRole="button" accessibilityLabel="버그 신고 닫기" hitSlop={12} onPress={onClose} style={styles.closeButton}>
-                <SymbolView name="xmark" size={20} tintColor="#777777" />
+                <SymbolView name="xmark" size={20} tintColor={AdaptiveColors.icon} />
               </Pressable>
               <BugReportForm
                 compact
@@ -40,10 +41,10 @@ export function BugReportModal({ visible, onClose }: { visible: boolean; onClose
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.42)' },
+  safeArea: { flex: 1, backgroundColor: AdaptiveColors.overlay },
   keyboardAvoidingView: { flex: 1 },
   scrollView: { flex: 1 },
   backdrop: { flexGrow: 1, justifyContent: 'center', padding: 24 },
-  card: { borderRadius: 24, backgroundColor: '#FFFFFF', padding: 24, shadowColor: '#000000', shadowOpacity: 0.2, shadowRadius: 18, shadowOffset: { width: 0, height: 8 }, elevation: 8 },
+  card: { borderRadius: 24, backgroundColor: AdaptiveColors.surfaceElevated, padding: 24, shadowColor: '#000000', shadowOpacity: 0.2, shadowRadius: 18, shadowOffset: { width: 0, height: 8 }, elevation: 8 },
   closeButton: { position: 'absolute', zIndex: 1, top: 20, right: 20, padding: 4 },
 });

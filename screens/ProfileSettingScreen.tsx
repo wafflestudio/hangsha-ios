@@ -17,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/contexts/AuthProvider';
 import type { ProfileImage } from '@/types/auth';
+import { AdaptiveColors } from '@/util/theme';
 
 const DEFAULT_USERNAME = '푱푱한 토끼';
 
@@ -114,7 +115,7 @@ export default function ProfileSettingScreen() {
             value={username}
             onChangeText={setUsername}
             placeholder={DEFAULT_USERNAME}
-            placeholderTextColor="#8A8A8A"
+            placeholderTextColor={AdaptiveColors.textMuted}
             textContentType="nickname"
             returnKeyType="done"
             onSubmitEditing={submit}
@@ -146,7 +147,7 @@ export default function ProfileSettingScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#FFFFFF' },
+  safeArea: { flex: 1, backgroundColor: AdaptiveColors.background },
   container: { flex: 1 },
   content: {
     flex: 1,
@@ -158,7 +159,7 @@ const styles = StyleSheet.create({
   },
   header: { alignItems: 'center', marginBottom: 66 },
   title: {
-    color: '#111111',
+    color: AdaptiveColors.text,
     fontSize: 24,
     lineHeight: 31,
     fontWeight: '800',
@@ -166,7 +167,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     marginTop: 6,
-    color: '#222222',
+    color: AdaptiveColors.textSecondary,
     fontSize: 16,
     lineHeight: 22,
     textAlign: 'center',
@@ -178,7 +179,7 @@ const styles = StyleSheet.create({
     marginBottom: 19,
     borderRadius: 100,
     overflow: 'hidden',
-    backgroundColor: '#D9D9D9',
+    backgroundColor: AdaptiveColors.backgroundElement,
   },
   avatarImage: { width: '100%', height: '100%' },
   uploadOverlay: {
@@ -198,10 +199,10 @@ const styles = StyleSheet.create({
     height: 42,
     paddingHorizontal: 18,
     borderWidth: 1,
-    borderColor: '#E2E2E2',
+    borderColor: AdaptiveColors.border,
     borderRadius: 999,
-    backgroundColor: '#FFFFFF',
-    color: '#161616',
+    backgroundColor: AdaptiveColors.input,
+    color: AdaptiveColors.text,
     fontSize: 16,
     textAlign: 'center',
     shadowColor: '#000000',
@@ -219,7 +220,7 @@ const styles = StyleSheet.create({
     gap: 8,
     marginTop: 19,
     borderRadius: 999,
-    backgroundColor: '#111111',
+    backgroundColor: AdaptiveColors.accent,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,

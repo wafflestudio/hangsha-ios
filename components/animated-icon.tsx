@@ -5,6 +5,8 @@ import { Dimensions, StyleSheet, Text, View } from 'react-native';
 import Animated, { Easing, Keyframe } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
+import { AdaptiveColors } from '@/util/theme';
+
 const INITIAL_SCALE_FACTOR = Dimensions.get('screen').height / 90;
 const SPLASH_DURATION = 1200;
 const ICON_ANIMATION_DURATION = 600;
@@ -145,7 +147,7 @@ const styles = StyleSheet.create({
   },
   splashOverlay: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: AdaptiveColors.background,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 1000,
@@ -159,7 +161,7 @@ const styles = StyleSheet.create({
   },
   splashTitle: {
     marginTop: 42,
-    color: '#111111',
+    color: AdaptiveColors.text,
     fontSize: 23,
     lineHeight: 30,
     fontWeight: '700',

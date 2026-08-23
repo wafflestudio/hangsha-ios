@@ -4,6 +4,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { EventCard } from '@/components/events/EventCard';
 import type { Event } from '@/types/event';
+import { AdaptiveColors } from '@/util/theme';
 
 type GalleryEventCardProps = {
   event: Event;
@@ -53,9 +54,9 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#F0F0F0',
+    borderColor: AdaptiveColors.border,
     borderRadius: 8,
-    backgroundColor: '#F9F9F9',
+    backgroundColor: AdaptiveColors.backgroundElement,
   },
   thumbnail: { width: '100%', height: '100%' },
 });

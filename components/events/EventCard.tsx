@@ -11,6 +11,7 @@ import {
 import type { Event } from '@/types/event';
 import { CategoryChip, DdayChip } from '@/components/events/EventChip';
 import { StartDate } from '@/components/events/EventDate';
+import { AdaptiveColors } from '@/util/theme';
 
 type EventCardProps = {
   event: Event;
@@ -100,7 +101,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
   },
-  ddayText: { color: '#111111', fontSize: 14, lineHeight: 20, fontWeight: '500' },
+  ddayText: { color: AdaptiveColors.text, fontSize: 14, lineHeight: 20, fontWeight: '500' },
   bookmarkButton: {
     width: 34,
     height: 34,
@@ -112,7 +113,7 @@ const styles = StyleSheet.create({
   title: {
     minHeight: 50,
     marginTop: 13,
-    color: '#111111',
+    color: AdaptiveColors.text,
     fontSize: 16,
     lineHeight: 23,
     fontWeight: '700',
@@ -126,11 +127,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: 10,
   },
-  dateText: { color: '#555555', fontSize: 13, lineHeight: 19 },
+  dateText: { color: AdaptiveColors.textSecondary, fontSize: 13, lineHeight: 19 },
   organizationText: {
     minWidth: 0,
     flex: 1,
-    color: '#555555',
+    color: AdaptiveColors.textSecondary,
     fontSize: 13,
     lineHeight: 19,
     fontWeight: '500',

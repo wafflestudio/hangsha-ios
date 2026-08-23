@@ -9,6 +9,8 @@ import {
   View,
 } from 'react-native';
 
+import { AdaptiveColors } from '@/util/theme';
+
 const WHEEL_ITEM_HEIGHT = 36;
 const VISIBLE_WHEEL_ITEMS = 5;
 const WHEEL_HEIGHT = WHEEL_ITEM_HEIGHT * VISIBLE_WHEEL_ITEMS;
@@ -170,9 +172,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     marginBottom: 8,
   },
-  pickerLabel: { color: '#7B818A', fontSize: 14, fontWeight: '600' },
+  pickerLabel: { color: AdaptiveColors.textSecondary, fontSize: 14, fontWeight: '600' },
   timeOutput: {
-    color: '#1677FF',
+    color: AdaptiveColors.accent,
     fontSize: 14,
     fontWeight: '700',
     fontVariant: ['tabular-nums'],
@@ -190,7 +192,7 @@ const styles = StyleSheet.create({
     left: 0,
     height: WHEEL_ITEM_HEIGHT,
     borderRadius: 15,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: AdaptiveColors.backgroundElement,
   },
   wheelColumnWrap: { flex: 1, height: WHEEL_HEIGHT },
   wheelPadding: { paddingVertical: WHEEL_ITEM_HEIGHT * 2 },
@@ -200,7 +202,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   wheelItemText: {
-    color: '#1F2329',
+    color: AdaptiveColors.text,
     fontSize: 16,
     fontWeight: '500',
     fontVariant: ['tabular-nums'],

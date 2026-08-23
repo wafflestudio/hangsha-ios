@@ -3,6 +3,7 @@ import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-nativ
 import { BookmarksHeader } from '@/components/bookmarks/BookmarksHeader';
 import { GalleryEventCard } from '@/components/events/GalleryEventCard';
 import type { Event } from '@/types/event';
+import { AdaptiveColors } from '@/util/theme';
 
 const PREVIEW_CARD_WIDTH = 180;
 
@@ -25,7 +26,7 @@ export function BookmarkWidget({
 
       {isLoading && events.length === 0 ? (
         <View style={styles.feedback}>
-          <ActivityIndicator color="#828282" />
+          <ActivityIndicator color={AdaptiveColors.icon} />
         </View>
       ) : events.length === 0 ? (
         <View style={styles.feedback}>
@@ -61,11 +62,11 @@ const styles = StyleSheet.create({
     paddingTop: 24,
     paddingBottom: 24,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#DDDDDD',
-    backgroundColor: '#FFFFFF',
+    borderTopColor: AdaptiveColors.border,
+    backgroundColor: AdaptiveColors.background,
   },
   listContent: { paddingTop: 16, paddingHorizontal: 20 },
   separator: { width: 6 },
   feedback: { minHeight: 134, alignItems: 'center', justifyContent: 'center' },
-  emptyText: { color: '#888888', fontSize: 14, lineHeight: 21, textAlign: 'center' },
+  emptyText: { color: AdaptiveColors.textMuted, fontSize: 14, lineHeight: 21, textAlign: 'center' },
 });

@@ -3,6 +3,9 @@ import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { AdaptiveColors } from '@/util/theme';
+
 const NAV_ITEMS = [
   {
     id: 'calendar',
@@ -17,8 +20,8 @@ const NAV_ITEMS = [
     id: 'timetable',
     label: '시간표',
     href: '/timetable' as const,
-    inactiveIcon: require('@/assets/images/timetable.svg'),
-    activeIcon: require('@/assets/images/timetableActive.png'),
+    inactiveIcon: require('@/assets/images/bottom_timetable.svg'),
+    activeIcon: require('@/assets/images/bottom_timetable_active.svg'),
     width: 30,
     height: 30,
   },
@@ -54,6 +57,7 @@ export function MobileBottomNavigation({
   onTabPress,
 }: MobileBottomNavigationProps) {
   const router = useRouter();
+  const colorScheme = useColorScheme();
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
@@ -85,7 +89,10 @@ export function MobileBottomNavigation({
               accessibilityState={{ selected: isActive, disabled: !isEnabled }}>
               <Image
                 source={isActive ? item.activeIcon : item.inactiveIcon}
-                style={{ width: item.width, height: item.height }}
+                style={[
+                  { width: item.width, height: item.height },
+                  colorScheme === 'dark' && !isActive && { tintColor: AdaptiveColors.icon },
+                ]}
                 contentFit="contain"
               />
             </Pressable>
@@ -98,13 +105,13 @@ export function MobileBottomNavigation({
 
 const styles = StyleSheet.create({
   safeArea: {
-    backgroundColor: '#F5F5F5',
+    backgroundColor: AdaptiveColors.surface,
   },
   navigationBar: {
     height: 66,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F5F5F5',
+    backgroundColor: AdaptiveColors.surface,
   },
   tabButton: {
     flex: 1,

@@ -7,7 +7,10 @@ import { MobileBottomNavigation } from '@/components/mobile-bottom-navigation';
 import { LoginRequiredPrompt } from '@/components/auth/LoginRequiredPrompt';
 import { AddClassSheet } from '@/components/timetable/AddClassSheet';
 import { SnuttTimetablePickerModal } from '@/components/timetable/SnuttTimetablePickerModal';
-import { TimetableGrid } from '@/components/timetable/TimetableGrid';
+import {
+  TimetableEventTimelineSheet,
+  TimetableGrid,
+} from '@/components/timetable/TimetableGrid';
 import { TimetableHeader } from '@/components/timetable/TimetableHeader';
 import { TimetableManagerSheet } from '@/components/timetable/TimetableManagerSheet';
 import { useAuth } from '@/contexts/AuthProvider';
@@ -27,6 +30,7 @@ import {
 import { useTimetableUiStore } from '@/stores/timetableUiStore';
 import type { CalendarEvent, Event } from '@/types/event';
 import type { Timetable } from '@/types/timetable';
+import { AdaptiveColors } from '@/util/theme';
 import { weekCalendarEventMapper } from '@/util/calendar/calendarEventMapper';
 import {
   buildCoursePatch,
@@ -47,7 +51,7 @@ export function TimetableScreen() {
     return (
       <View style={styles.page}>
         <SafeAreaView style={styles.centered} edges={['top', 'left', 'right']}>
-          <ActivityIndicator color="#208AEF" />
+          <ActivityIndicator color={AdaptiveColors.accent} />
         </SafeAreaView>
         <MobileBottomNavigation activeTab="timetable" />
       </View>
@@ -72,6 +76,7 @@ export function TimetableScreen() {
 function AuthenticatedTimetableScreen() {
   const router = useRouter();
   const [isSnuttPickerOpen, setIsSnuttPickerOpen] = useState(false);
+  const [isPeriodSheetOpen, setIsPeriodSheetOpen] = useState(false);
   const snuttImportingRef = useRef(false);
   const {
     year,
@@ -151,6 +156,11 @@ function AuthenticatedTimetableScreen() {
         };
       });
   }, [eventOverlayOn, weekEvents, weekRange.from, weekRange.to]);
+  const hasTimelineEvents = useMemo(
+    () => weekCalendarEvents.some((event) => event.resource.isPeriodEvent || event.allDay),
+    [weekCalendarEvents],
+  );
+  const shouldHideFloatingActions = hasTimelineEvents && isPeriodSheetOpen;
 
   const createMutation = useCreateTimetableMutation(year, semester);
   const renameMutation = useRenameTimetableMutation(year, semester);
@@ -270,8 +280,14 @@ function AuthenticatedTimetableScreen() {
           loading={timetableQuery.isPending}
           onYearChange={setYear}
           onSemesterChange={setSemester}
-          onToggleOverlay={toggleEventOverlay}
-          onMoveWeek={moveWeek}
+          onToggleOverlay={() => {
+            setIsPeriodSheetOpen(false);
+            toggleEventOverlay();
+          }}
+          onMoveWeek={(amount) => {
+            setIsPeriodSheetOpen(false);
+            moveWeek(amount);
+          }}
         />
 
         {timetableQuery.isError ? (
@@ -290,7 +306,7 @@ function AuthenticatedTimetableScreen() {
           <TimetableGrid
             courses={courses}
             events={weekCalendarEvents}
-            weekStart={weekRange.from}
+            hideCourseDetails={eventOverlayOn}
             isLoading={
               timetableQuery.isPending ||
               coursesQuery.isPending ||
@@ -315,34 +331,52 @@ function AuthenticatedTimetableScreen() {
           />
         )}
 
-        <View pointerEvents="box-none" style={styles.floatingActions}>
-          <Pressable
-            disabled={importSnuttMutation.isPending}
-            style={({ pressed }) => [
-              styles.snuttButton,
-              (pressed || importSnuttMutation.isPending) && styles.pressed,
-            ]}
-            onPress={() => setIsSnuttPickerOpen(true)}>
-            <Text style={styles.floatingText}>
-              {importSnuttMutation.isPending ? '불러오는 중...' : 'SNUTT 연동'}
-            </Text>
-          </Pressable>
+        {hasTimelineEvents ? (
+          <TimetableEventTimelineSheet
+            events={weekCalendarEvents}
+            weekStart={weekRange.from}
+            onSelectEvent={(event) =>
+              router.push({ pathname: '/event/[id]', params: { id: String(event.id) } })
+            }
+            onOpenChange={setIsPeriodSheetOpen}
+          />
+        ) : null}
 
-          <Pressable
-            style={({ pressed }) => [styles.changeButton, pressed && styles.pressed]}
-            onPress={() => setOpenSheet('manager')}>
-            <Text style={styles.floatingText}>시간표 변경</Text>
-          </Pressable>
-
-          {selectedTimetable && (
+        {!shouldHideFloatingActions ? (
+          <View
+            pointerEvents="box-none"
+            style={[
+              styles.floatingActions,
+              hasTimelineEvents && styles.floatingActionsAboveTimelineSheet,
+            ]}>
             <Pressable
-              style={({ pressed }) => [styles.addButton, pressed && styles.pressed]}
-              onPress={openCreateCourseSheet}>
-              <Text style={styles.backGlyph}>‹</Text>
-              <Text style={styles.floatingText}>수업 추가</Text>
+              disabled={importSnuttMutation.isPending}
+              style={({ pressed }) => [
+                styles.snuttButton,
+                (pressed || importSnuttMutation.isPending) && styles.pressed,
+              ]}
+              onPress={() => setIsSnuttPickerOpen(true)}>
+              <Text style={styles.floatingText}>
+                {importSnuttMutation.isPending ? '불러오는 중...' : 'SNUTT 연동'}
+              </Text>
             </Pressable>
-          )}
-        </View>
+
+            <Pressable
+              style={({ pressed }) => [styles.changeButton, pressed && styles.pressed]}
+              onPress={() => setOpenSheet('manager')}>
+              <Text style={styles.floatingText}>시간표 변경</Text>
+            </Pressable>
+
+            {selectedTimetable && (
+              <Pressable
+                style={({ pressed }) => [styles.addButton, pressed && styles.pressed]}
+                onPress={openCreateCourseSheet}>
+                <Text style={styles.backGlyph}>‹</Text>
+                <Text style={styles.floatingText}>수업 추가</Text>
+              </Pressable>
+            )}
+          </View>
+        ) : null}
 
         {openSheet === 'manager' && (
           <TimetableManagerSheet
@@ -419,11 +453,11 @@ function AuthenticatedTimetableScreen() {
 }
 
 const styles = StyleSheet.create({
-  page: { flex: 1, backgroundColor: '#FFFFFF' },
-  content: { flex: 1, backgroundColor: '#FFFFFF' },
+  page: { flex: 1, backgroundColor: AdaptiveColors.background },
+  content: { flex: 1, backgroundColor: AdaptiveColors.background },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
-  emptyTitle: { marginBottom: 8, color: '#222222', fontSize: 17, fontWeight: '700' },
-  message: { color: '#777777', fontSize: 14, textAlign: 'center' },
+  emptyTitle: { marginBottom: 8, color: AdaptiveColors.text, fontSize: 17, fontWeight: '700' },
+  message: { color: AdaptiveColors.textSecondary, fontSize: 14, textAlign: 'center' },
   retryButton: { marginTop: 14, paddingHorizontal: 16, paddingVertical: 9, borderRadius: 20, backgroundColor: '#20C4DD' },
   retryText: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
   floatingActions: {
@@ -434,6 +468,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     gap: 10,
   },
+  floatingActionsAboveTimelineSheet: { bottom: 72 },
   changeButton: {
     minWidth: 126,
     height: 42,

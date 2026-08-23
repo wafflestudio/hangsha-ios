@@ -13,6 +13,7 @@ import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 
 import type { SnuttFullTimetable } from '@/util/timetable/snuttTimetable';
 import { parseSnuttWebViewMessage } from '@/util/timetable/snuttTimetable';
+import { AdaptiveColors } from '@/util/theme';
 
 type SnuttTimetablePickerModalProps = {
   visible: boolean;
@@ -72,7 +73,7 @@ export function SnuttTimetablePickerModal({
               hitSlop={10}
               style={({ pressed }) => [styles.closeButton, pressed && styles.pressed]}
               onPress={onClose}>
-              <SymbolView name="xmark" tintColor="#333333" size={18} weight="semibold" />
+              <SymbolView name="xmark" tintColor={AdaptiveColors.text} size={18} weight="semibold" />
             </Pressable>
           </View>
 
@@ -88,7 +89,7 @@ export function SnuttTimetablePickerModal({
               startInLoadingState
               renderLoading={() => (
                 <View style={styles.loading}>
-                  <ActivityIndicator color="#20C4DD" />
+                  <ActivityIndicator color={AdaptiveColors.accent} />
                 </View>
               )}
               onMessage={handleMessage}
@@ -102,7 +103,7 @@ export function SnuttTimetablePickerModal({
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFFFFF' },
+  container: { flex: 1, backgroundColor: AdaptiveColors.background },
   header: {
     height: 52,
     flexDirection: 'row',
@@ -110,23 +111,23 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: AdaptiveColors.border,
   },
-  title: { color: '#111827', fontSize: 17, fontWeight: '700' },
+  title: { color: AdaptiveColors.text, fontSize: 17, fontWeight: '700' },
   closeButton: {
     width: 36,
     height: 36,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 18,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: AdaptiveColors.backgroundElement,
   },
-  webView: { flex: 1, backgroundColor: '#FFFFFF' },
+  webView: { flex: 1, backgroundColor: AdaptiveColors.background },
   loading: {
     ...StyleSheet.absoluteFill,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: AdaptiveColors.surface,
   },
   pressed: { opacity: 0.62 },
 });

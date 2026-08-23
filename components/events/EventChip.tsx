@@ -1,7 +1,8 @@
 import { StyleSheet, Text, type StyleProp, type TextStyle, View } from 'react-native';
 
-import { getEventTypeColors, getEventTypeLabel } from '@/util/theme';
+import { AdaptiveColors, getEventTypeColors, getEventTypeLabel } from '@/util/theme';
 import { getDDay } from '@/util/calendar/getDday';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
 type EventChipProps = {
   compact?: boolean;
@@ -49,7 +50,8 @@ export function CategoryChip({
   style,
   variant = 'chip',
 }: CategoryChipProps) {
-  const colors = getEventTypeColors('light', categoryId);
+  const colorScheme = useColorScheme();
+  const colors = getEventTypeColors(colorScheme, categoryId);
   const label = getEventTypeLabel(categoryId);
 
   if (variant === 'circle') {
@@ -81,10 +83,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: 999,
   },
-  outlined: { borderWidth: 1, borderColor: '#DDDDDD', backgroundColor: '#FFFFFF' },
+  outlined: { borderWidth: 1, borderColor: AdaptiveColors.border, backgroundColor: AdaptiveColors.surface },
   plain: { minHeight: undefined, paddingHorizontal: 0, backgroundColor: 'transparent' },
   circle: { width: 27, height: 27, flexShrink: 0, borderRadius: 999 },
-  text: { color: '#555555', fontSize: 13, fontWeight: '600', lineHeight: 18 },
+  text: { color: AdaptiveColors.textSecondary, fontSize: 13, fontWeight: '600', lineHeight: 18 },
   compact: { minHeight: 22, paddingHorizontal: 8 },
   compactText: { fontSize: 11, lineHeight: 15 },
 });

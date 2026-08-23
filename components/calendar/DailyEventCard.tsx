@@ -5,7 +5,8 @@ import { type GestureResponderEvent, Pressable, StyleSheet, Text, View } from 'r
 import { StartDate } from '@/components/events/EventDate';
 import type { Event } from '@/types/event';
 import { getDDay } from '@/util/calendar/getDday';
-import { getEventTypeColors, getEventTypeLabel } from '@/util/theme';
+import { AdaptiveColors, getEventTypeColors, getEventTypeLabel } from '@/util/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
 type DailyEventCardProps = {
   event: Event;
@@ -14,10 +15,11 @@ type DailyEventCardProps = {
 };
 
 export function DailyEventCard({ event, onPress, onToggleBookmark }: DailyEventCardProps) {
+  const colorScheme = useColorScheme();
   const [isCategoryExpanded, setIsCategoryExpanded] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(event.isBookmarked ?? false);
   const [isBookmarkPending, setIsBookmarkPending] = useState(false);
-  const categoryColors = getEventTypeColors('light', event.eventTypeId);
+  const categoryColors = getEventTypeColors(colorScheme, event.eventTypeId);
   const dday = getDDay(event.applyEnd);
 
   const toggleCategory = (pressEvent: GestureResponderEvent) => {
@@ -144,8 +146,8 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
   categoryExpanded: { width: 'auto', maxWidth: 190, paddingHorizontal: 10 },
-  categoryLabel: { color: '#111111', fontSize: 13, lineHeight: 18, fontWeight: '600' },
-  ddayText: { color: '#111111', fontSize: 14, lineHeight: 20, fontWeight: '500' },
+  categoryLabel: { color: AdaptiveColors.text, fontSize: 13, lineHeight: 18, fontWeight: '600' },
+  ddayText: { color: AdaptiveColors.text, fontSize: 14, lineHeight: 20, fontWeight: '500' },
   bookmarkButton: {
     width: 38,
     height: 32,
@@ -156,7 +158,7 @@ const styles = StyleSheet.create({
   bookmarkIcon: { width: 24, height: 24 },
   title: {
     marginTop: 12,
-    color: '#111111',
+    color: AdaptiveColors.text,
     fontSize: 16,
     lineHeight: 23,
     fontWeight: '700',
@@ -170,11 +172,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: 12,
   },
-  dateText: { color: '#555555', fontSize: 13, lineHeight: 19 },
+  dateText: { color: AdaptiveColors.textSecondary, fontSize: 13, lineHeight: 19 },
   organizationText: {
     minWidth: 0,
     flex: 1,
-    color: '#555555',
+    color: AdaptiveColors.textSecondary,
     fontSize: 13,
     lineHeight: 19,
     fontWeight: '500',

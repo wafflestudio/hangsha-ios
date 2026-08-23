@@ -17,6 +17,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useAuth } from "@/contexts/AuthProvider";
 import { SocialLoginError, type SocialLoginProvider } from "@/types/socialAuth";
+import { AdaptiveColors } from "@/util/theme";
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -158,7 +159,7 @@ export default function HomeScreen() {
                   }
                 }}
                 placeholder="아이디"
-                placeholderTextColor="#858585"
+                placeholderTextColor={AdaptiveColors.textMuted}
                 autoCapitalize="none"
                 autoCorrect={false}
                 keyboardType="email-address"
@@ -177,7 +178,7 @@ export default function HomeScreen() {
                   }
                 }}
                 placeholder="비밀번호"
-                placeholderTextColor="#858585"
+                placeholderTextColor={AdaptiveColors.textMuted}
                 secureTextEntry
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -309,7 +310,7 @@ function SocialLoginButton({
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: AdaptiveColors.background,
   },
 
   keyboardView: {
@@ -318,7 +319,7 @@ const styles = StyleSheet.create({
 
   scrollView: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: AdaptiveColors.background,
   },
 
   scrollContent: {
@@ -354,7 +355,7 @@ const styles = StyleSheet.create({
   },
 
   title: {
-    color: "#000000",
+    color: AdaptiveColors.text,
     fontSize: 56,
     lineHeight: 64,
     fontWeight: "800",
@@ -377,12 +378,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
 
     borderWidth: 1,
-    borderColor: "#DEDEDE",
+    borderColor: AdaptiveColors.border,
     borderRadius: 999,
 
-    backgroundColor: "#FFFFFF",
+    backgroundColor: AdaptiveColors.input,
 
-    color: "#111111",
+    color: AdaptiveColors.text,
     fontSize: 16,
     fontWeight: "600",
 
@@ -459,7 +460,7 @@ const styles = StyleSheet.create({
   divider: {
     width: "100%",
     height: StyleSheet.hairlineWidth,
-    backgroundColor: "#CECECE",
+    backgroundColor: AdaptiveColors.borderStrong,
 
     marginTop: 18,
     marginBottom: 20,
@@ -475,10 +476,10 @@ const styles = StyleSheet.create({
   },
 
   socialButton: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: AdaptiveColors.surface,
 
     borderWidth: 1,
-    borderColor: "#E3E3E3",
+    borderColor: AdaptiveColors.border,
 
     shadowColor: "#000000",
     shadowOffset: {
@@ -499,7 +500,7 @@ const styles = StyleSheet.create({
   },
 
   socialButtonText: {
-    color: "#111111",
+    color: AdaptiveColors.text,
     fontSize: 16,
     fontWeight: "600",
     textAlign: "center",
@@ -510,7 +511,7 @@ const styles = StyleSheet.create({
   // ---------------------------------------------------------------------------
 
   signUpButton: {
-    backgroundColor: "#B7B7B7",
+    backgroundColor: AdaptiveColors.backgroundElement,
 
     shadowColor: "#000000",
     shadowOffset: {
@@ -524,7 +525,7 @@ const styles = StyleSheet.create({
   },
 
   signUpText: {
-    color: "#111111",
+    color: AdaptiveColors.text,
     fontSize: 17,
     fontWeight: "600",
   },
@@ -548,7 +549,7 @@ const styles = StyleSheet.create({
   },
 
   guestText: {
-    color: "#6A6A6A",
+    color: AdaptiveColors.textSecondary,
     fontSize: 16,
     fontWeight: "500",
     textAlign: "center",

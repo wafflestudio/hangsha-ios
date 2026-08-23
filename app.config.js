@@ -71,8 +71,13 @@ module.exports = {
           image: "./assets/images/logo.png",
           imageWidth: 100,
           resizeMode: "contain",
+          dark: {
+            backgroundColor: "#0B0D10",
+            image: "./assets/images/logo.png",
+          },
         },
       ],
+      "expo-system-ui",
       "expo-secure-store",
       "expo-web-browser",
       "expo-image",
