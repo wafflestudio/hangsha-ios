@@ -10,7 +10,7 @@
       "channel": "development",
       "env": {
         "APP_VARIANT": "development",
-        "IOS_BUNDLE_IDENTIFIER": "com.wafflestudio.hangsha-ios.dev"
+        "IOS_BUNDLE_IDENTIFIER": "com.wafflestudio.hangsha.dev"
       }
     },
     "production": {

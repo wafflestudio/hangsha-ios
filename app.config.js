@@ -24,9 +24,7 @@ const naverUrlScheme = readBuildEnv(
 );
 const iosBundleIdentifier = readBuildEnv(
   "IOS_BUNDLE_IDENTIFIER",
-  isDevelopment
-    ? "com.wafflestudio.hangsha-ios.dev"
-    : "com.wafflestudio.hangsha-ios",
+  isDevelopment ? "com.wafflestudio.hangsha.dev" : "com.wafflestudio.hangsha",
 );
 
 module.exports = {
