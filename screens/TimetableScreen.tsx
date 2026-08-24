@@ -350,15 +350,16 @@ function AuthenticatedTimetableScreen() {
               hasTimelineEvents && styles.floatingActionsAboveTimelineSheet,
             ]}>
             <Pressable
-              disabled={importSnuttMutation.isPending}
-              style={({ pressed }) => [
-                styles.snuttButton,
-                (pressed || importSnuttMutation.isPending) && styles.pressed,
-              ]}
-              onPress={() => setIsSnuttPickerOpen(true)}>
-              <Text style={styles.floatingText}>
-                {importSnuttMutation.isPending ? '불러오는 중...' : 'SNUTT 연동'}
-              </Text>
+              accessibilityRole="button"
+              accessibilityState={{ disabled: true }}
+              style={styles.snuttButtonDisabled}
+              onPress={() =>
+                Alert.alert(
+                  'SNUTT 연동 안내',
+                  '현재 snutt 연동은 행샤 웹에서만 가능합니다. hangsha.wafflestudio.com 웹을 이용해주세요.',
+                )
+              }>
+              <Text style={styles.floatingTextDisabled}>SNUTT 연동</Text>
             </Pressable>
 
             <Pressable
@@ -493,6 +494,14 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 12,
   },
+  snuttButtonDisabled: {
+    minWidth: 126,
+    height: 42,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 22,
+    backgroundColor: '#CBD5D1',
+  },
   addButton: {
     minWidth: 126,
     height: 42,
@@ -508,6 +517,7 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
   },
   floatingText: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
+  floatingTextDisabled: { color: '#8A9691', fontSize: 14, fontWeight: '700' },
   backGlyph: { marginTop: -2, color: '#FFFFFF', fontSize: 28, fontWeight: '300', lineHeight: 26 },
   pressed: { opacity: 0.66 },
 });
