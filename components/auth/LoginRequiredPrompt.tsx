@@ -1,6 +1,8 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { AdaptiveColors } from '@/util/theme';
+
 type LoginRequiredPromptProps = {
   description: string;
   onLoginPress: () => void;
@@ -35,11 +37,11 @@ export function LoginRequiredPrompt({ description, onLoginPress }: LoginRequired
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.42)' },
+  safeArea: { flex: 1, backgroundColor: AdaptiveColors.overlay },
   backdrop: { flex: 1, justifyContent: 'center', padding: 24 },
   card: {
     borderRadius: 24,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: AdaptiveColors.surfaceElevated,
     padding: 24,
     shadowColor: '#000000',
     shadowOpacity: 0.2,
@@ -48,10 +50,10 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   header: { alignItems: 'center' },
-  title: { color: '#222222', fontSize: 20, fontWeight: '700', textAlign: 'center' },
+  title: { color: AdaptiveColors.text, fontSize: 20, fontWeight: '700', textAlign: 'center' },
   description: {
     marginTop: 10,
-    color: '#777777',
+    color: AdaptiveColors.textSecondary,
     fontSize: 15,
     lineHeight: 22,
     textAlign: 'center',

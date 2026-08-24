@@ -31,8 +31,8 @@ npx expo start      # 이후엔 이것만 — 이미 설치된 Dev Client가 자
 | `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID`    | Google iOS OAuth Client ID                                                                                         |
 | `EXPO_PUBLIC_KAKAO_NATIVE_APP_KEY`    | Kakao Native App Key                                                                                               |
 | `EXPO_PUBLIC_NAVER_CLIENT_ID`         | Naver OAuth Client ID                                                                                              |
-| `EXPO_PUBLIC_NAVER_CLIENT_SECRET`     | Naver iOS SDK 초기화에 필요한 모바일 앱 credential                                                                |
-| `EXPO_PUBLIC_NAVER_URL_SCHEME`        | Naver Developers에 등록한 URL scheme (`hangsha-dev-naver` 또는 `hangsha-naver`)                                   |
+| `EXPO_PUBLIC_NAVER_CLIENT_SECRET`     | Naver iOS SDK 초기화에 필요한 모바일 앱 credential                                                                 |
+| `EXPO_PUBLIC_NAVER_URL_SCHEME`        | Naver Developers에 등록한 URL scheme (`hangsha-dev-naver` 또는 `hangsha-naver`)                                    |
 | `EXPO_PUBLIC_API_URL`                 | 절대 경로 형식의 API base URL                                                                                      |
 | `EXPO_PUBLIC_SNUTT_BASE_URL`          | 환경별 SNUTT base URL (`https://snutt-dev.wafflestudio.com` 또는 `https://snutt.wafflestudio.com`)                 |
 | `EXPO_PUBLIC_TIMETABLE_PICKER_ORIGIN` | SNUTT picker에 전달할 행샤 origin (`https://hangsha-dev.wafflestudio.com` 또는 `https://hangsha.wafflestudio.com`) |
@@ -151,10 +151,10 @@ picker URL의 `origin` 값에는 `EXPO_PUBLIC_TIMETABLE_PICKER_ORIGIN`을 사용
 
 `APP_VARIANT`는 원격 EAS 변수가 아니라 `eas.json`의 build profile에서 고정합니다. 이 값은 앱 이름, URL scheme, iOS Bundle Identifier를 아래처럼 선택하고 실제 EAS Build에서 필수 환경변수 검증을 활성화합니다.
 
-| profile       | 앱 이름    | iOS Bundle Identifier              | channel       |
-| ------------- | ---------- | ---------------------------------- | ------------- |
-| `development` | `행샤 dev` | `com.wafflestudio.hangsha-ios.dev` | `development` |
-| `production`  | `행샤`     | `com.wafflestudio.hangsha-ios`     | `production`  |
+| profile       | 앱 이름    | iOS Bundle Identifier          | channel       |
+| ------------- | ---------- | ------------------------------ | ------------- |
+| `development` | `행샤 dev` | `com.wafflestudio.hangsha.dev` | `development` |
+| `production`  | `행샤`     | `com.wafflestudio.hangsha`     | `production`  |
 
 ---
 

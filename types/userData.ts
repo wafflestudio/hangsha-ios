@@ -16,8 +16,8 @@ export interface MemoOrganization {
 export interface Memo {
   id: number;
   eventId: number;
-  /** 서버의 행사 카테고리 ID(4~10)를 앱 카테고리 ID(1~7)로 변환해 보관한다. */
-  categoryId: number;
+  /** event-types API의 ID */
+  eventTypeId: number;
   eventTitle: string;
   content: string;
   tags: MemoTag[];

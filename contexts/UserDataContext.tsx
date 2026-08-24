@@ -5,7 +5,7 @@ import * as userApi from '@/api/user';
 import type { BookmarksResponse } from '@/api/user';
 import { eventKeys } from '@/api/event';
 import { useAuth } from '@/contexts/AuthProvider';
-import type { Category } from '@/types/category';
+import type { InterestCategory } from '@/types/category';
 import type { Event } from '@/types/event';
 import type { ExcludedKeyword, Memo, MemoUpdates } from '@/types/userData';
 
@@ -24,7 +24,7 @@ export const userDataKeys = {
 
 interface UserDataContextValue {
   bookmarkedEvents: Event[];
-  interestCategories: Category[];
+  interestCategories: InterestCategory[];
   excludedKeywords: ExcludedKeyword[];
   eventMemos: Memo[];
   isLoading: boolean;
@@ -36,7 +36,10 @@ interface UserDataContextValue {
   excludedKeywordLoading: boolean;
   refreshUserData: () => Promise<void>;
   refreshBookmarks: () => Promise<void>;
-  saveInterestPreferences: (categories: Category[]) => Promise<void>;
+  saveInterestPreferences: (categories: InterestCategory[]) => Promise<void>;
+  deleteInterestPreference: (
+    category: Pick<InterestCategory, 'id' | 'categoryType'>,
+  ) => Promise<void>;
   addExcludedKeyword: (keyword: string) => Promise<void>;
   deleteExcludedKeyword: (id: number) => Promise<void>;
   toggleBookmark: (target: Pick<Event, 'id' | 'isBookmarked'>) => Promise<void>;
@@ -102,6 +105,18 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
       queryClient.setQueryData(userDataKeys.interests(), categories);
     },
   });
+  const deleteInterestMutation = useMutation({
+    mutationFn: userApi.deleteInterestCategory,
+    onSuccess: (_, deletedCategory) => {
+      queryClient.setQueryData<InterestCategory[]>(userDataKeys.interests(), (categories = []) =>
+        categories.filter(
+          (category) =>
+            category.id !== deletedCategory.id ||
+            category.categoryType !== deletedCategory.categoryType,
+        ),
+      );
+    },
+  });
   const addExcludedKeywordMutation = useMutation({
     mutationFn: userApi.addExcludedKeyword,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: userDataKeys.excludedKeywords() }),
@@ -146,7 +161,7 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
       userApi.updateMemo(id, updates),
     onSuccess: (updatedMemo) => {
       queryClient.setQueryData<Memo[]>(userDataKeys.memos(), (memos = []) =>
-        memos.map((memo) => (memo.id === updatedMemo.id ? updatedMemo : memo)),
+        memos.map((memo) => (memo.id === updatedMemo.id ? { ...memo, ...updatedMemo } : memo)),
       );
       queryClient.invalidateQueries({ queryKey: [...userDataKeys.memos(), 'tag'] });
     },
@@ -183,6 +198,9 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
     },
     saveInterestPreferences: async (categories) => {
       await saveInterestsMutation.mutateAsync(categories);
+    },
+    deleteInterestPreference: async (category) => {
+      await deleteInterestMutation.mutateAsync(category);
     },
     addExcludedKeyword: async (keyword) => {
       await addExcludedKeywordMutation.mutateAsync(keyword);

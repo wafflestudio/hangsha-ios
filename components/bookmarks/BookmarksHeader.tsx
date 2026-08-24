@@ -1,6 +1,8 @@
 import { Image } from 'expo-image';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { AdaptiveColors } from '@/util/theme';
+
 type BookmarksHeaderProps = {
   variant: 'widget' | 'page';
   onAction: () => void;
@@ -60,7 +62,7 @@ const styles = StyleSheet.create({
   },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   pageTitleRow: { justifyContent: 'center', gap: 14 },
-  title: { color: '#111111', fontSize: 20, lineHeight: 25, fontWeight: '700' },
+  title: { color: AdaptiveColors.text, fontSize: 20, lineHeight: 25, fontWeight: '700' },
   pageTitle: { fontSize: 17, lineHeight: 23 },
   icon: { width: 20, height: 20 },
   backButton: {
@@ -78,7 +80,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     justifyContent: 'center',
   },
-  backChevron: { color: '#ABABAB', fontSize: 39, lineHeight: 39, fontWeight: '300' },
-  forwardChevron: { color: '#ABABAB', fontSize: 36, lineHeight: 36, fontWeight: '300' },
+  backChevron: { color: AdaptiveColors.icon, fontSize: 39, lineHeight: 39, fontWeight: '300' },
+  forwardChevron: { color: AdaptiveColors.icon, fontSize: 36, lineHeight: 36, fontWeight: '300' },
   pressed: { opacity: 0.55 },
 });

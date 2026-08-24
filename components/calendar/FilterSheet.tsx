@@ -5,36 +5,47 @@ import {
   BottomSheetTextInput,
 } from '@gorhom/bottom-sheet';
 import { SymbolView } from 'expo-symbols';
-import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { useAuth } from '@/contexts/AuthProvider';
-import { useCategoryGroupsQuery } from '@/contexts/EventDataContext';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import {
+  useEventStatusesQuery,
+  useEventTypesQuery,
+  useOrganizationsQuery,
+} from '@/contexts/EventDataContext';
 import { useUserData } from '@/contexts/UserDataContext';
 import { type FilterTab, useFilterStore } from '@/stores/filterStore';
 import { useLocalExcludedKeywordsStore } from '@/stores/localExcludedKeywordsStore';
 import type { Category } from '@/types/category';
-import { normalizeEventTypeId } from '@/util/calendar/transformEvent';
-import type { EventTypeId } from '@/util/theme';
-
-const STATUS_GROUP_ID = 1;
-const ORG_GROUP_ID = 2;
-const CATEGORY_GROUP_ID = 3;
+import { AdaptiveColors, Colors, type EventTypeId } from '@/util/theme';
 
 /**
  * 필터시트 전용 카테고리 색상 — hangsha-web CATEGORY_BUTTON_COLORS(15% 알파)
  * 그대로 이식. EventTypeColors(캘린더/상세/칩용 60% 알파 팔레트)와는 알파값만
  * 다르고 베이스 RGB는 동일.
  */
-const FILTER_CATEGORY_COLORS: Record<EventTypeId, string> = {
-  1: 'rgba(255, 140, 40, 0.15)',
-  2: 'rgba(255, 204, 0, 0.15)',
-  3: 'rgba(11, 206, 131, 0.15)',
-  4: 'rgba(0, 193, 232, 0.15)',
-  5: 'rgba(0, 136, 255, 0.15)',
-  6: 'rgba(162, 90, 255, 0.15)',
-  7: 'rgba(255, 45, 83, 0.15)',
+const FILTER_CATEGORY_COLORS: Record<'light' | 'dark', Record<EventTypeId, string>> = {
+  light: {
+    1: 'rgba(255, 140, 40, 0.15)',
+    2: 'rgba(255, 204, 0, 0.15)',
+    3: 'rgba(11, 206, 131, 0.15)',
+    4: 'rgba(0, 193, 232, 0.15)',
+    5: 'rgba(0, 136, 255, 0.15)',
+    6: 'rgba(162, 90, 255, 0.15)',
+    7: 'rgba(255, 45, 83, 0.15)',
+  },
+  dark: {
+    1: 'rgba(255, 140, 40, 0.28)',
+    2: 'rgba(255, 204, 0, 0.28)',
+    3: 'rgba(11, 206, 131, 0.28)',
+    4: 'rgba(0, 193, 232, 0.28)',
+    5: 'rgba(0, 136, 255, 0.28)',
+    6: 'rgba(162, 90, 255, 0.28)',
+    7: 'rgba(255, 45, 83, 0.28)',
+  },
 };
 
 const TABS: { key: FilterTab; label: string }[] = [
@@ -56,10 +67,13 @@ export const FilterSheet = forwardRef<BottomSheetModal, FilterSheetProps>(functi
   ref,
 ) {
   const sheetRef = useRef<BottomSheetModal>(null);
+  const colorScheme = useColorScheme();
   useImperativeHandle(ref, () => sheetRef.current as BottomSheetModal);
   const { isAuthenticated } = useAuth();
 
-  const { data: categoryGroups } = useCategoryGroupsQuery();
+  const { data: statusList = [] } = useEventStatusesQuery();
+  const { data: orgList = [] } = useOrganizationsQuery();
+  const { data: categoryList = [] } = useEventTypesQuery();
   const {
     excludedKeywords: serverExcludedKeywords,
     addExcludedKeyword,
@@ -80,22 +94,9 @@ export const FilterSheet = forwardRef<BottomSheetModal, FilterSheetProps>(functi
   const resetAll = useFilterStore((state) => state.resetAll);
   const applyDefaultStatus = useFilterStore((state) => state.applyDefaultStatus);
 
-  const statusList = useMemo(
-    () => categoryGroups?.find((g) => g.group.id === STATUS_GROUP_ID)?.categories ?? [],
-    [categoryGroups],
-  );
-  const orgList = useMemo(
-    () => categoryGroups?.find((g) => g.group.id === ORG_GROUP_ID)?.categories ?? [],
-    [categoryGroups],
-  );
-  const categoryList = useMemo(
-    () => categoryGroups?.find((g) => g.group.id === CATEGORY_GROUP_ID)?.categories ?? [],
-    [categoryGroups],
-  );
-
-  // 기본 필터: 모집중(status id 2) — hangsha-web FilterContext의 isApplying과 동일
+  // 새 상태 ID는 독립 테이블의 ID이므로 이름으로 기본 상태를 찾는다.
   useEffect(() => {
-    const applyingStatus = statusList.find((c) => c.id === 2);
+    const applyingStatus = statusList.find((category) => category.name === '모집중');
     if (applyingStatus) {
       applyDefaultStatus(applyingStatus);
     }
@@ -132,6 +133,7 @@ export const FilterSheet = forwardRef<BottomSheetModal, FilterSheetProps>(functi
       backdropComponent={(props) => (
         <BottomSheetBackdrop {...props} appearsOnIndex={0} disappearsOnIndex={-1} />
       )}
+      backgroundStyle={styles.sheet}
       handleIndicatorStyle={styles.handleIndicator}>
       <View style={styles.tabBar}>
         {TABS.map((tab) => (
@@ -185,7 +187,7 @@ export const FilterSheet = forwardRef<BottomSheetModal, FilterSheetProps>(functi
               const isChecked = activeSelection.some((s) => s.id === option.id);
               const rowBackground =
                 activeTab === 'category'
-                  ? FILTER_CATEGORY_COLORS[normalizeEventTypeId(option.id) as EventTypeId]
+                  ? FILTER_CATEGORY_COLORS[colorScheme][option.id as EventTypeId]
                   : undefined;
 
               return (
@@ -198,7 +200,11 @@ export const FilterSheet = forwardRef<BottomSheetModal, FilterSheetProps>(functi
                   <Checkbox checked={isChecked} />
                   <ThemedText
                     type="small"
-                    style={[styles.optionText, rowBackground && styles.optionTextOnColor]}>
+                    style={[
+                      styles.optionText,
+                      rowBackground && { color: Colors[colorScheme].text },
+                      rowBackground && colorScheme === 'dark' && styles.optionTextOnColorDark,
+                    ]}>
                     {option.name}
                   </ThemedText>
                 </Pressable>
@@ -214,7 +220,7 @@ export const FilterSheet = forwardRef<BottomSheetModal, FilterSheetProps>(functi
           onPress={resetAll}
           accessibilityRole="button"
           accessibilityLabel="필터 초기화">
-          <SymbolView name="arrow.clockwise" tintColor="#3a3a3a" size={16} />
+          <SymbolView name="arrow.clockwise" tintColor={AdaptiveColors.textSecondary} size={16} />
           <ThemedText type="small" themeColor="textSecondary">
             초기화
           </ThemedText>
@@ -273,7 +279,7 @@ function ExcludeKeywordPanel({ keywords, isLoading, onAdd, onRemove }: ExcludeKe
             onPress={() => onRemove(tag.key)}
             accessibilityRole="button"
             accessibilityLabel={`${tag.label} 제거`}>
-            <SymbolView name="xmark" tintColor="#8a8a8a" size={16} />
+            <SymbolView name="xmark" tintColor={AdaptiveColors.icon} size={16} />
           </Pressable>
           <ThemedText type="small">{tag.label}</ThemedText>
         </View>
@@ -297,12 +303,12 @@ function ExcludeKeywordInput({ isLoading, onCommit }: ExcludeKeywordInputProps) 
         accessibilityRole="button"
         accessibilityLabel="키워드 추가"
         disabled={isLoading}>
-        <SymbolView name="plus" tintColor="#9a9a9a" size={16} />
+        <SymbolView name="plus" tintColor={AdaptiveColors.icon} size={16} />
       </Pressable>
       <BottomSheetTextInput
         style={styles.excludeInput}
         placeholder="제외 키워드 입력"
-        placeholderTextColor="#b5b5b5"
+        placeholderTextColor={AdaptiveColors.textMuted}
         editable={!isLoading}
         value={value}
         onChangeText={setValue}
@@ -313,8 +319,9 @@ function ExcludeKeywordInput({ isLoading, onCommit }: ExcludeKeywordInputProps) 
 }
 
 const styles = StyleSheet.create({
+  sheet: { backgroundColor: AdaptiveColors.surfaceElevated },
   handleIndicator: {
-    backgroundColor: '#d9d9d9',
+    backgroundColor: AdaptiveColors.borderStrong,
     width: 40,
   },
   tabBar: {
@@ -331,7 +338,7 @@ const styles = StyleSheet.create({
     height: StyleSheet.hairlineWidth,
     width: '80%',
     alignSelf: 'center',
-    backgroundColor: '#cacaca',
+    backgroundColor: AdaptiveColors.border,
     marginBottom: 4,
   },
   body: {
@@ -352,17 +359,15 @@ const styles = StyleSheet.create({
   optionText: {
     flex: 1,
   },
-  optionTextOnColor: {
-    color: '#1f2937',
-  },
+  optionTextOnColorDark: { fontWeight: '600' },
   checkbox: {
     width: 18,
     height: 18,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
-    borderColor: '#c4c4c4',
-    backgroundColor: '#ffffff',
+    borderColor: AdaptiveColors.borderStrong,
+    backgroundColor: AdaptiveColors.surface,
   },
   checkboxChecked: {
     backgroundColor: '#3b82f6',
@@ -376,14 +381,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#e4e4e4',
+    borderBottomColor: AdaptiveColors.border,
     paddingVertical: 6,
   },
   excludeInput: {
     flex: 1,
     fontSize: 16,
     paddingVertical: 6,
-    color: '#222222',
+    color: AdaptiveColors.text,
   },
   excludeItem: {
     flexDirection: 'row',
@@ -407,7 +412,7 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingHorizontal: 20,
     borderRadius: 40,
-    backgroundColor: '#dddddd',
+    backgroundColor: AdaptiveColors.backgroundElement,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.1,
@@ -423,8 +428,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     borderRadius: 40,
     borderWidth: 1,
-    borderColor: '#f5f5f5',
-    backgroundColor: '#ffffff',
+    borderColor: AdaptiveColors.border,
+    backgroundColor: AdaptiveColors.surface,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.1,

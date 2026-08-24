@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { Spacing } from '@/util/theme';
+import { AdaptiveColors, Spacing } from '@/util/theme';
 
 type CalendarDayCellProps = {
   date: Date;
@@ -22,7 +22,7 @@ export function CalendarDayCell({
   minHeight,
   onPress,
 }: CalendarDayCellProps) {
-  const dateColor = isSunday ? '#FF9999' : '#8B8B8B';
+  const dateColor = isSunday ? '#FF8797' : AdaptiveColors.textMuted;
 
   return (
     <Pressable
@@ -57,7 +57,7 @@ const styles = StyleSheet.create({
   card: {
     flex: 1,
     borderRadius: 5,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: AdaptiveColors.surface,
     shadowColor: '#000000',
     shadowOffset: { width: 2, height: 2 },
     shadowOpacity: 0.1,
@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   todayText: {
-    color: '#111111',
+    color: AdaptiveColors.text,
     fontWeight: '700',
   },
   pressed: { opacity: 0.72 },

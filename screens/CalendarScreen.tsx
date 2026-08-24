@@ -8,7 +8,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  useColorScheme,
   useWindowDimensions,
   View,
 } from 'react-native';
@@ -30,36 +29,20 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useMonthEventsQuery } from '@/contexts/EventDataContext';
 import { useEventFilterParams } from '@/hooks/use-event-filter-params';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useTheme } from '@/hooks/use-theme';
 import type { Event, MonthViewResponse } from '@/types/event';
 import { buildMonthEventLayout } from '@/util/calendar/buildMonthEventLayout';
 import { formatDateToYYYYMMDD } from '@/util/calendar/dateFormatter';
 import { filterEventTimeVariants } from '@/util/calendar/filterEventTimeVariants';
 import { getMonthRange } from '@/util/calendar/getMonthRange';
-import { getEventTypeColors, Spacing } from '@/util/theme';
+import { AdaptiveColors, getEventTypeColors, Spacing } from '@/util/theme';
 
 const WEEKDAY_LABELS_KO = ['일', '월', '화', '수', '목', '금', '토'];
 const MAX_VISIBLE_ROWS = 4;
 const DAYS_PER_WEEK = 7;
 const GRID_HORIZONTAL_MARGIN = 20;
 const LONG_PRESS_DURATION_MS = 250;
-
-/**
- * 행사 블록의 반투명 카테고리색이 흰 캘린더 카드 위에서 보이는 최종 색을 계산 -> 미리보기는 반투명하게
- */
-const compositeRgbaOverWhite = (color: string) => {
-  const match = color.match(
-    /^rgba\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*([\d.]+)\s*\)$/,
-  );
-
-  if (!match) return color;
-
-  const [, red, green, blue, alpha] = match;
-  const opacity = Number(alpha);
-  const blend = (channel: string) => Math.round(Number(channel) * opacity + 255 * (1 - opacity));
-
-  return `rgb(${blend(red)}, ${blend(green)}, ${blend(blue)})`;
-};
 
 type MonthEventHitTarget = {
   key: string;
@@ -203,9 +186,7 @@ export function CalendarScreen({ onSelectDate, onSearch }: CalendarScreenProps) 
 
       const visibleCenterY =
         scrollOffsetRef.current + scrollViewportHeightRef.current / 2;
-      const backgroundColor = compositeRgbaOverWhite(
-        getEventTypeColors(scheme, target.eventTypeId).background,
-      );
+      const backgroundColor = getEventTypeColors(scheme, target.eventTypeId).background;
 
       setPreview((current) =>
         current?.key === target.key
@@ -427,7 +408,7 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
   },
   previewText: {
-    color: '#1F2937',
+    color: AdaptiveColors.text,
     fontSize: 14,
     lineHeight: 20,
     fontWeight: '500',

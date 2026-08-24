@@ -1,5 +1,5 @@
 import apiClient from '@/api/client';
-import type { Category, CategoryGroupWithCategories } from '@/types/category';
+import type { CategoryType, InterestCategory } from '@/types/category';
 import type { EventDTO } from '@/types/event';
 import type {
   ExcludedKeyword,
@@ -7,7 +7,7 @@ import type {
   MemoDTO,
   MemoUpdates,
 } from '@/types/userData';
-import { normalizeEventTypeId, transformEvent } from '@/util/calendar/transformEvent';
+import { transformEvent } from '@/util/calendar/transformEvent';
 import { parseDateString } from '@/util/calendar/dateFormatter';
 
 export type BookmarksResponse = {
@@ -20,28 +20,16 @@ export type BookmarksResponse = {
 function transformMemo(memo: MemoDTO): Memo {
   return {
     ...memo,
-    categoryId: normalizeEventTypeId(memo.categoryId),
     createdAt: parseDateString(memo.createdAt),
     updatedAt: parseDateString(memo.updatedAt),
     applyEnd: memo.applyEnd ? parseDateString(memo.applyEnd) : null,
   };
 }
 
-export async function getCategoryGroups() {
-  const response = await apiClient.get<{ items: CategoryGroupWithCategories[] }>(
-    'category-groups/with-categories',
-  );
-  return response.data.items;
-}
-
-export async function getOrganizations() {
-  const response = await apiClient.get<{ items: Category[] }>('categories/orgs');
-  return response.data.items;
-}
-
-export async function saveInterestCategories(categories: Category[]) {
+export async function saveInterestCategories(categories: InterestCategory[]) {
   await apiClient.put('users/me/interest-categories', {
     items: categories.map((category, index) => ({
+      categoryType: category.categoryType,
       categoryId: category.id,
       priority: index + 1,
     })),
@@ -50,12 +38,31 @@ export async function saveInterestCategories(categories: Category[]) {
 
 export async function getInterestCategories() {
   const response = await apiClient.get<{
-    items: { category: Category; priority: number }[];
+    items: {
+      categoryType: CategoryType;
+      categoryId: number;
+      name: string;
+      sortOrder: number;
+      priority: number;
+    }[];
   }>('users/me/interest-categories');
 
   return [...response.data.items]
     .sort((left, right) => left.priority - right.priority)
-    .map(({ category }) => category);
+    .map(({ categoryId, categoryType, name, sortOrder }) => ({
+      id: categoryId,
+      categoryType,
+      name,
+      sortOrder,
+    }));
+}
+
+export async function deleteInterestCategory(
+  category: Pick<InterestCategory, 'id' | 'categoryType'>,
+) {
+  await apiClient.delete(`users/me/interest-categories/${category.id}`, {
+    params: { categoryType: category.categoryType },
+  });
 }
 
 export async function getExcludedKeywords() {

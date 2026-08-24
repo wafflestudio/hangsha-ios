@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 
 import type { Timetable } from '@/types/timetable';
+import { AdaptiveColors } from '@/util/theme';
 
 type NameMode = { type: 'create' } | { type: 'rename'; timetable: Timetable };
 
@@ -65,7 +66,7 @@ export function TimetableManagerSheet({
           hitSlop={10}
           style={styles.closeButton}
           onPress={onClose}>
-          <SymbolView name="chevron.right" tintColor="#8A8A8A" size={22} />
+          <SymbolView name="chevron.right" tintColor={AdaptiveColors.icon} size={22} />
         </Pressable>
 
         <View style={styles.titleRow}>
@@ -75,7 +76,7 @@ export function TimetableManagerSheet({
             accessibilityLabel="새 시간표 추가"
             hitSlop={8}
             onPress={() => openNameDialog({ type: 'create' })}>
-            <SymbolView name="plus" tintColor="#777777" size={23} weight="medium" />
+            <SymbolView name="plus" tintColor={AdaptiveColors.icon} size={23} weight="medium" />
           </Pressable>
         </View>
 
@@ -137,7 +138,7 @@ export function TimetableManagerSheet({
               editable={!busy}
               maxLength={40}
               placeholder="시간표 이름"
-              placeholderTextColor="#A0A0A0"
+              placeholderTextColor={AdaptiveColors.textMuted}
               returnKeyType="done"
               style={styles.input}
               onChangeText={setName}
@@ -175,9 +176,9 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 24,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#EFEFF1',
+    borderTopColor: AdaptiveColors.border,
     borderTopLeftRadius: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: AdaptiveColors.surfaceElevated,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: -8 },
     shadowOpacity: 0.12,
@@ -186,8 +187,8 @@ const styles = StyleSheet.create({
   },
   closeButton: { alignSelf: 'flex-start', marginBottom: 12 },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 20 },
-  title: { color: '#111111', fontSize: 20, fontWeight: '700' },
-  empty: { color: '#757575', fontSize: 14 },
+  title: { color: AdaptiveColors.text, fontSize: 20, fontWeight: '700' },
+  empty: { color: AdaptiveColors.textSecondary, fontSize: 14 },
   list: { gap: 8 },
   listScroll: { flexGrow: 0, maxHeight: 390 },
   item: {
@@ -198,9 +199,9 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 10,
   },
-  itemSelected: { backgroundColor: 'rgba(0,192,232,0.12)' },
+  itemSelected: { backgroundColor: AdaptiveColors.backgroundSelected },
   itemSelect: { flex: 1, alignSelf: 'stretch', justifyContent: 'center' },
-  itemName: { color: '#1E1E1E', fontSize: 16 },
+  itemName: { color: AdaptiveColors.text, fontSize: 16 },
   itemNameMuted: { opacity: 0.68 },
   actions: { flexDirection: 'row', gap: 8 },
   actionButton: {
@@ -219,22 +220,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 28,
-    backgroundColor: 'rgba(0,0,0,0.28)',
+    backgroundColor: AdaptiveColors.overlay,
   },
-  dialog: { width: '100%', maxWidth: 350, padding: 20, borderRadius: 18, backgroundColor: '#FFFFFF' },
-  dialogTitle: { marginBottom: 14, color: '#111111', fontSize: 18, fontWeight: '700' },
+  dialog: { width: '100%', maxWidth: 350, padding: 20, borderRadius: 18, backgroundColor: AdaptiveColors.surfaceElevated },
+  dialogTitle: { marginBottom: 14, color: AdaptiveColors.text, fontSize: 18, fontWeight: '700' },
   input: {
     height: 48,
     paddingHorizontal: 13,
     borderWidth: 1,
-    borderColor: '#DEDEDE',
+    borderColor: AdaptiveColors.border,
     borderRadius: 10,
-    color: '#111111',
+    color: AdaptiveColors.text,
     fontSize: 16,
   },
   dialogActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 9, marginTop: 18 },
   dialogCancel: { paddingHorizontal: 16, paddingVertical: 10 },
-  dialogCancelText: { color: '#666666', fontSize: 15, fontWeight: '600' },
+  dialogCancelText: { color: AdaptiveColors.textSecondary, fontSize: 15, fontWeight: '600' },
   dialogSubmit: { paddingHorizontal: 18, paddingVertical: 10, borderRadius: 20, backgroundColor: '#20C4DD' },
   dialogSubmitText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
   disabled: { opacity: 0.42 },

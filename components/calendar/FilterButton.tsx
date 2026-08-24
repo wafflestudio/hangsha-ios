@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { Pressable, StyleSheet } from 'react-native';
 
-import { Spacing } from '@/util/theme';
+import { AdaptiveColors, Spacing } from '@/util/theme';
 
 type FilterButtonProps = {
   accessibilityLabel?: string;
@@ -35,9 +35,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#FFFFFF',
+    borderColor: AdaptiveColors.border,
     borderRadius: 5,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: AdaptiveColors.surface,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.1,

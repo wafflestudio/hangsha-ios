@@ -1,9 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { createContext, type ReactNode, useContext } from 'react';
 
-import { getCategoryGroups, getOrganizations } from '@/api/user';
+import { getEventTypes, getOrganizations } from '@/api/category';
 import { useAuthStore } from '@/stores/authStore';
-import type { Category } from '@/types/category';
+import type { InterestCategory } from '@/types/category';
 
 export const onboardingKeys = {
   all: ['onboarding'] as const,
@@ -11,8 +11,8 @@ export const onboardingKeys = {
 };
 
 interface OnboardingContextValue {
-  programTypes: Category[];
-  organizations: Category[];
+  programTypes: InterestCategory[];
+  organizations: InterestCategory[];
   isLoadingMeta: boolean;
   metadataError: Error | null;
   refreshMetadata: () => Promise<void>;
@@ -25,13 +25,19 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
   const metadataQuery = useQuery({
     queryKey: onboardingKeys.metadata(),
     queryFn: async () => {
-      const [groups, organizations] = await Promise.all([
-        getCategoryGroups(),
+      const [eventTypes, organizations] = await Promise.all([
+        getEventTypes(),
         getOrganizations(),
       ]);
       return {
-        programTypes: groups.find(({ group }) => group.id === 3)?.categories ?? [],
-        organizations,
+        programTypes: eventTypes.map((category) => ({
+          ...category,
+          categoryType: 'EVENT_TYPE' as const,
+        })),
+        organizations: organizations.map((category) => ({
+          ...category,
+          categoryType: 'ORGANIZATION' as const,
+        })),
       };
     },
     enabled: isAuthenticated,

@@ -1,6 +1,7 @@
 import { StyleSheet, Text, type StyleProp, type TextStyle, View } from 'react-native';
 
 import { formatEventDateRange } from '@/util/calendar/dateFormatter';
+import { AdaptiveColors } from '@/util/theme';
 
 type BaseDateProps = {
   label: string | null;
@@ -61,6 +62,6 @@ export function EventDate({ applyStart, applyEnd, eventStart, eventEnd }: EventD
 const styles = StyleSheet.create({
   column: { gap: 4 },
   row: { minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 6 },
-  label: { flexShrink: 0, color: '#555555', fontSize: 14, fontWeight: '600', lineHeight: 20 },
-  date: { flexShrink: 1, color: '#555555', fontSize: 14, lineHeight: 20 },
+  label: { flexShrink: 0, color: AdaptiveColors.textSecondary, fontSize: 14, fontWeight: '600', lineHeight: 20 },
+  date: { flexShrink: 1, color: AdaptiveColors.textSecondary, fontSize: 14, lineHeight: 20 },
 });

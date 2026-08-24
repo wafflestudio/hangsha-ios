@@ -16,6 +16,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useAuth } from "@/contexts/AuthProvider";
+import { AdaptiveColors } from "@/util/theme";
 
 type SignupStep = "email" | "code" | "password";
 
@@ -230,7 +231,7 @@ export default function SignupScreen() {
                   value={email}
                   onChangeText={setEmail}
                   placeholder="email@snu.ac.kr"
-                  placeholderTextColor="#8A8A8A"
+                  placeholderTextColor={AdaptiveColors.textMuted}
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -334,7 +335,7 @@ export default function SignupScreen() {
                     value={password}
                     onChangeText={setPassword}
                     placeholder="비밀번호"
-                    placeholderTextColor="#8A8A8A"
+                    placeholderTextColor={AdaptiveColors.textMuted}
                     secureTextEntry
                     autoCapitalize="none"
                     autoCorrect={false}
@@ -355,7 +356,7 @@ export default function SignupScreen() {
                     value={passwordConfirm}
                     onChangeText={setPasswordConfirm}
                     placeholder="비밀번호 확인"
-                    placeholderTextColor="#8A8A8A"
+                    placeholderTextColor={AdaptiveColors.textMuted}
                     secureTextEntry
                     autoCapitalize="none"
                     autoCorrect={false}
@@ -539,7 +540,7 @@ function PolicyTableRow({ cells, header = false }: { cells: string[]; header?: b
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: "#FFFFFF" },
+  safeArea: { flex: 1, backgroundColor: AdaptiveColors.background },
   keyboardView: { flex: 1 },
   scrollContent: { flexGrow: 1 },
   container: {
@@ -553,7 +554,7 @@ const styles = StyleSheet.create({
   codeContainer: { paddingTop: 110 },
   header: { alignItems: "center", marginBottom: 28 },
   title: {
-    color: "#111111",
+    color: AdaptiveColors.text,
     fontSize: 24,
     lineHeight: 31,
     fontWeight: "800",
@@ -562,7 +563,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     marginTop: 6,
-    color: "#222222",
+    color: AdaptiveColors.textSecondary,
     fontSize: 16,
     lineHeight: 22,
     fontWeight: "400",
@@ -574,10 +575,10 @@ const styles = StyleSheet.create({
     height: 42,
     paddingHorizontal: 16,
     borderWidth: 1,
-    borderColor: "#D5D5D5",
+    borderColor: AdaptiveColors.border,
     borderRadius: 999,
-    backgroundColor: "#FFFFFF",
-    color: "#111111",
+    backgroundColor: AdaptiveColors.input,
+    color: AdaptiveColors.text,
     fontSize: 17,
   },
   passwordFieldGroup: { width: "100%", gap: 8 },
@@ -612,19 +613,19 @@ const styles = StyleSheet.create({
   },
   validationText: {
     flex: 1,
-    color: "#222222",
+    color: AdaptiveColors.text,
     fontSize: 14,
     lineHeight: 19,
     fontWeight: "600",
   },
-  readonlyInput: { color: "#808080", backgroundColor: "#FFFFFF" },
+  readonlyInput: { color: AdaptiveColors.textMuted, backgroundColor: AdaptiveColors.backgroundElement },
   primaryButton: {
     width: "100%",
     height: 40,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 999,
-    backgroundColor: "#000000",
+    backgroundColor: AdaptiveColors.accent,
   },
   primaryButtonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "600" },
   resendButton: {
@@ -640,7 +641,7 @@ const styles = StyleSheet.create({
   buttonPressed: { opacity: 0.75 },
   codeGuide: {
     marginTop: 2,
-    color: "#151515",
+    color: AdaptiveColors.text,
     fontSize: 16,
     lineHeight: 22,
     fontWeight: "700",
@@ -668,17 +669,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "#CCCCCC",
+    borderColor: AdaptiveColors.border,
     borderRadius: 9,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: AdaptiveColors.surface,
     shadowColor: "#000000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 3,
     elevation: 2,
   },
-  activeCodeBox: { borderColor: "#777777", borderWidth: 1.5 },
-  codeDigit: { color: "#111111", fontSize: 24, fontWeight: "600" },
+  activeCodeBox: { borderColor: AdaptiveColors.borderStrong, borderWidth: 1.5 },
+  codeDigit: { color: AdaptiveColors.text, fontSize: 24, fontWeight: "600" },
   codeInput: {
     position: "absolute",
     top: 0,
@@ -702,26 +703,26 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginRight: 12,
     borderWidth: 1,
-    borderColor: "#777777",
+    borderColor: AdaptiveColors.borderStrong,
     borderRadius: 3,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: AdaptiveColors.surface,
   },
-  checkboxChecked: { borderColor: "#000000", backgroundColor: "#000000" },
+  checkboxChecked: { borderColor: AdaptiveColors.accent, backgroundColor: AdaptiveColors.accent },
   checkmark: { color: "#FFFFFF", fontSize: 12, lineHeight: 14, fontWeight: "800" },
-  consentLabel: { color: "#222222", fontSize: 15, lineHeight: 20 },
-  detailsLink: { color: "#777777", fontSize: 15, lineHeight: 20 },
+  consentLabel: { color: AdaptiveColors.text, fontSize: 15, lineHeight: 20 },
+  detailsLink: { color: AdaptiveColors.textSecondary, fontSize: 15, lineHeight: 20 },
   modalBackdrop: {
     flex: 1,
     justifyContent: "center",
     paddingHorizontal: 20,
-    backgroundColor: "rgba(0, 0, 0, 0.45)",
+    backgroundColor: AdaptiveColors.overlay,
   },
   modalSafeArea: { width: "100%", maxWidth: 560, maxHeight: "88%", alignSelf: "center" },
   modalCard: {
     flexShrink: 1,
     maxHeight: "100%",
     borderRadius: 18,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: AdaptiveColors.surfaceElevated,
     overflow: "hidden",
   },
   modalHeader: {
@@ -731,26 +732,26 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 20,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#D8D8D8",
+    borderBottomColor: AdaptiveColors.border,
   },
-  modalTitle: { color: "#111111", fontSize: 19, fontWeight: "800" },
-  modalCloseIcon: { color: "#555555", fontSize: 30, lineHeight: 32, fontWeight: "300" },
+  modalTitle: { color: AdaptiveColors.text, fontSize: 19, fontWeight: "800" },
+  modalCloseIcon: { color: AdaptiveColors.icon, fontSize: 30, lineHeight: 32, fontWeight: "300" },
   policyScroll: { flexShrink: 1 },
   policyContent: { padding: 20 },
-  policyHeading: { color: "#111111", fontSize: 17, lineHeight: 24, fontWeight: "800" },
+  policyHeading: { color: AdaptiveColors.text, fontSize: 17, lineHeight: 24, fontWeight: "800" },
   policySectionTitle: {
     marginTop: 24,
     marginBottom: 8,
-    color: "#111111",
+    color: AdaptiveColors.text,
     fontSize: 17,
     lineHeight: 24,
     fontWeight: "800",
   },
-  policyParagraph: { marginTop: 12, color: "#333333", fontSize: 14, lineHeight: 21 },
-  policyList: { marginTop: 5, color: "#333333", fontSize: 14, lineHeight: 21 },
+  policyParagraph: { marginTop: 12, color: AdaptiveColors.textSecondary, fontSize: 14, lineHeight: 21 },
+  policyList: { marginTop: 5, color: AdaptiveColors.textSecondary, fontSize: 14, lineHeight: 21 },
   policyNotice: {
     marginTop: 24,
-    color: "#333333",
+    color: AdaptiveColors.textSecondary,
     fontSize: 14,
     lineHeight: 21,
     fontWeight: "600",
@@ -759,10 +760,10 @@ const styles = StyleSheet.create({
     marginTop: 16,
     borderTopWidth: 1,
     borderLeftWidth: 1,
-    borderColor: "#D4D4D4",
+    borderColor: AdaptiveColors.border,
   },
   policyTableRow: { flexDirection: "row" },
-  policyTableHeader: { backgroundColor: "#F2F2F2" },
+  policyTableHeader: { backgroundColor: AdaptiveColors.backgroundElement },
   policyTableCell: {
     flex: 1.35,
     minHeight: 48,
@@ -770,11 +771,11 @@ const styles = StyleSheet.create({
     padding: 7,
     borderRightWidth: 1,
     borderBottomWidth: 1,
-    borderColor: "#D4D4D4",
+    borderColor: AdaptiveColors.border,
   },
   policyTableFirstCell: { flex: 0.8 },
-  policyTableText: { color: "#333333", fontSize: 11, lineHeight: 16 },
-  policyTableHeaderText: { color: "#111111", fontWeight: "700", textAlign: "center" },
+  policyTableText: { color: AdaptiveColors.textSecondary, fontSize: 11, lineHeight: 16 },
+  policyTableHeaderText: { color: AdaptiveColors.text, fontWeight: "700", textAlign: "center" },
   modalCloseButton: {
     height: 50,
     alignItems: "center",
@@ -782,7 +783,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     marginBottom: 16,
     borderRadius: 10,
-    backgroundColor: "#000000",
+    backgroundColor: AdaptiveColors.accent,
   },
   modalCloseButtonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
 });

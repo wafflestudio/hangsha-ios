@@ -1,10 +1,11 @@
-import { StyleSheet, useColorScheme, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { CalendarDayCell } from '@/components/calendar/CalendarDayCell';
 import { ThemedText } from '@/components/themed-text';
 import type { WeekEventBar } from '@/util/calendar/buildMonthEventLayout';
 import { formatDateToYYYYMMDD } from '@/util/calendar/dateFormatter';
-import { getEventTypeColors, Spacing } from '@/util/theme';
+import { AdaptiveColors, getEventTypeColors, Spacing } from '@/util/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export const MONTH_EVENT_ROW_HEIGHT = 18;
 export const MONTH_DATE_BADGE_HEIGHT = 30;
@@ -175,7 +176,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   blockEventText: {
-    color: '#1F2937',
+    color: AdaptiveColors.text,
     fontSize: 11,
     lineHeight: 13,
     fontWeight: '500',

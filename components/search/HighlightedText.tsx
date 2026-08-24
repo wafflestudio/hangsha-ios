@@ -1,5 +1,7 @@
 import { StyleSheet, Text, type TextProps } from 'react-native';
 
+import { AdaptiveColors } from '@/util/theme';
+
 type HighlightedTextProps = TextProps & {
   html: string;
 };
@@ -38,6 +40,7 @@ export function HighlightedText({ html, ...textProps }: HighlightedTextProps) {
 
 const styles = StyleSheet.create({
   highlight: {
-    backgroundColor: '#FFF176',
+    backgroundColor: AdaptiveColors.accentSoft,
+    color: AdaptiveColors.accent,
   },
 });

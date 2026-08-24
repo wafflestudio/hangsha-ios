@@ -26,7 +26,7 @@ import { useEventFilterParams } from '@/hooks/use-event-filter-params';
 import type { Event } from '@/types/event';
 import { formatDateToYYYYMMDD, parseDateString } from '@/util/calendar/dateFormatter';
 import { filterDayEvents } from '@/util/calendar/filterDayEvents';
-import { Spacing } from '@/util/theme';
+import { AdaptiveColors, Spacing } from '@/util/theme';
 
 type DailyEventsScreenProps = {
   date: string;
@@ -108,7 +108,7 @@ export function DailyEventsScreen({ date }: DailyEventsScreenProps) {
                 hitSlop={Spacing.two}
                 accessibilityRole="button"
                 accessibilityLabel="이전 날">
-                <SymbolView name="chevron.left" tintColor="#ABABAB" size={18} weight="bold" />
+                <SymbolView name="chevron.left" tintColor={AdaptiveColors.icon} size={18} weight="bold" />
               </Pressable>
 
               <Pressable
@@ -117,7 +117,7 @@ export function DailyEventsScreen({ date }: DailyEventsScreenProps) {
                 hitSlop={Spacing.two}
                 accessibilityRole="button"
                 accessibilityLabel="다음 날">
-                <SymbolView name="chevron.right" tintColor="#ABABAB" size={18} weight="bold" />
+                <SymbolView name="chevron.right" tintColor={AdaptiveColors.icon} size={18} weight="bold" />
               </Pressable>
 
               <FilterButton onPress={() => filterSheetRef.current?.present()} />
@@ -130,14 +130,14 @@ export function DailyEventsScreen({ date }: DailyEventsScreenProps) {
               accessibilityRole="button"
               accessibilityLabel="일별 행사 닫기"
               style={({ pressed }) => [styles.closeButton, pressed && styles.controlPressed]}>
-              <SymbolView name="xmark" tintColor="#ABABAB" size={22} weight="semibold" />
+              <SymbolView name="xmark" tintColor={AdaptiveColors.icon} size={22} weight="semibold" />
             </Pressable>
           }
         />
 
         {isPending ? (
           <View style={styles.centered}>
-            <ActivityIndicator color="#828282" />
+            <ActivityIndicator color={AdaptiveColors.icon} />
           </View>
         ) : isError ? (
           <View style={styles.centered}>
@@ -162,7 +162,7 @@ export function DailyEventsScreen({ date }: DailyEventsScreenProps) {
               <RefreshControl
                 refreshing={isRefetching}
                 onRefresh={() => dayEventsQuery.refetch()}
-                tintColor="#828282"
+                tintColor={AdaptiveColors.icon}
               />
             }
             renderItem={({ item }) => (
@@ -191,25 +191,25 @@ export function DailyEventsScreen({ date }: DailyEventsScreenProps) {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#FFFFFF' },
-  safeArea: { flex: 1, backgroundColor: '#FFFFFF' },
+  root: { flex: 1, backgroundColor: AdaptiveColors.background },
+  safeArea: { flex: 1, backgroundColor: AdaptiveColors.background },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
   todayButton: {
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: AdaptiveColors.border,
     borderRadius: 13,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: AdaptiveColors.surface,
   },
-  todayText: { color: '#555555', fontSize: 13, lineHeight: 18, fontWeight: '500' },
+  todayText: { color: AdaptiveColors.textSecondary, fontSize: 13, lineHeight: 18, fontWeight: '500' },
   headerArrow: { width: 28, height: 36, alignItems: 'center', justifyContent: 'center' },
   closeButton: { width: 36, height: 40, alignItems: 'center', justifyContent: 'center' },
   listContent: { paddingHorizontal: 20, paddingTop: 1, paddingBottom: 18 },
   emptyListContent: { flexGrow: 1 },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  stateText: { color: '#888888', fontSize: 14, lineHeight: 20, fontWeight: '500' },
-  retryButton: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 9, backgroundColor: '#F0F0F0' },
-  retryText: { color: '#555555', fontSize: 13, fontWeight: '700' },
+  stateText: { color: AdaptiveColors.textMuted, fontSize: 14, lineHeight: 20, fontWeight: '500' },
+  retryButton: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 9, backgroundColor: AdaptiveColors.backgroundElement },
+  retryText: { color: AdaptiveColors.textSecondary, fontSize: 13, fontWeight: '700' },
   controlPressed: { opacity: 0.55 },
 });

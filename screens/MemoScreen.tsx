@@ -25,6 +25,7 @@ import { useAuth } from '@/contexts/AuthProvider';
 import { useUserData } from '@/contexts/UserDataContext';
 import type { Memo } from '@/types/userData';
 import { formatDateDotParsed } from '@/util/calendar/dateFormatter';
+import { AdaptiveColors } from '@/util/theme';
 
 export default function MemoScreen() {
   const router = useRouter();
@@ -106,7 +107,7 @@ export default function MemoScreen() {
     return (
       <View style={styles.root}>
         <SafeAreaView style={styles.centered} edges={['top', 'left', 'right']}>
-          <ActivityIndicator color="#208AEF" />
+          <ActivityIndicator color={AdaptiveColors.accent} />
         </SafeAreaView>
         <MobileBottomNavigation activeTab="memos" />
       </View>
@@ -139,7 +140,7 @@ export default function MemoScreen() {
 
         {memoLoading && sortedMemos.length === 0 ? (
           <View style={styles.centered}>
-            <ActivityIndicator color="#208AEF" />
+            <ActivityIndicator color={AdaptiveColors.accent} />
             <Text style={styles.loadingText}>메모를 불러오는 중...</Text>
           </View>
         ) : (
@@ -152,7 +153,7 @@ export default function MemoScreen() {
             ]}
             showsVerticalScrollIndicator={false}
             refreshControl={
-              <RefreshControl refreshing={isRefreshing} onRefresh={refresh} tintColor="#208AEF" />
+              <RefreshControl refreshing={isRefreshing} onRefresh={refresh} tintColor={AdaptiveColors.accent} />
             }
             ListEmptyComponent={
               <View style={styles.emptyState}>
@@ -202,7 +203,7 @@ export default function MemoScreen() {
               textAlignVertical="top"
               maxLength={1000}
               placeholder="메모를 입력해주세요."
-              placeholderTextColor="#A0A0A0"
+              placeholderTextColor={AdaptiveColors.textMuted}
               style={styles.editorInput}
             />
             <View style={styles.editorActions}>
@@ -248,7 +249,7 @@ function MemoListCard({
     <View style={styles.memoCard}>
       <View style={styles.memoTopRow}>
         <View style={styles.eventChipRow}>
-          <CategoryChip categoryId={memo.categoryId} variant="circle" />
+          <CategoryChip categoryId={memo.eventTypeId} variant="circle" />
           <DdayChip prefix="" targetDate={memo.applyEnd} variant="plain" />
         </View>
         <Pressable
@@ -296,7 +297,7 @@ function MemoListCard({
             hitSlop={10}
             onPress={onDelete}
             style={({ pressed }) => pressed && styles.pressed}>
-            <FontAwesomeFreeSolid name="trash" size={22} color="#8E8E8E" />
+            <FontAwesomeFreeSolid name="trash" size={22} color={AdaptiveColors.icon} />
           </Pressable>
           <Pressable
             accessibilityRole="button"
@@ -304,7 +305,7 @@ function MemoListCard({
             hitSlop={10}
             onPress={onEdit}
             style={({ pressed }) => pressed && styles.pressed}>
-            <FontAwesomeFreeSolid name="edit" size={23} color="#8E8E8E" />
+            <FontAwesomeFreeSolid name="edit" size={23} color={AdaptiveColors.icon} />
           </Pressable>
         </View>
       </View>
@@ -313,10 +314,10 @@ function MemoListCard({
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#FFFFFF' },
-  safeArea: { flex: 1, backgroundColor: '#FFFFFF' },
+  root: { flex: 1, backgroundColor: AdaptiveColors.background },
+  safeArea: { flex: 1, backgroundColor: AdaptiveColors.background },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 },
-  loadingText: { color: '#777777', fontSize: 13 },
+  loadingText: { color: AdaptiveColors.textSecondary, fontSize: 13 },
   header: {
     height: 92,
     paddingHorizontal: 20,
@@ -325,7 +326,7 @@ const styles = StyleSheet.create({
     paddingTop: 35,
     gap: 10,
   },
-  headerTitle: { color: '#171717', fontSize: 18, lineHeight: 25, fontWeight: '800' },
+  headerTitle: { color: AdaptiveColors.text, fontSize: 18, lineHeight: 25, fontWeight: '800' },
   headerIcon: { width: 22, height: 23 },
   listContent: {
     width: '100%',
@@ -337,19 +338,14 @@ const styles = StyleSheet.create({
   emptyListContent: { flexGrow: 1 },
   emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 70 },
   emptyIcon: { width: 40, height: 41, opacity: 0.55 },
-  emptyTitle: { marginTop: 18, color: '#333333', fontSize: 17, fontWeight: '800' },
-  emptyDescription: { marginTop: 7, color: '#888888', fontSize: 13 },
+  emptyTitle: { marginTop: 18, color: AdaptiveColors.text, fontSize: 17, fontWeight: '800' },
+  emptyDescription: { marginTop: 7, color: AdaptiveColors.textMuted, fontSize: 13 },
   memoCard: {
     marginBottom: 38,
     paddingHorizontal: 11,
     paddingTop: 17,
     paddingBottom: 14,
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.14,
-    shadowRadius: 5,
-    elevation: 4,
+    backgroundColor: AdaptiveColors.surface,
   },
   memoTopRow: { minHeight: 27, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   eventChipRow: { minWidth: 0, flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
@@ -357,15 +353,15 @@ const styles = StyleSheet.create({
   bookmarkIcon: { width: 23, height: 23 },
   eventTitle: {
     marginTop: 18,
-    color: '#111111',
+    color: AdaptiveColors.text,
     fontSize: 16,
     lineHeight: 23,
     fontWeight: '800',
   },
   eventMetadata: { marginTop: 9, flexDirection: 'row', alignItems: 'center', gap: 15 },
-  memoDate: { color: '#888888', fontSize: 13, lineHeight: 18 },
-  organizationName: { color: '#888888', fontSize: 13, lineHeight: 18 },
-  memoContent: { marginTop: 7, color: '#222222', fontSize: 14, lineHeight: 18 },
+  memoDate: { color: AdaptiveColors.textMuted, fontSize: 13, lineHeight: 18 },
+  organizationName: { color: AdaptiveColors.textMuted, fontSize: 13, lineHeight: 18 },
+  memoContent: { marginTop: 7, color: AdaptiveColors.text, fontSize: 14, lineHeight: 18 },
   cardBottomRow: {
     marginTop: 16,
     minHeight: 27,
@@ -380,9 +376,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 7,
     borderRadius: 6,
-    backgroundColor: '#ECECEC',
+    backgroundColor: AdaptiveColors.backgroundElement,
   },
-  memoTagText: { color: '#707070', fontSize: 12, fontWeight: '700' },
+  memoTagText: { color: AdaptiveColors.textSecondary, fontSize: 12, fontWeight: '700' },
   cardActions: {
     flexShrink: 0,
     flexDirection: 'row',
@@ -395,28 +391,28 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+    backgroundColor: AdaptiveColors.overlay,
   },
   editorCard: {
     width: '100%',
     maxWidth: 520,
     padding: 20,
     borderRadius: 16,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: AdaptiveColors.surfaceElevated,
   },
-  editorTitle: { color: '#171717', fontSize: 19, fontWeight: '800' },
-  editorEventTitle: { marginTop: 8, color: '#777777', fontSize: 13, lineHeight: 18 },
+  editorTitle: { color: AdaptiveColors.text, fontSize: 19, fontWeight: '800' },
+  editorEventTitle: { marginTop: 8, color: AdaptiveColors.textSecondary, fontSize: 13, lineHeight: 18 },
   editorInput: {
     height: 150,
     marginTop: 18,
     padding: 13,
     borderWidth: 1,
-    borderColor: '#DADADA',
+    borderColor: AdaptiveColors.border,
     borderRadius: 10,
-    color: '#222222',
+    color: AdaptiveColors.text,
     fontSize: 15,
     lineHeight: 21,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: AdaptiveColors.input,
   },
   editorActions: { marginTop: 16, flexDirection: 'row', gap: 10 },
   editorButton: {
@@ -425,12 +421,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#DADADA',
+    borderColor: AdaptiveColors.border,
     borderRadius: 10,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: AdaptiveColors.surface,
   },
   saveButton: { borderColor: '#208AEF', backgroundColor: '#208AEF' },
-  cancelButtonText: { color: '#666666', fontSize: 14, fontWeight: '700' },
+  cancelButtonText: { color: AdaptiveColors.textSecondary, fontSize: 14, fontWeight: '700' },
   saveButtonText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
   pressed: { opacity: 0.6 },
   disabled: { opacity: 0.5 },

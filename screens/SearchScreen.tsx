@@ -31,6 +31,7 @@ import {
   useSearchUiStore,
 } from '@/stores/searchUiStore';
 import type { Event } from '@/types/event';
+import { AdaptiveColors } from '@/util/theme';
 
 type SearchScreenProps = {
   initialQuery?: string;
@@ -160,7 +161,7 @@ export function SearchScreen({ initialQuery }: SearchScreenProps) {
                 maxLength={50}
                 returnKeyType="search"
                 placeholder="검색어를 입력해주세요"
-                placeholderTextColor="#A3A3A3"
+                placeholderTextColor={AdaptiveColors.textMuted}
                 style={styles.input}
                 onChangeText={setInputValue}
                 onSubmitEditing={runSearch}
@@ -172,7 +173,7 @@ export function SearchScreen({ initialQuery }: SearchScreenProps) {
                   hitSlop={8}
                   onPress={clear}
                   style={styles.clearButton}>
-                  <SymbolView name="xmark" tintColor="#828282" size={15} weight="semibold" />
+                  <SymbolView name="xmark" tintColor={AdaptiveColors.icon} size={15} weight="semibold" />
                 </Pressable>
               ) : null}
             </View>
@@ -183,7 +184,7 @@ export function SearchScreen({ initialQuery }: SearchScreenProps) {
               hitSlop={8}
               onPress={runSearch}
               style={({ pressed }) => [styles.searchButton, pressed && styles.pressed]}>
-              <SymbolView name="magnifyingglass" tintColor="#828282" size={27} />
+              <SymbolView name="magnifyingglass" tintColor={AdaptiveColors.icon} size={27} />
             </Pressable>
           </View>
         </View>
@@ -199,7 +200,7 @@ export function SearchScreen({ initialQuery }: SearchScreenProps) {
               <Text style={styles.pageSizeLabel}>표시 개수:</Text>
               <View style={styles.pageSizeValue}>
                 <Text style={styles.pageSizeValueText}>{pageSize}개</Text>
-                <SymbolView name="chevron.up.chevron.down" tintColor="#555555" size={10} />
+                <SymbolView name="chevron.up.chevron.down" tintColor={AdaptiveColors.textSecondary} size={10} />
               </View>
             </Pressable>
           </View>
@@ -209,7 +210,7 @@ export function SearchScreen({ initialQuery }: SearchScreenProps) {
           <EmptyState message="검색어를 입력해보세요!" />
         ) : searchQuery.isPending ? (
           <View style={styles.centered}>
-            <ActivityIndicator color="#828282" />
+            <ActivityIndicator color={AdaptiveColors.icon} />
           </View>
         ) : searchQuery.isError ? (
           <EmptyState message="오류가 발생했습니다. 잠시 후 다시 시도해주세요." />
@@ -302,7 +303,7 @@ function PageSizeMenu({
             style={({ pressed }) => [styles.pageSizeOption, pressed && styles.optionPressed]}>
             <View style={styles.checkSlot}>
               {option === selected ? (
-                <SymbolView name="checkmark" tintColor="#222222" size={14} weight="bold" />
+                <SymbolView name="checkmark" tintColor={AdaptiveColors.text} size={14} weight="bold" />
               ) : null}
             </View>
             <Text style={styles.pageSizeOptionText}>{option}개</Text>
@@ -332,7 +333,7 @@ function Pagination({
         disabled={groupStart === 1}
         onPress={() => onChange(groupStart - 1)}
         style={groupStart === 1 && styles.paginationDisabled}>
-        <SymbolView name="chevron.left" tintColor="#666666" size={14} />
+        <SymbolView name="chevron.left" tintColor={AdaptiveColors.textSecondary} size={14} />
       </Pressable>
       {pages.map((pageNumber) => (
         <Pressable
@@ -350,15 +351,15 @@ function Pagination({
         disabled={groupEnd === totalPages}
         onPress={() => onChange(groupEnd + 1)}
         style={groupEnd === totalPages && styles.paginationDisabled}>
-        <SymbolView name="chevron.right" tintColor="#666666" size={14} />
+        <SymbolView name="chevron.right" tintColor={AdaptiveColors.textSecondary} size={14} />
       </Pressable>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#FFFFFF' },
-  safeArea: { flex: 1, backgroundColor: '#FFFFFF' },
+  root: { flex: 1, backgroundColor: AdaptiveColors.background },
+  safeArea: { flex: 1, backgroundColor: AdaptiveColors.background },
   toolbar: { paddingHorizontal: 20, paddingTop: 24 },
   headerRow: {
     minHeight: 48,
@@ -370,7 +371,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     minWidth: 0,
     flex: 1,
-    color: '#111111',
+    color: AdaptiveColors.text,
     fontSize: 21,
     lineHeight: 28,
     fontWeight: '800',
@@ -382,7 +383,7 @@ const styles = StyleSheet.create({
     height: 40,
     overflow: 'hidden',
     borderRadius: 20,
-    backgroundColor: '#F2F2F2',
+    backgroundColor: AdaptiveColors.backgroundElement,
   },
   profileImage: { width: '100%', height: '100%' },
   searchRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
@@ -394,7 +395,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     overflow: 'hidden',
     borderRadius: 22,
-    backgroundColor: '#EAEAEA',
+    backgroundColor: AdaptiveColors.pressed,
   },
   input: {
     minWidth: 0,
@@ -402,7 +403,7 @@ const styles = StyleSheet.create({
     height: '100%',
     paddingLeft: 14,
     paddingRight: 6,
-    color: '#111111',
+    color: AdaptiveColors.text,
     fontSize: 16,
   },
   clearButton: { width: 38, height: 44, alignItems: 'center', justifyContent: 'center' },
@@ -414,7 +415,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   pageSizeButton: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  pageSizeLabel: { color: '#666666', fontSize: 14, fontWeight: '600' },
+  pageSizeLabel: { color: AdaptiveColors.textSecondary, fontSize: 14, fontWeight: '600' },
   pageSizeValue: {
     minWidth: 67,
     height: 31,
@@ -423,16 +424,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 10,
     borderWidth: 1,
-    borderColor: '#DDDDDD',
+    borderColor: AdaptiveColors.border,
     borderRadius: 6,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: AdaptiveColors.surface,
   },
-  pageSizeValueText: { color: '#333333', fontSize: 14 },
+  pageSizeValueText: { color: AdaptiveColors.text, fontSize: 14 },
   results: { flex: 1, paddingHorizontal: 20 },
-  resultCount: { marginBottom: 2, color: '#9CA3AF', fontSize: 13 },
+  resultCount: { marginBottom: 2, color: AdaptiveColors.textMuted, fontSize: 13 },
   listContent: { paddingBottom: 30 },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
-  emptyText: { color: '#A3A3A3', fontSize: 16, lineHeight: 23, fontWeight: '500', textAlign: 'center' },
+  emptyText: { color: AdaptiveColors.textMuted, fontSize: 16, lineHeight: 23, fontWeight: '500', textAlign: 'center' },
   menuBackdrop: { ...StyleSheet.absoluteFill, backgroundColor: 'transparent' },
   pageSizeMenu: {
     position: 'absolute',
@@ -442,9 +443,9 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     paddingVertical: 6,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#D4D4D4',
+    borderColor: AdaptiveColors.border,
     borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.97)',
+    backgroundColor: AdaptiveColors.surfaceElevated,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.18,
@@ -458,8 +459,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   checkSlot: { width: 23, alignItems: 'center' },
-  pageSizeOptionText: { color: '#222222', fontSize: 15 },
-  optionPressed: { backgroundColor: '#F0F0F0' },
+  pageSizeOptionText: { color: AdaptiveColors.text, fontSize: 15 },
+  optionPressed: { backgroundColor: AdaptiveColors.pressed },
   pagination: {
     minHeight: 58,
     flexDirection: 'row',
@@ -468,9 +469,9 @@ const styles = StyleSheet.create({
     gap: 13,
   },
   pageButton: { width: 28, height: 28, alignItems: 'center', justifyContent: 'center', borderRadius: 14 },
-  pageButtonSelected: { backgroundColor: '#EEEEEE' },
-  pageText: { color: '#777777', fontSize: 13 },
-  pageTextSelected: { color: '#111111', fontWeight: '700' },
+  pageButtonSelected: { backgroundColor: AdaptiveColors.backgroundSelected },
+  pageText: { color: AdaptiveColors.textSecondary, fontSize: 13 },
+  pageTextSelected: { color: AdaptiveColors.text, fontWeight: '700' },
   paginationDisabled: { opacity: 0.25 },
   pressed: { opacity: 0.58 },
 });

@@ -18,6 +18,7 @@ import { GalleryEventCard } from '@/components/events/GalleryEventCard';
 import { useAuth } from '@/contexts/AuthProvider';
 import { useBookmarksInfinite, useUserData } from '@/contexts/UserDataContext';
 import type { Event } from '@/types/event';
+import { AdaptiveColors } from '@/util/theme';
 
 const TWO_COLUMN_BREAKPOINT = 455;
 const TWO_COLUMN_CARD_WIDTH = 180;
@@ -77,7 +78,7 @@ export default function BookmarksScreen() {
     return (
       <View style={styles.root}>
         <SafeAreaView style={styles.centered} edges={['top', 'left', 'right']}>
-          <ActivityIndicator color="#828282" />
+          <ActivityIndicator color={AdaptiveColors.icon} />
         </SafeAreaView>
       </View>
     );
@@ -110,7 +111,7 @@ export default function BookmarksScreen() {
 
         {bookmarksLoading && bookmarkedEvents.length === 0 ? (
           <View style={styles.centered}>
-            <ActivityIndicator color="#828282" />
+            <ActivityIndicator color={AdaptiveColors.icon} />
           </View>
         ) : (
           <FlatList
@@ -137,7 +138,7 @@ export default function BookmarksScreen() {
               <RefreshControl
                 refreshing={isRefetching && !isFetchingNextPage}
                 onRefresh={refresh}
-                tintColor="#828282"
+                tintColor={AdaptiveColors.icon}
               />
             }
             ListEmptyComponent={
@@ -149,7 +150,7 @@ export default function BookmarksScreen() {
             }
             ListFooterComponent={
               isFetchingNextPage ? (
-                <ActivityIndicator style={styles.nextPageLoading} color="#828282" />
+                <ActivityIndicator style={styles.nextPageLoading} color={AdaptiveColors.icon} />
               ) : null
             }
             onEndReached={loadNextPage}
@@ -163,8 +164,8 @@ export default function BookmarksScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#FFFFFF' },
-  safeArea: { flex: 1, backgroundColor: '#FFFFFF' },
+  root: { flex: 1, backgroundColor: AdaptiveColors.background },
+  safeArea: { flex: 1, backgroundColor: AdaptiveColors.background },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
   list: { width: '80%', flex: 1, alignSelf: 'center' },
   singleColumnList: { width: '90%' },
@@ -177,10 +178,10 @@ const styles = StyleSheet.create({
   columnWrapper: { gap: TWO_COLUMN_GAP },
   emptyListContent: { flexGrow: 1, paddingTop: 0 },
   emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  emptyText: { color: '#888888', fontSize: 14, lineHeight: 21, textAlign: 'center' },
+  emptyText: { color: AdaptiveColors.textMuted, fontSize: 14, lineHeight: 21, textAlign: 'center' },
   nextPageLoading: { marginVertical: 20 },
-  guestTitle: { color: '#222222', fontSize: 21, fontWeight: '800' },
-  guestDescription: { color: '#777777', fontSize: 14 },
+  guestTitle: { color: AdaptiveColors.text, fontSize: 21, fontWeight: '800' },
+  guestDescription: { color: AdaptiveColors.textSecondary, fontSize: 14 },
   loginButton: {
     height: 48,
     marginTop: 12,

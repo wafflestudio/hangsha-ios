@@ -24,9 +24,7 @@ const naverUrlScheme = readBuildEnv(
 );
 const iosBundleIdentifier = readBuildEnv(
   "IOS_BUNDLE_IDENTIFIER",
-  isDevelopment
-    ? "com.wafflestudio.hangsha-ios.dev"
-    : "com.wafflestudio.hangsha-ios",
+  isDevelopment ? "com.wafflestudio.hangsha.dev" : "com.wafflestudio.hangsha",
 );
 
 module.exports = {
@@ -36,7 +34,7 @@ module.exports = {
     scheme: isDevelopment ? "hangsha-dev" : "hangsha",
     version: "1.0.0",
     orientation: "portrait",
-    icon: "./assets/images/logo.png",
+    icon: "./assets/images/icon.png",
     userInterfaceStyle: "automatic",
 
     updates: {
@@ -49,7 +47,7 @@ module.exports = {
 
     ios: {
       bundleIdentifier: iosBundleIdentifier,
-      icon: "./assets/images/logo.png",
+      icon: "./assets/images/icon.png",
       config: {
         usesNonExemptEncryption: false,
       },
@@ -61,7 +59,7 @@ module.exports = {
 
     web: {
       output: "static",
-      favicon: "./assets/images/logo.png",
+      favicon: "./assets/images/icon.png",
     },
 
     plugins: [
@@ -73,8 +71,13 @@ module.exports = {
           image: "./assets/images/logo.png",
           imageWidth: 100,
           resizeMode: "contain",
+          dark: {
+            backgroundColor: "#0B0D10",
+            image: "./assets/images/logo.png",
+          },
         },
       ],
+      "expo-system-ui",
       "expo-secure-store",
       "expo-web-browser",
       "expo-image",
