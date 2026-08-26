@@ -56,8 +56,12 @@ export async function verifySignupEmailCode(input: VerifySignupEmailCodeInput) {
 export async function loginWithSocial(input: SocialLoginRequest) {
   const payload: SocialLoginPayload = {
     provider: input.provider,
-    code: null,
-    accessToken: input.accessToken,
+    code: input.authorizationCode ?? null,
+    accessToken: input.accessToken ?? null,
+    identityToken: input.identityToken ?? null,
+    userIdentifier: input.userIdentifier ?? null,
+    email: input.email ?? null,
+    name: input.name ?? null,
     codeVerifier: null,
     client_type: "MOB",
   };

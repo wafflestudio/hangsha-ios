@@ -2,6 +2,7 @@ import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { initializeKakaoSDK } from "@react-native-kakao/core";
 import { login as loginWithKakao } from "@react-native-kakao/user";
 import NaverLogin from "@react-native-seoul/naver-login";
+import * as AppleAuthentication from "expo-apple-authentication";
 import { Platform } from "react-native";
 
 import type {
@@ -21,14 +22,14 @@ export async function requestSocialAccessToken(
   }
 
   try {
-    const accessToken = await PROVIDER_LOGIN[provider]();
-    if (!accessToken.trim()) {
+    const result = await PROVIDER_LOGIN[provider]();
+    if (provider !== "APPLE" && !result.accessToken?.trim()) {
       throw new SocialLoginError(
         "missing_provider_access_token",
         `${provider} 로그인 응답에 access token이 없습니다.`,
       );
     }
-    return { provider, accessToken };
+    return result;
   } catch (error) {
     if (error instanceof SocialLoginError) throw error;
     if (isCancellationError(error)) {
@@ -38,11 +39,51 @@ export async function requestSocialAccessToken(
   }
 }
 
-const PROVIDER_LOGIN: Record<SocialLoginProvider, () => Promise<string>> = {
-  GOOGLE: requestGoogleAccessToken,
-  KAKAO: requestKakaoAccessToken,
-  NAVER: requestNaverAccessToken,
+const PROVIDER_LOGIN: Record<
+  SocialLoginProvider,
+  () => Promise<SocialProviderTokenResult>
+> = {
+  APPLE: requestAppleCredential,
+  GOOGLE: async () => ({ provider: "GOOGLE", accessToken: await requestGoogleAccessToken() }),
+  KAKAO: async () => ({ provider: "KAKAO", accessToken: await requestKakaoAccessToken() }),
+  NAVER: async () => ({ provider: "NAVER", accessToken: await requestNaverAccessToken() }),
 };
+
+async function requestAppleCredential(): Promise<SocialProviderTokenResult> {
+  if (Platform.OS !== "ios" || !(await AppleAuthentication.isAvailableAsync())) {
+    throw new SocialLoginError(
+      "configuration_error",
+      "Apple 로그인은 지원되는 iPhone 또는 iPad에서 사용할 수 있습니다.",
+    );
+  }
+
+  const credential = await AppleAuthentication.signInAsync({
+    requestedScopes: [
+      AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+      AppleAuthentication.AppleAuthenticationScope.EMAIL,
+    ],
+  });
+
+  if (!credential.identityToken?.trim() || !credential.user.trim()) {
+    throw new SocialLoginError(
+      "invalid_credential",
+      "Apple 인증 정보가 올바르지 않습니다. 다시 시도해주세요.",
+    );
+  }
+
+  const formattedName = credential.fullName
+    ? AppleAuthentication.formatFullName(credential.fullName).trim()
+    : "";
+
+  return {
+    provider: "APPLE",
+    identityToken: credential.identityToken,
+    authorizationCode: credential.authorizationCode,
+    userIdentifier: credential.user,
+    email: credential.email,
+    name: formattedName || null,
+  };
+}
 
 async function requestGoogleAccessToken() {
   const iosClientId = requireConfig(

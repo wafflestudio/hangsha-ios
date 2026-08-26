@@ -25,6 +25,7 @@ import { useAuth } from '@/contexts/AuthProvider';
 import { useEventSearchQuery } from '@/contexts/EventDataContext';
 import { useUserData } from '@/contexts/UserDataContext';
 import { useEventFilterParams } from '@/hooks/use-event-filter-params';
+import { useLoginGate } from '@/hooks/use-login-gate';
 import {
   SEARCH_PAGE_SIZES,
   type SearchPageSize,
@@ -43,6 +44,7 @@ export function SearchScreen({ initialQuery }: SearchScreenProps) {
   const listRef = useRef<FlatList>(null);
   const filterSheetRef = useRef<BottomSheetModal>(null);
   const { user } = useAuth();
+  const { requestLogin } = useLoginGate();
   const { toggleBookmark } = useUserData();
   const [profileImageFailed, setProfileImageFailed] = useState(false);
   const {
@@ -100,10 +102,11 @@ export function SearchScreen({ initialQuery }: SearchScreenProps) {
 
   const handleToggleBookmark = async (event: Event) => {
     if (!user) {
-      Alert.alert('로그인이 필요해요', '행사를 찜하려면 로그인해주세요.', [
-        { text: '취소', style: 'cancel' },
-        { text: '로그인', onPress: () => router.replace('/') },
-      ]);
+      requestLogin('관심 행사를 저장하려면 로그인이 필요합니다.', {
+        type: 'set-bookmark',
+        eventId: event.id,
+        shouldBookmark: true,
+      });
       return;
     }
 

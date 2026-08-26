@@ -2,7 +2,6 @@ import { Redirect } from 'expo-router';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { useAuth } from '@/contexts/AuthProvider';
-import HomeScreen from '@/screens/HomeScreen';
 import { AdaptiveColors } from '@/util/theme';
 
 export default function IndexScreen() {
@@ -26,7 +25,7 @@ export default function IndexScreen() {
     return <Redirect href="/calendar" />;
   }
 
-  return <HomeScreen />;
+  return <Redirect href="/calendar" />;
 }
 
 const styles = StyleSheet.create({

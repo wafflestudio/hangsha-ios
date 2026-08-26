@@ -25,6 +25,10 @@ npx expo start      # 이후엔 이것만 — 이미 설치된 Dev Client가 자
 
 `.env.local`에 아래 필수 앱 설정을 입력해야 합니다.
 구글·카카오·네이버 로그인은 네이티브 SDK가 포함된 개발 빌드 또는 배포 빌드에서 확인합니다. Expo Go에서는 동작하지 않습니다.
+Apple 로그인도 네이티브 개발/배포 빌드에서 실제 기기로 검증해야 합니다. 앱 설정의
+`ios.usesAppleSignIn`과 `expo-apple-authentication` config plugin이 entitlement를 생성하며,
+Apple Developer의 development/production App ID 모두에서 **Sign in with Apple** capability가
+활성화되어 있어야 합니다.
 
 | 환경변수                              | 설명                                                                                                               |
 | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
@@ -36,6 +40,10 @@ npx expo start      # 이후엔 이것만 — 이미 설치된 Dev Client가 자
 | `EXPO_PUBLIC_API_URL`                 | 절대 경로 형식의 API base URL                                                                                      |
 | `EXPO_PUBLIC_SNUTT_BASE_URL`          | 환경별 SNUTT base URL (`https://snutt-dev.wafflestudio.com` 또는 `https://snutt.wafflestudio.com`)                 |
 | `EXPO_PUBLIC_TIMETABLE_PICKER_ORIGIN` | SNUTT picker에 전달할 행샤 origin (`https://hangsha-dev.wafflestudio.com` 또는 `https://hangsha.wafflestudio.com`) |
+
+Apple 로그인용 클라이언트 secret은 앱 환경변수로 넣지 않습니다. 서버는 Apple identity token의
+서명과 audience를 검증하며, 허용 bundle identifier는 서버 환경변수 `APPLE_CLIENT_IDS`에 쉼표로
+구분해 설정합니다(예: `com.wafflestudio.hangsha.dev,com.wafflestudio.hangsha`).
 
 `EXPO_PUBLIC_*` 값은 앱 번들에 포함됩니다. 따라서 `EXPO_PUBLIC_NAVER_CLIENT_SECRET`을 EAS에서 `Sensitive`로 관리하면 대시보드·CLI 출력은 가릴 수 있지만, 설치된 앱에서 값을 추출하지 못하게 만드는 서버 secret 보관 수단은 아닙니다. 서버용 Naver credential과 재사용하지 말고 iOS 앱 전용 credential로 분리하며, Naver Developers에 bundle identifier와 환경별 URL scheme을 정확히 등록합니다. Google·Kakao·Naver가 발급한 사용자 access token은 로그인 요청에만 사용하고 로컬에 저장하지 않습니다.
 

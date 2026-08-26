@@ -1,26 +1,29 @@
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
-    Alert,
-    Image,
-    ImageSourcePropType,
-    KeyboardAvoidingView,
-    Platform,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
+  Alert,
+  Image,
+  ImageSourcePropType,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { AppleLoginButton } from "@/components/auth/AppleLoginButton";
 import { useAuth } from "@/contexts/AuthProvider";
+import { useAuthNavigation } from "@/hooks/use-login-gate";
 import { SocialLoginError, type SocialLoginProvider } from "@/types/socialAuth";
 import { AdaptiveColors } from "@/util/theme";
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { finishAuthentication, continueAsGuest } = useAuthNavigation();
   const {
     login,
     loginMutation,
@@ -59,7 +62,7 @@ export default function HomeScreen() {
     try {
       setIsLoginValid(true);
       await login(email.trim(), password);
-      router.replace("/calendar");
+      finishAuthentication(false);
     } catch {
       setIsLoginValid(false);
     }
@@ -71,7 +74,7 @@ export default function HomeScreen() {
   ) => {
     try {
       const { isNewUser } = await loginWithSocial(provider);
-      router.replace(isNewUser ? "/onboarding/profile" : "/calendar");
+      finishAuthentication(isNewUser);
     } catch (error) {
       if (error instanceof SocialLoginError && error.code === "cancelled") {
         return;
@@ -91,6 +94,10 @@ export default function HomeScreen() {
    */
   const handleGoogleLogin = async () => {
     await handleSocialLogin("GOOGLE", "구글");
+  };
+
+  const handleAppleLogin = async () => {
+    await handleSocialLogin("APPLE", "Apple");
   };
 
   /**
@@ -118,7 +125,7 @@ export default function HomeScreen() {
    * 게스트로 계속하기
    */
   const handleGuest = () => {
-    router.replace("/calendar");
+    continueAsGuest();
   };
 
   return (
@@ -237,7 +244,10 @@ export default function HomeScreen() {
                 disabled={isBusy}
                 isLoading={activeSocialProvider === "NAVER"}
               />
-
+              <AppleLoginButton
+                onPress={handleAppleLogin}
+                disabled={isBusy}
+              />
               {/* Sign Up */}
               <Pressable
                 style={({ pressed }) => [
@@ -259,7 +269,7 @@ export default function HomeScreen() {
                 onPress={handleGuest}
               >
                 <Text style={styles.guestText}>
-                  로그인 없이 게스트로 계속하기
+                  로그인하지 않고 행사 둘러보기
                 </Text>
               </Pressable>
             </View>

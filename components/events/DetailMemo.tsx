@@ -4,6 +4,7 @@ import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-nativ
 
 import { useAuth } from '@/contexts/AuthProvider';
 import { useUserData } from '@/contexts/UserDataContext';
+import { useLoginGate } from '@/hooks/use-login-gate';
 import type { Memo } from '@/types/userData';
 import { AdaptiveColors } from '@/util/theme';
 
@@ -71,6 +72,7 @@ const DetailMemoEditor = forwardRef<DetailMemoHandle, DetailMemoEditorProps>(fun
   const [tagInput, setTagInput] = useState('');
   const inputRef = useRef<TextInput>(null);
   const tagInputRef = useRef<TextInput>(null);
+  const { requestLogin } = useLoginGate();
 
   useImperativeHandle(ref, () => ({
     blur: () => {
@@ -88,7 +90,7 @@ const DetailMemoEditor = forwardRef<DetailMemoHandle, DetailMemoEditorProps>(fun
 
   const expand = () => {
     if (!isAuthenticated) {
-      Alert.alert('로그인이 필요해요', '메모는 로그인 후 작성할 수 있습니다.');
+      requestLogin('행사에 개인 메모를 남기려면 로그인이 필요합니다.');
       return;
     }
     setExpanded(true);

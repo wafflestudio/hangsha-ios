@@ -15,6 +15,7 @@ import { TimetableHeader } from '@/components/timetable/TimetableHeader';
 import { TimetableManagerSheet } from '@/components/timetable/TimetableManagerSheet';
 import { useAuth } from '@/contexts/AuthProvider';
 import { useMonthEventsQuery } from '@/contexts/EventDataContext';
+import { useLoginGate } from '@/hooks/use-login-gate';
 import {
   useAddCustomCourseMutation,
   useCreateTimetableMutation,
@@ -44,8 +45,8 @@ import {
 import type { SnuttFullTimetable } from '@/util/timetable/snuttTimetable';
 
 export function TimetableScreen() {
-  const router = useRouter();
   const { user, isLoading: isAuthLoading } = useAuth();
+  const { openLogin } = useLoginGate('/timetable');
 
   if (isAuthLoading) {
     return (
@@ -63,7 +64,7 @@ export function TimetableScreen() {
       <View style={styles.page}>
         <LoginRequiredPrompt
           description="시간표를 확인하려면 로그인해주세요."
-          onLoginPress={() => router.replace('/')}
+          onLoginPress={openLogin}
         />
         <MobileBottomNavigation activeTab="timetable" />
       </View>

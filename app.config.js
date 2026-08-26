@@ -48,6 +48,11 @@ module.exports = {
     ios: {
       bundleIdentifier: iosBundleIdentifier,
       icon: "./assets/images/icon.png",
+      supportsTablet: true,
+      usesAppleSignIn: true,
+      infoPlist: {
+        CFBundleAllowMixedLocalizations: true,
+      },
       config: {
         usesNonExemptEncryption: false,
       },
@@ -78,6 +83,7 @@ module.exports = {
         },
       ],
       "expo-system-ui",
+      "expo-apple-authentication",
       "expo-secure-store",
       "expo-web-browser",
       "expo-image",

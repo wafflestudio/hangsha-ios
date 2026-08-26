@@ -17,6 +17,7 @@ import { BookmarksHeader } from '@/components/bookmarks/BookmarksHeader';
 import { GalleryEventCard } from '@/components/events/GalleryEventCard';
 import { useAuth } from '@/contexts/AuthProvider';
 import { useBookmarksInfinite, useUserData } from '@/contexts/UserDataContext';
+import { useLoginGate } from '@/hooks/use-login-gate';
 import type { Event } from '@/types/event';
 import { AdaptiveColors } from '@/util/theme';
 
@@ -28,6 +29,7 @@ export default function BookmarksScreen() {
   const router = useRouter();
   const { width: windowWidth } = useWindowDimensions();
   const { user, isLoading: isAuthLoading } = useAuth();
+  const { openLogin } = useLoginGate('/bookmark');
   const { toggleBookmark } = useUserData();
   const {
     data: bookmarksData,
@@ -94,7 +96,7 @@ export default function BookmarksScreen() {
             <Text style={styles.guestDescription}>찜한 행사를 확인하려면 로그인해주세요.</Text>
             <Pressable
               accessibilityRole="button"
-              onPress={() => router.replace('/')}
+              onPress={() => openLogin()}
               style={({ pressed }) => [styles.loginButton, pressed && styles.pressed]}>
               <Text style={styles.loginButtonText}>로그인 · 회원가입</Text>
             </Pressable>

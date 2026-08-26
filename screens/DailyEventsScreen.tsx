@@ -23,6 +23,7 @@ import { useAuth } from '@/contexts/AuthProvider';
 import { useDayEventsQuery } from '@/contexts/EventDataContext';
 import { useUserData } from '@/contexts/UserDataContext';
 import { useEventFilterParams } from '@/hooks/use-event-filter-params';
+import { useLoginGate } from '@/hooks/use-login-gate';
 import type { Event } from '@/types/event';
 import { formatDateToYYYYMMDD, parseDateString } from '@/util/calendar/dateFormatter';
 import { filterDayEvents } from '@/util/calendar/filterDayEvents';
@@ -43,6 +44,7 @@ export function DailyEventsScreen({ date }: DailyEventsScreenProps) {
   const filterSheetRef = useRef<BottomSheetModal>(null);
   const filterParams = useEventFilterParams();
   const { user } = useAuth();
+  const { requestLogin } = useLoginGate();
   const { toggleBookmark } = useUserData();
   const dayEventsQuery = useDayEventsQuery(date, filterParams);
   const { data, isPending, isError, isRefetching } = dayEventsQuery;
@@ -71,10 +73,11 @@ export function DailyEventsScreen({ date }: DailyEventsScreenProps) {
 
   const toggleEventBookmark = async (event: Event) => {
     if (!user) {
-      Alert.alert('로그인이 필요해요', '행사를 찜하려면 로그인해주세요.', [
-        { text: '취소', style: 'cancel' },
-        { text: '로그인', onPress: () => router.replace('/') },
-      ]);
+      requestLogin('관심 행사를 저장하려면 로그인이 필요합니다.', {
+        type: 'set-bookmark',
+        eventId: event.id,
+        shouldBookmark: true,
+      });
       throw new Error('Authentication is required to toggle a bookmark.');
     }
 

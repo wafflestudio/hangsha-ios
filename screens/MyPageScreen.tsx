@@ -30,6 +30,7 @@ import { useAuth } from '@/contexts/AuthProvider';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useUserData } from '@/contexts/UserDataContext';
 import { useScrollToFocusedInput } from '@/hooks/use-scroll-to-focused-input';
+import { useLoginGate } from '@/hooks/use-login-gate';
 import type { ProfileImage } from '@/types/auth';
 import type { InterestCategory } from '@/types/category';
 import type { Event } from '@/types/event';
@@ -61,6 +62,7 @@ const truncateToWeight = (value: string, maxWeight: number) => {
 
 export default function MyPageScreen() {
   const router = useRouter();
+  const { openLogin } = useLoginGate('/mypage');
   const { scrollViewRef, handleInputFocus, handleInputBlur } = useScrollToFocusedInput();
   const {
     user,
@@ -215,7 +217,7 @@ export default function MyPageScreen() {
     if (logoutMutation.isPending) return;
     try {
       await logout();
-      router.replace('/');
+      router.replace('/calendar');
     } catch {
       Alert.alert('로그아웃 실패', '잠시 후 다시 시도해주세요.');
     }
@@ -233,7 +235,7 @@ export default function MyPageScreen() {
           onPress: async () => {
             try {
               await deleteAccount();
-              router.replace('/');
+              router.replace('/calendar');
             } catch {
               Alert.alert('회원탈퇴 실패', '잠시 후 다시 시도해주세요.');
             }
@@ -276,7 +278,7 @@ export default function MyPageScreen() {
       <View style={styles.root}>
         <LoginRequiredPrompt
           description="프로필과 저장한 행사 정보를 확인하려면 로그인해주세요."
-          onLoginPress={() => router.replace('/')}
+          onLoginPress={openLogin}
         />
         <MobileBottomNavigation activeTab="profile" />
       </View>
