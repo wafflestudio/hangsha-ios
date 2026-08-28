@@ -60,6 +60,9 @@ module.exports = {
 
     android: {
       predictiveBackGestureEnabled: false,
+      package: isDevelopment
+        ? "com.wafflestudio.hangsha"
+        : "com.wafflestudio.hangsha.dev",
     },
 
     web: {
