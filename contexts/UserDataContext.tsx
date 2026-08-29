@@ -5,6 +5,7 @@ import * as userApi from '@/api/user';
 import type { BookmarksResponse } from '@/api/user';
 import { eventKeys } from '@/api/event';
 import { useAuth } from '@/contexts/AuthProvider';
+import { useAuthIntentStore } from '@/stores/authIntentStore';
 import type { InterestCategory } from '@/types/category';
 import type { Event } from '@/types/event';
 import type { ExcludedKeyword, Memo, MemoUpdates } from '@/types/userData';
@@ -147,6 +148,22 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
       ]);
     },
   });
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const pendingAction = useAuthIntentStore.getState().consumeAction();
+    if (pendingAction?.type !== 'set-bookmark') return;
+
+    void toggleBookmarkMutation
+      .mutateAsync({
+        id: pendingAction.eventId,
+        isBookmarked: !pendingAction.shouldBookmark,
+      })
+      .catch((error) => {
+        console.warn('The pending bookmark action could not be completed.', error);
+      });
+  }, [isAuthenticated, toggleBookmarkMutation]);
   const addMemoMutation = useMutation({
     mutationFn: ({ eventId, content, tagNames }: { eventId: number; content: string; tagNames: string[] }) =>
       userApi.addMemo(eventId, content, tagNames),

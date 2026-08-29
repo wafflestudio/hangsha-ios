@@ -1,8 +1,10 @@
+import type { Href } from 'expo-router';
 import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useAuthIntentStore } from '@/stores/authIntentStore';
 import { AdaptiveColors } from '@/util/theme';
 
 const DECORATIONS = [
@@ -22,6 +24,12 @@ const DECORATIONS = [
 export default function CompleteSignupScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
+  const returnTo = useAuthIntentStore((state) => state.returnTo);
+
+  const returnToRequestedFeature = () => {
+    const target = useAuthIntentStore.getState().consumeReturnTo();
+    router.replace((target ?? '/calendar') as Href);
+  };
 
   return (
     <View
@@ -43,7 +51,12 @@ export default function CompleteSignupScreen() {
         <View style={styles.container}>
           <Text style={styles.title}>환영합니다!</Text>
           <View style={styles.actions}>
-            <NavigationButton label="마이페이지" onPress={() => router.replace('/mypage')} />
+            <NavigationButton
+              label={returnTo ? '요청한 기능으로 돌아가기' : '마이페이지'}
+              onPress={
+                returnTo ? returnToRequestedFeature : () => router.replace('/mypage')
+              }
+            />
             <NavigationButton label="캘린더로 가기" onPress={() => router.replace('/calendar')} />
           </View>
         </View>

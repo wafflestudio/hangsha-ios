@@ -15,7 +15,10 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { AppleLoginButton } from "@/components/auth/AppleLoginButton";
 import { useAuth } from "@/contexts/AuthProvider";
+import { useAuthNavigation } from "@/hooks/use-login-gate";
+import { SocialLoginError } from "@/types/socialAuth";
 import { AdaptiveColors } from "@/util/theme";
 
 type SignupStep = "email" | "code" | "password";
@@ -65,6 +68,7 @@ function getApiErrorMessage(error: unknown, fallback: string) {
 
 export default function SignupScreen() {
   const router = useRouter();
+  const { finishAuthentication } = useAuthNavigation();
   const {
     signup,
     signupMutation,
@@ -72,6 +76,8 @@ export default function SignupScreen() {
     sendSignupEmailCodeMutation,
     verifySignupEmailCode,
     verifySignupEmailCodeMutation,
+    loginWithSocial,
+    socialLoginMutation,
   } = useAuth();
 
   const codeInputRef = useRef<TextInput>(null);
@@ -91,6 +97,8 @@ export default function SignupScreen() {
   const isSendingCode = sendSignupEmailCodeMutation.isPending;
   const isVerifyingCode = verifySignupEmailCodeMutation.isPending;
   const isSubmitting = signupMutation.isPending;
+  const isAppleLoginPending =
+    socialLoginMutation.isPending && socialLoginMutation.variables === "APPLE";
   const isCodeExpired = step === "code" && remainingSeconds === 0;
   const passwordErrors = PASSWORD_REQUIREMENTS.filter(({ isMet }) => !isMet(password));
   const shouldShowPasswordErrors = password.length > 0 || hasAttemptedSignup;
@@ -204,6 +212,22 @@ export default function SignupScreen() {
     }
   };
 
+  const handleAppleLogin = async () => {
+    if (socialLoginMutation.isPending) return;
+    try {
+      const { isNewUser } = await loginWithSocial("APPLE");
+      finishAuthentication(isNewUser);
+    } catch (error) {
+      if (error instanceof SocialLoginError && error.code === "cancelled") return;
+      Alert.alert(
+        "Apple 로그인 실패",
+        error instanceof SocialLoginError
+          ? error.message
+          : "잠시 후 다시 시도해 주세요.",
+      );
+    }
+  };
+
   const subtitle = step === "password" ? "비밀번호를 설정해주세요" : "이메일을 설정해주세요";
 
   return (
@@ -225,25 +249,36 @@ export default function SignupScreen() {
             </View>
 
             {step === "email" && (
-              <View style={styles.form}>
-                <TextInput
-                  style={styles.input}
-                  value={email}
-                  onChangeText={setEmail}
-                  placeholder="email@snu.ac.kr"
-                  placeholderTextColor={AdaptiveColors.textMuted}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  textContentType="emailAddress"
-                  returnKeyType="send"
-                  onSubmitEditing={handleSendCode}
-                  editable={!isSendingCode}
-                />
-                <PrimaryButton
-                  label={isSendingCode ? "발송 중..." : "이메일 인증"}
-                  onPress={handleSendCode}
-                  disabled={isSendingCode}
+              <View style={styles.signupOptions}>
+                <View style={styles.form}>
+                  <TextInput
+                    style={styles.input}
+                    value={email}
+                    onChangeText={setEmail}
+                    placeholder="email@snu.ac.kr"
+                    placeholderTextColor={AdaptiveColors.textMuted}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    textContentType="emailAddress"
+                    returnKeyType="send"
+                    onSubmitEditing={handleSendCode}
+                    editable={!isSendingCode && !isAppleLoginPending}
+                  />
+                  <PrimaryButton
+                    label={isSendingCode ? "발송 중..." : "이메일 인증"}
+                    onPress={handleSendCode}
+                    disabled={isSendingCode || isAppleLoginPending}
+                  />
+                </View>
+                <View style={styles.optionDividerRow}>
+                  <View style={styles.optionDivider} />
+                  <Text style={styles.optionDividerText}>또는</Text>
+                  <View style={styles.optionDivider} />
+                </View>
+                <AppleLoginButton
+                  onPress={handleAppleLogin}
+                  disabled={isSendingCode || socialLoginMutation.isPending}
                 />
               </View>
             )}
@@ -470,7 +505,8 @@ function PrivacyPolicyModal({ visible, onClose }: { visible: boolean; onClose: (
             >
               <Text style={styles.policyHeading}>○ 개인정보 수집 및 이용에 대한 동의</Text>
               <Text style={styles.policyParagraph}>
-                서비스는 회원가입 및 서비스 제공을 위해 아래와 같이 개인정보를 수집·이용합니다.
+                서비스는 회원가입 및 서비스 제공을 위해 로그인 방식에 따라 아래와 같이
+                개인정보를 수집·이용합니다.
               </Text>
 
               <View style={styles.policyTable}>
@@ -480,18 +516,41 @@ function PrivacyPolicyModal({ visible, onClose }: { visible: boolean; onClose: (
                 />
                 <PolicyTableRow
                   cells={[
-                    "이메일 주소",
+                    "이메일 주소(Apple 비공개 릴레이 이메일 포함)",
                     "회원 식별, 로그인, 계정 관리, 서비스 이용 안내",
                     "회원 탈퇴 시까지 (단, 관계 법령에 따라 보관이 필요한 경우 해당 기간 동안 보관)",
                   ]}
                 />
                 <PolicyTableRow
-                  cells={["비밀번호(암호화 저장)", "회원 인증 및 계정 보호", "회원 탈퇴 시까지"]}
+                  cells={[
+                    "비밀번호(이메일 가입 시에만 단방향 암호화 저장)",
+                    "회원 인증 및 계정 보호",
+                    "회원 탈퇴 시까지",
+                  ]}
                 />
                 <PolicyTableRow
-                  cells={["닉네임(선택)", "서비스 내 사용자 식별", "회원 탈퇴 시까지"]}
+                  cells={[
+                    "Apple 계정 식별자",
+                    "Apple 로그인 계정 식별·연결 및 재로그인",
+                    "회원 탈퇴 시까지",
+                  ]}
+                />
+                <PolicyTableRow
+                  cells={[
+                    "닉네임 또는 Apple이 제공한 이름(선택)",
+                    "서비스 내 사용자 식별",
+                    "회원 탈퇴 시까지",
+                  ]}
                 />
               </View>
+
+              <Text style={styles.policySectionTitle}>Apple 로그인 이용 안내</Text>
+              <Text style={styles.policyParagraph}>
+                Apple 로그인 이용 시 Apple로부터 전달받은 identity token과 authorization code는
+                로그인 유효성 확인에만 사용하며 회원 정보로 별도 보관하지 않습니다. Apple이
+                제공하는 이메일 주소는 사용자가 ‘나의 이메일 가리기’를 선택한 경우 Apple의
+                비공개 릴레이 이메일 주소일 수 있습니다.
+              </Text>
 
               <Text style={styles.policySectionTitle}>수집 목적</Text>
               <Text style={styles.policyList}>• 회원가입 및 본인 식별</Text>
@@ -500,7 +559,8 @@ function PrivacyPolicyModal({ visible, onClose }: { visible: boolean; onClose: (
 
               <Text style={styles.policySectionTitle}>보유 및 이용 기간</Text>
               <Text style={styles.policyParagraph}>
-                원칙적으로 회원 탈퇴 시 개인정보를 지체 없이 파기합니다.
+                원칙적으로 회원 탈퇴 시 이메일 주소, Apple 계정 식별자 및 기타 회원 개인정보를
+                지체 없이 파기합니다.
               </Text>
               <Text style={styles.policyParagraph}>
                 다만, 다음의 경우 관련 법령에 따라 일정 기간 보관할 수 있습니다.
@@ -570,6 +630,10 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   form: { width: "100%", gap: 24 },
+  signupOptions: { width: "100%", gap: 20 },
+  optionDividerRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  optionDivider: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: AdaptiveColors.border },
+  optionDividerText: { color: AdaptiveColors.textMuted, fontSize: 13 },
   input: {
     width: "100%",
     height: 42,

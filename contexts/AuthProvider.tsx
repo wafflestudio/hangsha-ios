@@ -1,11 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import * as AppleAuthentication from 'expo-apple-authentication';
 import type { ReactNode } from 'react';
 import { useEffect, useRef } from 'react';
+import { Platform } from 'react-native';
 
 import * as authApi from '@/api/auth';
 import { setSessionExpiredHandler } from '@/api/client';
 import { requestSocialAccessToken } from '@/api/socialAuth';
 import { TokenService } from '@/api/tokenService';
+import { useAuthIntentStore } from '@/stores/authIntentStore';
 import { useAuthStore } from '@/stores/authStore';
 import type {
   LoginInput,
@@ -37,8 +40,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     setSessionExpiredHandler(() => {
       queryClient.removeQueries({ queryKey: authKeys.all });
+      useAuthIntentStore.getState().clear();
       useAuthStore.getState().reset();
     });
+
+    const appleRevokeSubscription =
+      Platform.OS === 'ios'
+        ? AppleAuthentication.addRevokeListener(() => {
+            void TokenService.clearTokens().finally(() => {
+              queryClient.removeQueries({ queryKey: authKeys.all });
+              useAuthStore.getState().reset();
+            });
+          })
+        : null;
 
     if (!initializationPromise.current) {
       initializationPromise.current = (async () => {
@@ -48,6 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         ]);
 
         if (!storedAccessToken && !storedRefreshToken) return null;
+        await verifyStoredAppleCredential();
         if (storedRefreshToken) await authApi.refresh();
         return authApi.getUser();
       })().catch(async () => {
@@ -72,11 +87,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => {
       isMounted = false;
+      appleRevokeSubscription?.remove();
       setSessionExpiredHandler(null);
     };
   }, [queryClient]);
 
   return children;
+}
+
+async function verifyStoredAppleCredential() {
+  if (Platform.OS !== 'ios') return;
+
+  const userIdentifier = await TokenService.getAppleUserIdentifier();
+  if (!userIdentifier) return;
+
+  let state: AppleAuthentication.AppleAuthenticationCredentialState;
+  try {
+    state = await AppleAuthentication.getCredentialStateAsync(userIdentifier);
+  } catch (error) {
+    // The simulator always throws for this API. Keep the existing server session there,
+    // while real-device revocation is also handled immediately by addRevokeListener.
+    console.warn('Apple credential state could not be checked.', error);
+    return;
+  }
+
+  if (state !== AppleAuthentication.AppleAuthenticationCredentialState.AUTHORIZED) {
+    throw new Error('The stored Apple credential is no longer authorized.');
+  }
 }
 
 async function getUserAfterAuthentication() {
@@ -124,6 +161,11 @@ export function useAuth() {
     resetAuth();
   }
 
+  async function clearLocalSessionAndIntent() {
+    await clearLocalSession();
+    useAuthIntentStore.getState().clear();
+  }
+
   const loginMutation = useMutation({
     mutationFn: async (input: LoginInput) => {
       await authApi.login(input);
@@ -164,15 +206,19 @@ export function useAuth() {
 
   const socialLoginMutation = useMutation({
     mutationFn: async (provider: SocialLoginProvider) => {
-      const providerToken = await requestSocialAccessToken(provider);
-      const { accessToken, isNewUser } = await authApi.loginWithSocial(providerToken);
+      const providerCredential = await requestSocialAccessToken(provider);
+      const { accessToken, isNewUser } = await authApi.loginWithSocial(providerCredential);
       const user = await completeSocialAuthentication(accessToken);
+      if (providerCredential.provider === 'APPLE' && providerCredential.userIdentifier) {
+        await TokenService.setAppleUserIdentifier(providerCredential.userIdentifier);
+      }
       return { user, isNewUser };
     },
     onSuccess: ({ user, isNewUser }) => {
       setOnboardingStep(isNewUser ? 'profile' : null);
       commitAuthenticatedUser(user);
     },
+    onError: clearLocalSession,
   });
 
   const logoutMutation = useMutation({
@@ -183,12 +229,12 @@ export function useAuth() {
         console.warn('The server logout request failed; the local session was cleared.', error);
       }
     },
-    onSuccess: clearLocalSession,
+    onSuccess: clearLocalSessionAndIntent,
   });
 
   const deleteAccountMutation = useMutation({
     mutationFn: authApi.deleteAccount,
-    onSuccess: clearLocalSession,
+    onSuccess: clearLocalSessionAndIntent,
   });
 
   const updateUsernameMutation = useMutation({

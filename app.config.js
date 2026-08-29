@@ -48,6 +48,11 @@ module.exports = {
     ios: {
       bundleIdentifier: iosBundleIdentifier,
       icon: "./assets/images/icon.png",
+      supportsTablet: true,
+      usesAppleSignIn: true,
+      infoPlist: {
+        CFBundleAllowMixedLocalizations: true,
+      },
       config: {
         usesNonExemptEncryption: false,
       },
@@ -55,6 +60,9 @@ module.exports = {
 
     android: {
       predictiveBackGestureEnabled: false,
+      package: isDevelopment
+        ? "com.wafflestudio.hangsha"
+        : "com.wafflestudio.hangsha.dev",
     },
 
     web: {
@@ -78,6 +86,7 @@ module.exports = {
         },
       ],
       "expo-system-ui",
+      "expo-apple-authentication",
       "expo-secure-store",
       "expo-web-browser",
       "expo-image",

@@ -14,6 +14,7 @@ import { useAuth } from '@/contexts/AuthProvider';
 import { useEventDetailQuery } from '@/contexts/EventDataContext';
 import { useUserData } from '@/contexts/UserDataContext';
 import { useScrollToFocusedInput } from '@/hooks/use-scroll-to-focused-input';
+import { useLoginGate } from '@/hooks/use-login-gate';
 import { useTheme } from '@/hooks/use-theme';
 import { getDDay } from '@/util/calendar/getDday';
 import { AdaptiveColors, BottomTabInset, getEventTypeColors, getEventTypeLabel, Spacing } from '@/util/theme';
@@ -28,6 +29,7 @@ export function EventDetailScreen() {
   const theme = useTheme();
   const scheme = useColorScheme() === 'dark' ? 'dark' : 'light';
   const { isAuthenticated } = useAuth();
+  const { requestLogin } = useLoginGate();
   const { toggleBookmark } = useUserData();
   const { data: event, isPending, isError } = useEventDetailQuery(eventId);
   const [isBookmarkPending, setIsBookmarkPending] = useState(false);
@@ -46,7 +48,11 @@ export function EventDetailScreen() {
   const contentWidth = width - Spacing.three * 2;
   const toggle = async () => {
     if (!isAuthenticated) {
-      Alert.alert('로그인이 필요해요', '찜 기능은 로그인 후 사용할 수 있습니다.');
+      requestLogin('관심 행사를 저장하려면 로그인이 필요합니다.', {
+        type: 'set-bookmark',
+        eventId: event.id,
+        shouldBookmark: true,
+      });
       return;
     }
     if (isBookmarkPending) return;

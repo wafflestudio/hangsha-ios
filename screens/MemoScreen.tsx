@@ -23,6 +23,7 @@ import { LoginRequiredPrompt } from '@/components/auth/LoginRequiredPrompt';
 import { CategoryChip, DdayChip } from '@/components/events/EventChip';
 import { useAuth } from '@/contexts/AuthProvider';
 import { useUserData } from '@/contexts/UserDataContext';
+import { useLoginGate } from '@/hooks/use-login-gate';
 import type { Memo } from '@/types/userData';
 import { formatDateDotParsed } from '@/util/calendar/dateFormatter';
 import { AdaptiveColors } from '@/util/theme';
@@ -30,6 +31,7 @@ import { AdaptiveColors } from '@/util/theme';
 export default function MemoScreen() {
   const router = useRouter();
   const { user, isLoading: isAuthLoading } = useAuth();
+  const { openLogin } = useLoginGate('/memos');
   const { eventMemos, memoLoading, refreshUserData, deleteMemo, toggleBookmark, updateMemo } = useUserData();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [editingMemo, setEditingMemo] = useState<Memo | null>(null);
@@ -119,7 +121,7 @@ export default function MemoScreen() {
       <View style={styles.root}>
         <LoginRequiredPrompt
           description="행사에 남긴 메모를 확인하려면 로그인해주세요."
-          onLoginPress={() => router.replace('/')}
+          onLoginPress={openLogin}
         />
         <MobileBottomNavigation activeTab="memos" />
       </View>
