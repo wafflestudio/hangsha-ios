@@ -1,6 +1,6 @@
 import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { SymbolView } from 'expo-symbols';
-import { useMemo, useRef, useState } from 'react';
+import { useMemo } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -12,6 +12,7 @@ import {
   View,
 } from 'react-native';
 
+import { TimetableEventDayPager } from '@/components/timetable/TimetableEventDayPager';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import type { CalendarEvent, Event } from '@/types/event';
 import type { TimetableCourse } from '@/types/timetable';
@@ -19,13 +20,13 @@ import { DAY_LABELS_KO } from '@/types/timetable';
 import { AdaptiveColors, Colors, getEventTypeColors } from '@/util/theme';
 import {
   flattenCourses,
-  flattenEvents,
   flattenSpanningEvents,
   formatAmPmFromMinutes,
   formatHourLabel,
   GRID_END_HOUR,
   GRID_HEIGHT,
   GRID_START_HOUR,
+  layoutEventsByDay,
   PIXELS_PER_MINUTE,
   VISIBLE_DAYS,
 } from '@/util/timetable/layout';
@@ -50,6 +51,8 @@ const PERIOD_LABEL_BACKGROUND_COLORS = {
 type TimetableGridProps = {
   courses: TimetableCourse[];
   events: CalendarEvent[];
+  /** 보고 있는 주를 구분하는 값. 바뀌면 모든 요일의 행사 넘김이 첫 장으로 돌아가고 힌트가 다시 나온다. */
+  weekKey: string;
   hideCourseDetails?: boolean;
   isLoading?: boolean;
   onDeleteCourse: (enrollId: number) => void;
@@ -60,23 +63,21 @@ type TimetableGridProps = {
 export function TimetableGrid({
   courses,
   events,
+  weekKey,
   hideCourseDetails = false,
   isLoading = false,
   onDeleteCourse,
   onSelectCourse,
   onSelectEvent,
 }: TimetableGridProps) {
-  const colorScheme = useColorScheme();
   const { width } = useWindowDimensions();
-  const [expandedEventId, setExpandedEventId] = useState<number | null>(null);
-  const longPressedEventIdRef = useRef<number | null>(null);
   const columnWidth = (width - TIME_GUTTER_WIDTH) / VISIBLE_DAYS.length;
   const courseBlocks = useMemo(() => flattenCourses(courses), [courses]);
   const timedEvents = useMemo(
     () => events.filter((event) => !event.allDay && !event.resource.isPeriodEvent),
     [events],
   );
-  const eventBlocks = useMemo(() => flattenEvents(timedEvents), [timedEvents]);
+  const eventBlocksByDay = useMemo(() => layoutEventsByDay(timedEvents), [timedEvents]);
   const halfHourLines = (GRID_END_HOUR - GRID_START_HOUR) * 2;
 
   return (
@@ -160,72 +161,17 @@ export function TimetableGrid({
             </Pressable>
           ))}
 
-          {eventBlocks.map((block) => {
-            const expanded = block.event.id === expandedEventId;
-            const location = block.event.location?.trim();
-            const hasLocation = Boolean(location && location !== '-');
-            const color = getEventTypeColors(colorScheme, block.event.eventTypeId).background;
-            const baseLeft = TIME_GUTTER_WIDTH +
-              block.dayIndex * columnWidth +
-              columnWidth * (block.leftPct / 100);
-            const baseWidth = columnWidth * (block.widthPct / 100);
-
-            return (
-              <Pressable
-                key={block.key}
-                accessibilityRole="button"
-                accessibilityLabel={
-                  hasLocation
-                    ? `${block.event.title} 행사, 장소 ${location}`
-                    : `${block.event.title} 행사`
-                }
-                onHoverIn={() => setExpandedEventId(block.event.id)}
-                onHoverOut={() => setExpandedEventId(null)}
-                onFocus={() => setExpandedEventId(block.event.id)}
-                onBlur={() => setExpandedEventId(null)}
-                delayLongPress={350}
-                onPressIn={() => {
-                  longPressedEventIdRef.current = null;
-                }}
-                onLongPress={() => {
-                  longPressedEventIdRef.current = block.event.id;
-                  setExpandedEventId(block.event.id);
-                }}
-                onPressOut={() => setExpandedEventId(null)}
-                onPress={() => {
-                  if (longPressedEventIdRef.current === block.event.id) {
-                    longPressedEventIdRef.current = null;
-                    return;
-                  }
-                  onSelectEvent?.(block.event);
-                }}
-                style={[
-                  styles.eventBlock,
-                  {
-                    left: expanded ? baseLeft - 5 : baseLeft,
-                    top: block.top,
-                    width: expanded ? baseWidth + 10 : baseWidth,
-                    height: expanded ? Math.max(block.height, hasLocation ? 104 : 86) : block.height,
-                    backgroundColor: color,
-                    opacity: expanded ? 1 : block.opacity,
-                    zIndex: expanded ? 30 : block.zIndex,
-                  },
-                  expanded && styles.eventBlockExpanded,
-                ]}>
-                <Text numberOfLines={expanded ? undefined : 2} style={[styles.eventTitle, expanded && styles.eventTitleExpanded]}>
-                  {block.event.title}
-                </Text>
-                <Text numberOfLines={expanded ? undefined : 2} style={[styles.eventTime, expanded && styles.eventTimeExpanded]}>
-                  {formatAmPmFromMinutes(block.startMin)} - {formatAmPmFromMinutes(block.endMin)}
-                </Text>
-                {hasLocation ? (
-                  <Text numberOfLines={expanded ? undefined : 1} style={styles.eventLocation}>
-                    {location}
-                  </Text>
-                ) : null}
-              </Pressable>
-            );
-          })}
+          {eventBlocksByDay.map((dayBlocks, dayIndex) =>
+            dayBlocks.length > 0 ? (
+              <TimetableEventDayPager
+                key={`${weekKey}-${VISIBLE_DAYS[dayIndex]}`}
+                blocks={dayBlocks}
+                left={TIME_GUTTER_WIDTH + dayIndex * columnWidth}
+                columnWidth={columnWidth}
+                onSelectEvent={onSelectEvent}
+              />
+            ) : null,
+          )}
 
           {isLoading && (
             <View style={styles.loadingOverlay}>
@@ -498,24 +444,6 @@ const styles = StyleSheet.create({
   deleteCourseButton: { position: 'absolute', top: 4, right: 4, zIndex: 2 },
   courseTitle: { marginTop: 8, color: AdaptiveColors.text, fontSize: 11, fontWeight: '700', lineHeight: 14 },
   courseTime: { marginTop: 2, color: AdaptiveColors.textSecondary, fontSize: 10, lineHeight: 13 },
-  eventBlock: {
-    position: 'absolute',
-    paddingHorizontal: 4,
-    paddingVertical: 6,
-    overflow: 'hidden',
-  },
-  eventBlockExpanded: {
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 7 },
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    elevation: 8,
-  },
-  eventTitle: { color: AdaptiveColors.text, fontSize: 11, fontWeight: '700', lineHeight: 14 },
-  eventTitleExpanded: { fontSize: 12, lineHeight: 16 },
-  eventTime: { marginTop: 2, color: AdaptiveColors.textSecondary, fontSize: 10, lineHeight: 13 },
-  eventTimeExpanded: { fontSize: 11, lineHeight: 15 },
-  eventLocation: { marginTop: 3, color: AdaptiveColors.textSecondary, fontSize: 10, lineHeight: 13 },
   periodSheetContainer: {
     zIndex: 40,
     elevation: 10,
