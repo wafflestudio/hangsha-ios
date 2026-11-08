@@ -130,8 +130,9 @@ function AuthenticatedTimetableScreen() {
       .filter((event): event is CalendarEvent => event !== null)
       .filter((event) => event.start <= weekRange.to && event.end >= weekRange.from)
       .map((event) => {
-        const isTwentyThreeHoursFiftyNineMinutes =
-          event.end.getTime() - event.start.getTime() ===
+        // 23시간 59분 이상인 행사는 시간표 칸 대신 종일 행사로 보낸다. 안드로이드 시간표와 같은 기준이어야 한다.
+        const lastsAtLeastTwentyThreeHoursFiftyNineMinutes =
+          event.end.getTime() - event.start.getTime() >=
           (23 * 60 + 59) * 60 * 1000;
         const startDay = new Date(
           event.start.getFullYear(),
@@ -153,7 +154,7 @@ function AuthenticatedTimetableScreen() {
           allDay:
             Boolean(event.allDay) ||
             differentDate ||
-            isTwentyThreeHoursFiftyNineMinutes,
+            lastsAtLeastTwentyThreeHoursFiftyNineMinutes,
         };
       });
   }, [eventOverlayOn, weekEvents, weekRange.from, weekRange.to]);
@@ -307,6 +308,7 @@ function AuthenticatedTimetableScreen() {
           <TimetableGrid
             courses={courses}
             events={weekCalendarEvents}
+            weekKey={from}
             hideCourseDetails={eventOverlayOn}
             isLoading={
               timetableQuery.isPending ||
