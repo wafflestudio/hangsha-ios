@@ -20,6 +20,14 @@ export type CourseGridBlock = {
   item: TimetableCourse;
 };
 
+/** 한 장에 나란히 그리는 겹친 행사 칸의 최대 개수. 안드로이드 시간표와 같은 값이어야 한다. */
+export const MAX_EVENT_LANES_PER_PAGE = 2;
+
+/**
+ * 요일 열 안에서 넘겨 보는 장(page) 단위로 배치된 시간 지정 행사.
+ * laneIndex·laneCount는 그 장 안에서의 칸 위치와 칸 수이고,
+ * pageCount는 요일 전체가 아니라 이 행사가 속한 겹침 묶음이 가진 장 수다.
+ */
 export type EventGridBlock = {
   key: string;
   event: Event;
@@ -28,10 +36,12 @@ export type EventGridBlock = {
   height: number;
   startMin: number;
   endMin: number;
-  leftPct: number;
-  widthPct: number;
-  opacity: number;
-  zIndex: number;
+  visibleStartMin: number;
+  visibleEndMin: number;
+  laneIndex: number;
+  laneCount: number;
+  pageIndex: number;
+  pageCount: number;
 };
 
 export type SpanningEventGridBlock = {
@@ -91,41 +101,75 @@ const isSameDay = (start: Date, end: Date) =>
   start.getMonth() === end.getMonth() &&
   start.getDate() === end.getDate();
 
-type BaseEventBlock = Omit<EventGridBlock, 'leftPct' | 'widthPct' | 'opacity' | 'zIndex'>;
+type BaseEventBlock = Omit<
+  EventGridBlock,
+  'laneIndex' | 'laneCount' | 'pageIndex' | 'pageCount'
+>;
 
-function layoutEventDay(blocks: BaseEventBlock[]): EventGridBlock[] {
-  const sorted = [...blocks].sort((a, b) => a.startMin - b.startMin || a.endMin - b.endMin);
+/**
+ * 시간이 사슬처럼 이어 겹치는 행사들을 한 묶음으로 보고, 묶음 안에서 칸(lane)을 나눈 뒤
+ * MAX_EVENT_LANES_PER_PAGE 칸씩 장으로 자른다. 안드로이드 시간표의 배치 규칙과 같은 결과를 내야 한다.
+ * 칸은 시작이 이른 행사부터 비어 있는 가장 앞 칸에 채우므로, 칸 수는 한순간에 동시에 겹친 최대 행사 수와 같다.
+ */
+function assignLanesWithinGroup(group: BaseEventBlock[]): EventGridBlock[] {
   const laneEnds: number[] = [];
-  const laneByKey = new Map<string, number>();
-
-  for (const block of sorted) {
-    const reusableLane = laneEnds.findIndex((end) => block.startMin >= end);
+  const withLanes = group.map((block) => {
+    const reusableLane = laneEnds.findIndex((end) => end <= block.visibleStartMin);
     const lane = reusableLane === -1 ? laneEnds.length : reusableLane;
-    laneEnds[lane] = block.endMin;
-    laneByKey.set(block.key, lane);
-  }
+    laneEnds[lane] = block.visibleEndMin;
+    return { block, lane };
+  });
 
-  return sorted.map((block) => {
-    const lane = laneByKey.get(block.key) ?? 0;
-    const overlap = sorted.filter(
-      (candidate) => candidate.startMin < block.endMin && block.startMin < candidate.endMin,
-    ).length;
+  const totalLanes = Math.max(1, laneEnds.length);
+  const pageCount = Math.ceil(totalLanes / MAX_EVENT_LANES_PER_PAGE);
 
-    if (overlap === 2) {
-      return { ...block, leftPct: (lane % 2) * 50, widthPct: 50, opacity: 1, zIndex: 3 };
-    }
-
-    if (overlap >= 3) {
-      return lane <= 1
-        ? { ...block, leftPct: lane * 50, widthPct: 50, opacity: 1, zIndex: 3 }
-        : { ...block, leftPct: 0, widthPct: 100, opacity: 0.5, zIndex: 1 };
-    }
-
-    return { ...block, leftPct: 0, widthPct: 100, opacity: 1, zIndex: 2 };
+  return withLanes.map(({ block, lane }) => {
+    const pageIndex = Math.floor(lane / MAX_EVENT_LANES_PER_PAGE);
+    const firstLaneOnPage = pageIndex * MAX_EVENT_LANES_PER_PAGE;
+    return {
+      ...block,
+      laneIndex: lane % MAX_EVENT_LANES_PER_PAGE,
+      laneCount: Math.min(MAX_EVENT_LANES_PER_PAGE, totalLanes - firstLaneOnPage),
+      pageIndex,
+      pageCount,
+    };
   });
 }
 
-export function flattenEvents(events: CalendarEvent[]): EventGridBlock[] {
+function layoutEventDay(blocks: BaseEventBlock[]): EventGridBlock[] {
+  const sorted = [...blocks].sort(
+    (a, b) => a.visibleStartMin - b.visibleStartMin || a.visibleEndMin - b.visibleEndMin,
+  );
+  const result: EventGridBlock[] = [];
+  let group: BaseEventBlock[] = [];
+  let groupEnd = Number.NEGATIVE_INFINITY;
+
+  for (const block of sorted) {
+    if (group.length > 0 && block.visibleStartMin >= groupEnd) {
+      result.push(...assignLanesWithinGroup(group));
+      group = [];
+      groupEnd = Number.NEGATIVE_INFINITY;
+    }
+    group.push(block);
+    groupEnd = Math.max(groupEnd, block.visibleEndMin);
+  }
+  if (group.length > 0) result.push(...assignLanesWithinGroup(group));
+
+  return result;
+}
+
+export const getDayPageCount = (blocks: EventGridBlock[]) =>
+  blocks.reduce((count, block) => Math.max(count, block.pageCount), 1);
+
+/**
+ * pageIndex 장에서 보이는 행사. 장 수가 적은 묶음은 자기 마지막 장을 계속 보여주므로,
+ * 겹치지 않는 행사는 모든 장에서 보인다.
+ */
+export const getBlocksOnPage = (blocks: EventGridBlock[], pageIndex: number) =>
+  blocks.filter((block) => block.pageIndex === Math.min(pageIndex, block.pageCount - 1));
+
+/** 시간 지정 행사를 요일 열마다 배치한다. 돌려주는 배열의 n번째가 VISIBLE_DAYS의 n번째 요일이다. */
+export function layoutEventsByDay(events: CalendarEvent[]): EventGridBlock[][] {
   const blocks: BaseEventBlock[] = [];
 
   for (const calendarEvent of events) {
@@ -152,10 +196,12 @@ export function flattenEvents(events: CalendarEvent[]): EventGridBlock[] {
       height: durationToHeight(visibleStart, visibleEnd),
       startMin,
       endMin,
+      visibleStartMin: visibleStart,
+      visibleEndMin: visibleEnd,
     });
   }
 
-  return VISIBLE_DAYS.flatMap((_day, dayIndex) =>
+  return VISIBLE_DAYS.map((_day, dayIndex) =>
     layoutEventDay(blocks.filter((block) => block.dayIndex === dayIndex)),
   );
 }
